@@ -60,8 +60,7 @@ pub use rpc::*;
 pub use telemetry_events::Event;
 pub use user::*;
 
-static ZED_SERVER_URL: LazyLock<Option<String>> =
-    LazyLock::new(|| std::env::var("ZED_SERVER_URL").ok());
+const LOCAL_SERVICE_URL: &str = "http://127.0.0.1:0";
 static ZED_RPC_URL: LazyLock<Option<String>> = LazyLock::new(|| std::env::var("ZED_RPC_URL").ok());
 
 pub static IMPERSONATE_LOGIN: LazyLock<Option<String>> = LazyLock::new(|| {
@@ -115,16 +114,11 @@ pub struct ClientSettings {
 }
 
 impl Settings for ClientSettings {
-    fn from_settings(content: &settings::SettingsContent) -> Self {
-        if let Some(server_url) = &*ZED_SERVER_URL {
-            return Self {
-                server_url: server_url.clone(),
-                credentials_url: content.credentials_url.clone(),
-            };
-        }
+    fn from_settings(_content: &settings::SettingsContent) -> Self {
+        // 本地发行版固定隔离 Zed 托管服务，第三方 API 使用各自的绝对 URL。
         Self {
-            server_url: content.server_url.clone().unwrap(),
-            credentials_url: content.credentials_url.clone(),
+            server_url: LOCAL_SERVICE_URL.to_owned(),
+            credentials_url: Some(LOCAL_SERVICE_URL.to_owned()),
         }
     }
 }
@@ -547,8 +541,9 @@ impl settings::Settings for TelemetrySettings {
     fn from_settings(content: &SettingsContent) -> Self {
         let telemetry = content.telemetry.as_ref().unwrap();
         Self {
-            diagnostics: telemetry.diagnostics.unwrap(),
-            metrics: telemetry.metrics.unwrap(),
+            // 本地发行版不允许配置重新启用 Zed 遥测或诊断上传。
+            diagnostics: cfg!(test),
+            metrics: cfg!(test),
             anthropic_retention: telemetry.anthropic_retention.unwrap(),
         }
     }

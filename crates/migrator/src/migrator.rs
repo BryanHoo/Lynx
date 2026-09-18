@@ -1065,8 +1065,8 @@ mod tests {
         "default_width": 640,
         "default_height": 320,
         "default_model": {
-            "provider": "zed.dev",
-            "model": "claude-sonnet-4"
+            "provider": "anthropic",
+            "model": "claude-sonnet-4-5"
         }
     }
 }"#,
@@ -1087,8 +1087,8 @@ mod tests {
         "default_width": 640,
         "default_height": 320,
         "default_model": {
-            "provider": "zed.dev",
-            "model": "claude-sonnet-4"
+            "provider": "anthropic",
+            "model": "claude-sonnet-4-5"
         }
     }
 }"#,

@@ -28,10 +28,10 @@ enum TokenRefreshMode {
 }
 
 pub fn global_llm_token(cx: &App) -> LlmApiToken {
-    RefreshLlmTokenListener::global(cx)
-        .read(cx)
-        .llm_api_token
-        .clone()
+    // 本地发行版不注册 Zed token 刷新服务，第三方预测提供商不使用该 token。
+    cx.try_global::<GlobalRefreshLlmTokenListener>()
+        .map(|listener| listener.0.read(cx).llm_api_token.clone())
+        .unwrap_or_default()
 }
 
 struct GlobalRefreshLlmTokenListener(Entity<RefreshLlmTokenListener>);

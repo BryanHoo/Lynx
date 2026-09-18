@@ -9,7 +9,6 @@ mod open_listener;
 mod open_url_modal;
 mod quick_action_bar;
 pub mod remote_debug;
-pub mod telemetry_log;
 #[cfg(all(target_os = "macos", feature = "visual-tests"))]
 pub mod visual_tests;
 #[cfg(target_os = "windows")]
@@ -22,7 +21,6 @@ pub use app_menus::*;
 use assets::Assets;
 
 use breadcrumbs::Breadcrumbs;
-use client::zed_urls;
 use collections::VecDeque;
 use debugger_ui::debugger_panel::DebugPanel;
 use editor::{Editor, MultiBuffer};
@@ -105,17 +103,8 @@ use workspace::{
 use workspace::{CloseProject, CloseWindow, RestoreBanner, with_active_or_new_workspace};
 use workspace::{Pane, notifications::DetachAndPromptErr};
 use zed_actions::{
-    About, GetMerch, OpenAccountSettings, OpenBrowser, OpenDocs, OpenProjectTasks,
-    OpenServerSettings, OpenSettingsFile, OpenStatusPage, OpenZedUrl, Quit,
+    About, OpenBrowser, OpenProjectTasks, OpenServerSettings, OpenSettingsFile, OpenZedUrl, Quit,
 };
-
-const DOCS_URL: &str = "https://zed.dev/docs/";
-const STATUS_URL: &str = "https://status.zed.dev";
-const MERCH_URL: &str = "https://merch.zed.dev/";
-
-pub struct CrashHandler(pub Arc<crashes::Client>);
-
-impl gpui::Global for CrashHandler {}
 
 actions!(
     zed,
@@ -264,11 +253,6 @@ pub fn init(cx: &mut App) {
                 window,
                 cx,
             );
-        });
-    })
-    .on_action(|_: &OpenAccountSettings, cx| {
-        with_active_or_new_workspace(cx, |_, _, cx| {
-            cx.open_url(&zed_urls::account_url(cx));
         });
     })
     .on_action(|_: &OpenTasks, cx| {
@@ -577,9 +561,6 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut App) {
         if let Some(specs) = window.gpu_specs() {
             log::info!("Using GPU: {:?}", specs);
             show_software_emulation_warning_if_needed(specs.clone(), window, cx);
-            if let Some(crash_client) = cx.try_global::<CrashHandler>() {
-                crashes::set_gpu_info(&crash_client.0, specs);
-            }
         }
 
         let edit_prediction_menu_handle = PopoverMenuHandle::default();
@@ -779,8 +760,6 @@ fn initialize_panels(window: &mut Window, cx: &mut Context<Workspace>) -> Task<a
         let outline_panel = OutlinePanel::load(workspace_handle.clone(), cx.clone());
         let terminal_panel = TerminalPanel::load(workspace_handle.clone(), cx.clone());
         let git_panel = GitPanel::load(workspace_handle.clone(), cx.clone());
-        let channels_panel =
-            collab_ui::collab_panel::CollabPanel::load(workspace_handle.clone(), cx.clone());
         let debug_panel = DebugPanel::load(workspace_handle.clone(), cx);
 
         async fn add_panel_when_ready(
@@ -803,7 +782,6 @@ fn initialize_panels(window: &mut Window, cx: &mut Context<Workspace>) -> Task<a
             add_panel_when_ready(outline_panel, workspace_handle.clone(), cx.clone()),
             add_panel_when_ready(terminal_panel, workspace_handle.clone(), cx.clone()),
             add_panel_when_ready(git_panel, workspace_handle.clone(), cx.clone()),
-            add_panel_when_ready(channels_panel, workspace_handle.clone(), cx.clone()),
             add_panel_when_ready(debug_panel, workspace_handle.clone(), cx.clone()),
             initialize_agent_panel(workspace_handle.clone(), cx.clone()).map(|r| r.log_err()),
         );
@@ -916,11 +894,7 @@ fn register_actions(
     _: &mut Window,
     cx: &mut Context<Workspace>,
 ) {
-    workspace
-        .register_action(|_, _: &OpenDocs, _, cx| cx.open_url(DOCS_URL))
-        .register_action(|_, _: &OpenStatusPage, _, cx| cx.open_url(STATUS_URL))
-        .register_action(|_, _: &GetMerch, _, cx| cx.open_url(MERCH_URL))
-        .register_action(
+    workspace.register_action(
             |workspace: &mut Workspace,
              _: &input_latency_ui::DumpInputLatencyHistogram,
              window: &mut Window,
@@ -1316,14 +1290,6 @@ fn register_actions(
         )
         .register_action(
             |workspace: &mut Workspace,
-             _: &collab_ui::collab_panel::ToggleFocus,
-             window: &mut Window,
-             cx: &mut Context<Workspace>| {
-                workspace.toggle_panel_focus::<collab_ui::collab_panel::CollabPanel>(window, cx);
-            },
-        )
-        .register_action(
-            |workspace: &mut Workspace,
              _: &terminal_panel::ToggleFocus,
              window: &mut Window,
              cx: &mut Context<Workspace>| {
@@ -1489,9 +1455,6 @@ fn initialize_pane(
             toolbar.add_item(dap_log_item, window, cx);
             let acp_tools_item = cx.new(|_| acp_tools::AcpToolsToolbarItemView::new());
             toolbar.add_item(acp_tools_item, window, cx);
-            let telemetry_log_item =
-                cx.new(|cx| telemetry_log::TelemetryLogToolbarItemView::new(window, cx));
-            toolbar.add_item(telemetry_log_item, window, cx);
             let syntax_tree_item = cx.new(|_| language_tools::SyntaxTreeToolbarItemView::new());
             toolbar.add_item(syntax_tree_item, window, cx);
             let migration_banner =
@@ -6167,7 +6130,6 @@ mod tests {
             release_channel::init(Version::new(0, 0, 0), cx);
             command_palette::init(cx);
             editor::init(cx);
-            collab_ui::init(&app_state, cx);
             git_ui::init(cx);
             project_panel::init(cx);
             outline_panel::init(cx);
