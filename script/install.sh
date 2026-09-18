@@ -55,9 +55,9 @@ main() {
     "$platform" "$@"
 
     if [ "$(command -v zed)" = "$HOME/.local/bin/zed" ]; then
-        echo "Zed has been installed. Run with 'zed'"
+        echo "Lynx has been installed. Run with 'zed'"
     else
-        echo "To run Zed from your terminal, you must add ~/.local/bin to your PATH"
+        echo "To run Lynx from your terminal, you must add ~/.local/bin to your PATH"
         echo "Run:"
 
         case "$SHELL" in
@@ -74,7 +74,7 @@ main() {
                 ;;
         esac
 
-        echo "To run Zed now, '~/.local/bin/zed'"
+        echo "To run Lynx now, '~/.local/bin/zed'"
     fi
 }
 
@@ -82,7 +82,7 @@ linux() {
     if [ -n "${ZED_BUNDLE_PATH:-}" ]; then
         cp "$ZED_BUNDLE_PATH" "$temp/zed-linux-$arch.tar.gz"
     else
-        echo "Downloading Zed version: $ZED_VERSION"
+        echo "Downloading Lynx version: $ZED_VERSION"
         curl "https://cloud.zed.dev/releases/$channel/$ZED_VERSION/download?asset=zed&arch=$arch&os=linux&source=install.sh" > "$temp/zed-linux-$arch.tar.gz"
     fi
 
@@ -120,9 +120,9 @@ linux() {
     if [ -f "$zed_editor" ] && command -v ldd >/dev/null 2>&1; then
         missing="$(ldd "$zed_editor" 2>/dev/null | sed -n 's/^[[:space:]]*\(.*\) => not found$/\1/p')"
         if [ -n "$missing" ]; then
-            echo "Warning: your system is missing libraries that Zed needs:"
+            echo "Warning: your system is missing libraries that Lynx needs:"
             echo "$missing" | sed 's/^/    /'
-            echo "Install them with your package manager, or Zed will fail to start."
+            echo "Install them with your package manager, or Lynx will fail to start."
         fi
     fi
 
@@ -151,7 +151,7 @@ linux() {
 }
 
 macos() {
-    echo "Downloading Zed version: $ZED_VERSION"
+    echo "Downloading Lynx version: $ZED_VERSION"
     curl "https://cloud.zed.dev/releases/$channel/$ZED_VERSION/download?asset=zed&os=macos&arch=$arch&source=install.sh" > "$temp/Zed-$arch.dmg"
     hdiutil attach -quiet "$temp/Zed-$arch.dmg" -mountpoint "$temp/mount"
     app="$(cd "$temp/mount/"; echo *.app)"

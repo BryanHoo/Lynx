@@ -1,13 +1,13 @@
 ---
-title: Building Zed for macOS
-description: "Guide to building zed for macos for Zed development."
+title: Building Lynx for macOS
+description: "Guide to building zed for macos for Lynx development."
 ---
 
-# Building Zed for macOS
+# Building Lynx for macOS
 
 ## Repository
 
-Clone the [Zed repository](https://github.com/zed-industries/zed).
+Clone the [Lynx repository](https://github.com/zed-industries/zed).
 
 ## Dependencies
 
@@ -36,9 +36,9 @@ Clone the [Zed repository](https://github.com/zed-industries/zed).
   brew install cmake
   ```
 
-## Building Zed from Source
+## Building Lynx from Source
 
-Once you have the dependencies installed, you can build Zed using [Cargo](https://doc.rust-lang.org/cargo/).
+Once you have the dependencies installed, you can build Lynx using [Cargo](https://doc.rust-lang.org/cargo/).
 
 For a debug build:
 
@@ -60,7 +60,7 @@ cargo test --workspace
 
 ## Visual Regression Tests
 
-Zed includes visual regression tests that capture screenshots of real Zed windows and compare them against baseline images. These tests require macOS with Screen Recording permission.
+Lynx includes visual regression tests that capture screenshots of real Lynx windows and compare them against baseline images. These tests require macOS with Screen Recording permission.
 
 ### Prerequisites
 
@@ -108,22 +108,22 @@ UPDATE_BASELINE=1 cargo run -p zed --bin zed_visual_test_runner --features visua
 
 ## Sampling released builds
 
-How to get a symbolicated CPU profile from a released (non-dev) Zed instance.
-Use this when Zed is using a lot of CPU.
+How to get a symbolicated CPU profile from a released (non-dev) Lynx instance.
+Use this when Lynx is using a lot of CPU.
 
 Released macOS binaries are stripped of local symbols, so `sample` and Instruments show raw addresses for most frames.
 The debug symbols for every release are archived: `script/bundle-mac` uploads `zed.dwarf` to Sentry before stripping.
 
 ### During the incident
 
-- Run `sample Zed 10 -f zed-sample.txt` (adjust the process name for Preview or Nightly).
+- Run `sample Lynx 10 -f zed-sample.txt` (adjust the process name for Preview or Nightly).
 - Get the exact build: type {#action zed::About} in the command palette and copy the version and commit.
 
-The `zed-sample.txt` file can be sent to Zed together with the exact version.
+The `zed-sample.txt` file can be sent to Lynx together with the exact version.
 
 ### Later
 
-This can be done by Zed staff.
+This can be done by Lynx staff.
 
 - Find the binary UUID in the `Binary Images` section at the bottom of the sample output.
 - Download the matching `zed.dwarf` from the Sentry project's Debug Files page by searching for that UUID.
@@ -134,8 +134,8 @@ This can be done by Zed staff.
 To profile a released build on your own machine with full symbols, download the matching `zed.dwarf`, convert it into a `.dSYM` bundle Spotlight can index, and re-run `sample`:
 
 ```sh
-mkdir -p Zed.dSYM/Contents/Resources/DWARF
-cp zed.dwarf Zed.dSYM/Contents/Resources/DWARF/zed
+mkdir -p Lynx.dSYM/Contents/Resources/DWARF
+cp zed.dwarf Lynx.dSYM/Contents/Resources/DWARF/zed
 ```
 
 Frames then resolve automatically, including file and line information.
@@ -209,18 +209,18 @@ This error seems to be caused by OS resource constraints. Installing and running
 
 ### Avoiding continual rebuilds
 
-If Zed continually rebuilds root crates, you may be opening the Zed codebase itself in your development build.
+If Lynx continually rebuilds root crates, you may be opening the Lynx codebase itself in your development build.
 
 This causes problems because `cargo run` exports a bunch of environment
 variables which are picked up by the `rust-analyzer` that runs in the development
-build of Zed. These environment variables are in turn passed to `cargo check`, which
+build of Lynx. These environment variables are in turn passed to `cargo check`, which
 invalidates the build cache of some of the crates we depend on.
 
 To avoid this, run the built binary against a different project, for example `cargo run ~/path/to/other/project`.
 
 ### Speeding up verification
 
-If you build Zed frequently, macOS may keep verifying new builds, which can add a few seconds to each iteration.
+If you build Lynx frequently, macOS may keep verifying new builds, which can add a few seconds to each iteration.
 
 To fix this, you can:
 

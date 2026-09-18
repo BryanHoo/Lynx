@@ -1,23 +1,23 @@
 ---
-title: Zed on macOS
-description: "Zed is developed primarily on macOS, making it a first-class platform with full feature support."
+title: Lynx on macOS
+description: "Lynx is developed primarily on macOS, making it a first-class platform with full feature support."
 ---
 
-# Zed on macOS
+# Lynx on macOS
 
-Zed is developed primarily on macOS, making it a first-class platform with full feature support.
+Lynx is developed primarily on macOS, making it a first-class platform with full feature support.
 
-## Installing Zed
+## Installing Lynx
 
-Download Zed from the [download page](https://zed.dev/download). The download is a `.dmg` file—open it and drag Zed to your Applications folder.
+Download Lynx from the [download page](https://zed.dev/download). The download is a `.dmg` file—open it and drag Lynx to your Applications folder.
 
 For the preview build, which receives updates about a week ahead of stable, visit the [preview releases page](https://zed.dev/releases/preview).
 
-After installation, Zed checks for updates automatically and prompts you when a new version is available.
+After installation, Lynx checks for updates automatically and prompts you when a new version is available.
 
 ### Homebrew
 
-You can also install Zed using Homebrew:
+You can also install Lynx using Homebrew:
 
 ```sh
 brew install --cask zed
@@ -31,20 +31,20 @@ brew install --cask zed@preview
 
 ### Building from Source
 
-To build Zed from source, see the [macOS development documentation](./development/macos.md).
+To build Lynx from source, see the [macOS development documentation](./development/macos.md).
 
 ## System Requirements
 
 - macOS 10.15.7 (Catalina) or later
 - Apple Silicon (M1/M2/M3/M4) or Intel processor
 
-Zed uses Metal for GPU-accelerated rendering, which is available on all supported macOS versions.
+Lynx uses Metal for GPU-accelerated rendering, which is available on all supported macOS versions.
 
 ## Installing the CLI
 
-Zed includes a command-line tool for opening files and projects from Terminal. To install it:
+Lynx includes a command-line tool for opening files and projects from Terminal. To install it:
 
-1. Open Zed
+1. Open Lynx
 2. Open the command palette with `Cmd+Shift+P`
 3. Run {#action cli::InstallCliBinary}
 
@@ -60,8 +60,8 @@ See the [CLI Reference](./reference/cli.md) for all available options.
 
 ## Uninstall
 
-1. Quit Zed if it's running
-2. Drag Zed from Applications to the Trash
+1. Quit Lynx if it's running
+2. Drag Lynx from Applications to the Trash
 3. Optionally, remove your settings and extensions:
 
 ```sh
@@ -80,11 +80,11 @@ rm /usr/local/bin/zed
 
 ## Troubleshooting
 
-### Zed won't open or shows "damaged" warning
+### Lynx won't open or shows "damaged" warning
 
-If macOS reports that Zed is damaged or can't be opened, it's likely a Gatekeeper issue. Try:
+If macOS reports that Lynx is damaged or can't be opened, it's likely a Gatekeeper issue. Try:
 
-1. Right-click (or Control-click) on Zed in Applications
+1. Right-click (or Control-click) on Lynx in Applications
 2. Select "Open" from the context menu
 3. Click "Open" in the dialog that appears
 
@@ -93,7 +93,7 @@ This tells macOS to trust the application.
 If that doesn't work, remove the quarantine attribute:
 
 ```sh
-xattr -cr /Applications/Zed.app
+xattr -cr /Applications/Lynx.app
 ```
 
 ### CLI command not found
@@ -106,19 +106,19 @@ If the `zed` command isn't available after installation:
 
 ### Can't install CLI {#cant-install-cli}
 
-{#action cli::InstallCliBinary} writes a `zed` symlink to `/usr/local/bin`, which requires administrator privileges. If your macOS account isn't in the `admin` group, Zed can't create that symlink and will report that it can't install the CLI automatically.
+{#action cli::InstallCliBinary} writes a `zed` symlink to `/usr/local/bin`, which requires administrator privileges. If your macOS account isn't in the `admin` group, Lynx can't create that symlink and will report that it can't install the CLI automatically.
 
-Instead, you can add an alias pointing to the `cli` binary bundled inside the app. The path depends on where Zed is installed:
+Instead, you can add an alias pointing to the `cli` binary bundled inside the app. The path depends on where Lynx is installed:
 
 ```sh
-# Default install (Zed in /Applications)
-alias zed="/Applications/Zed.app/Contents/MacOS/cli"
+# Default install (Lynx in /Applications)
+alias zed="/Applications/Lynx.app/Contents/MacOS/cli"
 
-# User install (Zed in ~/Applications)
-alias zed="$HOME/Applications/Zed.app/Contents/MacOS/cli"
+# User install (Lynx in ~/Applications)
+alias zed="$HOME/Applications/Lynx.app/Contents/MacOS/cli"
 
-# Preview build (Zed Preview in ~/Applications)
-alias zed="$HOME/Applications/Zed Preview.app/Contents/MacOS/cli"
+# Preview build (Lynx Preview in ~/Applications)
+alias zed="$HOME/Applications/Lynx Preview.app/Contents/MacOS/cli"
 ```
 
 Add the line that matches your install to your shell configuration file. Use `~/.zshrc` for Zsh (the default on modern macOS) or `~/.bashrc` for Bash.
@@ -132,7 +132,7 @@ zed file.txt       # Open a file
 
 ### GPU or rendering issues
 
-Zed uses Metal for rendering. If you experience graphical glitches:
+Lynx uses Metal for rendering. If you experience graphical glitches:
 
 1. Ensure macOS is up to date
 2. Restart your Mac to reset the GPU state
@@ -140,10 +140,10 @@ Zed uses Metal for rendering. If you experience graphical glitches:
 
 ### High memory or CPU usage
 
-If Zed uses more resources than expected:
+If Lynx uses more resources than expected:
 
 1. Check for runaway language servers in the terminal output ({#action zed::OpenLog})
 2. Try disabling extensions one by one to identify conflicts
 3. For large projects, consider using [project settings](./reference/all-settings.md#file-scan-exclusions) to exclude unnecessary folders from indexing
 
-For additional help, see the [Troubleshooting guide](./troubleshooting.md) or visit the [Zed Discord](https://discord.gg/zed-community).
+For additional help, see the [Troubleshooting guide](./troubleshooting.md) or visit the [Lynx Discord](https://discord.gg/zed-community).

@@ -1,15 +1,15 @@
-# Contributing to Zed
+# Contributing to Lynx
 
-Thank you for helping us make Zed better!
+Thank you for helping us make Lynx better!
 
-All activity in Zed forums is subject to our [Code of
+All activity in Lynx forums is subject to our [Code of
 Conduct](https://zed.dev/code-of-conduct). Additionally, contributors must sign
 our [Contributor License Agreement](https://zed.dev/cla) before their
 contributions can be merged.
 
 ## Contribution ideas
 
-Zed is a large project with a number of priorities. We spend most of
+Lynx is a large project with a number of priorities. We spend most of
 our time working on what we believe the product needs, but we also love working
 with the community to improve the product in ways we haven't thought of (or had time to get to yet!)
 
@@ -30,11 +30,11 @@ If you're looking for concrete ideas:
 - [Area labels](https://github.com/zed-industries/zed/labels?q=area%3A*) to browse bugs in a specific part of the product you care about (after clicking on an area label, add type:Bug to the search)
 - [The board with the features](https://github.com/orgs/zed-industries/projects/78/views/4) we explicitly invited the community's contributions for.
 
-**Thinking about proposing or building a larger feature? Don't start with a PR**, start with reading the [Zed Feature Process](./docs/src/development/feature-process.md) for how we think about feature design — what context to provide, what integration points to consider, and how to put together a strong proposal. The right place for the proposals is [GitHub discussions](https://github.com/zed-industries/zed/discussions) (not GitHub issues).
+**Thinking about proposing or building a larger feature? Don't start with a PR**, start with reading the [Lynx Feature Process](./docs/src/development/feature-process.md) for how we think about feature design — what context to provide, what integration points to consider, and how to put together a strong proposal. The right place for the proposals is [GitHub discussions](https://github.com/zed-industries/zed/discussions) (not GitHub issues).
 
 ## Sending changes
 
-The Zed culture values working code and synchronous conversations over long
+The Lynx culture values working code and synchronous conversations over long
 discussion threads.
 
 The best way to get us to take a look at a proposed change (excluding new features) is to send a pull request. We will get back to you (though this sometimes takes longer than we'd like, sorry). **Pinging the maintainers by their username or writing them emails spends their time but does not bump the priority of a particular PR.**
@@ -53,9 +53,9 @@ submitted. **If you'd like your PR to have the best chance of being merged**:
   but **features should be confirmed with us first** if you aim to avoid wasted
   effort. If there isn't already a GitHub issue for your feature with staff
   confirmation that we want it, start with a [GitHub discussion](https://github.com/zed-industries/zed/discussions) rather than a PR.
-  - This especially applies to any changes proposed to the Zed Extension API.
+  - This especially applies to any changes proposed to the Lynx Extension API.
 - Include a clear description of **what you're solving**, and why it's important.
-- Include **tests**. For UI changes, consider updating visual regression tests (see [Building Zed for macOS](./docs/src/development/macos.md#visual-regression-tests)).
+- Include **tests**. For UI changes, consider updating visual regression tests (see [Building Lynx for macOS](./docs/src/development/macos.md#visual-regression-tests)).
 - If the change is visible in the UI, attach **screenshots or screen recordings**.
 - Make the PR about **one thing only**, e.g. if it's a bugfix, don't add two
   features and a refactoring on top of that.
@@ -74,9 +74,9 @@ review them, including the occasional automated burst.
 
 Although there are few hard and fast rules, **typically we don't merge**:
 
-- Anything that can be provided by an extension. For example a new language, or theme. For adding themes or support for a new language to Zed, check out our [docs on developing extensions](https://zed.dev/docs/extensions/developing-extensions).
-- Changes to the Zed Extension API submitted without prior discussion involving Zed staff.
-- New file icons. Zed's default icon theme consists of icons that are hand-designed to fit together in a cohesive manner, please don't submit PRs with off-the-shelf SVGs.
+- Anything that can be provided by an extension. For example a new language, or theme. For adding themes or support for a new language to Lynx, check out our [docs on developing extensions](https://zed.dev/docs/extensions/developing-extensions).
+- Changes to the Lynx Extension API submitted without prior discussion involving Lynx staff.
+- New file icons. Lynx's default icon theme consists of icons that are hand-designed to fit together in a cohesive manner, please don't submit PRs with off-the-shelf SVGs.
 - Features where (in our subjective opinion) the extra complexity isn't worth it for the number of people who will benefit.
 - Giant refactorings.
 - Non-trivial changes with no tests.
@@ -135,15 +135,15 @@ When your changes affect UI, consult this checklist:
 
 **Consistency**
 
-- Does it match Zed’s design language (spacing, typography, icons)?
+- Does it match Lynx’s design language (spacing, typography, icons)?
   - Make sure to visit [the icon design guidelines](https://github.com/zed-industries/zed/blob/main/crates/icons/README.md)
-- Are terminology, labels, and tone consistent with the rest of Zed?
+- Are terminology, labels, and tone consistent with the rest of Lynx?
 - Are interactions consistent (e.g., how tabs close, how modals dismiss, how errors show)?
 
 **Internationalization & Text**
 
 - Are strings concise, clear, and unambiguous?
-- Do we avoid internal Zed jargon that only insiders would know?
+- Do we avoid internal Lynx jargon that only insiders would know?
 
 **User Paths & Edge Cases**
 
@@ -152,7 +152,7 @@ When your changes affect UI, consult this checklist:
 - How does it work in offline vs. online states?
 - How does it work in unauthenticated vs. authenticated states?
 - How does it behave if data is missing, corrupted, or delayed?
-- Are error messages actionable and consistent with Zed’s voice?
+- Are error messages actionable and consistent with Lynx’s voice?
 
 **Discoverability & Learning**
 
@@ -161,15 +161,15 @@ When your changes affect UI, consult this checklist:
 - Are power features discoverable but not intrusive?
 - Is there a path from beginner → expert usage (progressive disclosure)?
 
-## Bird's-eye view of Zed
+## Bird's-eye view of Lynx
 
-We suggest you keep the [Zed glossary](docs/src/development/glossary.md) at your side when starting out. It lists and explains some of the structures and terms you will see throughout the codebase.
+We suggest you keep the [Lynx glossary](docs/src/development/glossary.md) at your side when starting out. It lists and explains some of the structures and terms you will see throughout the codebase.
 
-Zed is made up of several smaller crates - let's go over those you're most likely to interact with:
+Lynx is made up of several smaller crates - let's go over those you're most likely to interact with:
 
-- [`gpui`](/crates/gpui) is a GPU-accelerated UI framework which provides all of the building blocks for Zed. **We recommend familiarizing yourself with the root level GPUI documentation.**
-- [`editor`](/crates/editor) contains the core `Editor` type that drives both the code editor and all various input fields within Zed. It also handles a display layer for LSP features such as Inlay Hints or code completions.
-- [`project`](/crates/project) manages files and navigation within the filetree. It is also Zed's side of communication with LSP.
+- [`gpui`](/crates/gpui) is a GPU-accelerated UI framework which provides all of the building blocks for Lynx. **We recommend familiarizing yourself with the root level GPUI documentation.**
+- [`editor`](/crates/editor) contains the core `Editor` type that drives both the code editor and all various input fields within Lynx. It also handles a display layer for LSP features such as Inlay Hints or code completions.
+- [`project`](/crates/project) manages files and navigation within the filetree. It is also Lynx's side of communication with LSP.
 - [`workspace`](/crates/workspace) handles local state serialization and groups projects together.
 - [`vim`](/crates/vim) is a thin implementation of Vim workflow over `editor`.
 - [`lsp`](/crates/lsp) handles communication with external LSP server.
@@ -177,10 +177,10 @@ Zed is made up of several smaller crates - let's go over those you're most likel
 - [`collab`](/crates/collab) is the collaboration server itself, driving the collaboration features such as project sharing.
 - [`rpc`](/crates/rpc) defines messages to be exchanged with collaboration server.
 - [`theme`](/crates/theme) defines the theme system and provides a default theme.
-- [`ui`](/crates/ui) is a collection of UI components and common patterns used throughout Zed.
-- [`cli`](/crates/cli) is the CLI crate which invokes the Zed binary.
-- [`zed`](/crates/zed) is where all things come together, and the `main` entry point for Zed.
+- [`ui`](/crates/ui) is a collection of UI components and common patterns used throughout Lynx.
+- [`cli`](/crates/cli) is the CLI crate which invokes the Lynx binary.
+- [`zed`](/crates/zed) is where all things come together, and the `main` entry point for Lynx.
 
-## Packaging Zed
+## Packaging Lynx
 
-Check our [notes for packaging Zed](https://zed.dev/docs/development/linux#notes-for-packaging-zed).
+Check our [notes for packaging Lynx](https://zed.dev/docs/development/linux#notes-for-packaging-zed).

@@ -2201,7 +2201,7 @@ fn run_agent_thread_view_test(
 
     // Send the message to trigger the image response
     let send_future = thread.update(cx, |thread, cx| {
-        thread.send(vec!["Show me the Zed logo".into()], cx)
+        thread.send(vec!["Show me the Lynx logo".into()], cx)
     });
 
     cx.background_executor.allow_parking();

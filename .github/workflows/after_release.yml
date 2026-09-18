@@ -69,7 +69,7 @@ jobs:
       uses: 2428392/gh-truncate-string-action@b3ff790d21cf42af3ca7579146eedb93c8fb0757
       with:
         stringToTruncate: |
-          📣 Zed [${{ env.TAG_NAME }}](<${{ steps.get-release-url.outputs.URL }}>)  was just released!
+          📣 Lynx [${{ env.TAG_NAME }}](<${{ steps.get-release-url.outputs.URL }}>)  was just released!
 
           ${{ github.event.release.body || inputs.body }}
         maxLength: 2000

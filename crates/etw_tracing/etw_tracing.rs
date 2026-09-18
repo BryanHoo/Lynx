@@ -237,7 +237,7 @@ fn start_etw_recording(cx: &mut App, heap_pid: Option<u32>) {
     .detach();
 }
 
-const INSTANCE_NAME: &str = "Zed";
+const INSTANCE_NAME: &str = "Lynx";
 
 const BUILTIN_PROFILES: &[&str] = &[
     "CPU.Verbose.Memory",
@@ -272,7 +272,7 @@ fn heap_tracing_profile(heap_pid: Option<u32>) -> String {
 
     format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
-<WindowsPerformanceRecorder Version="1.0" Author="Zed Industries">
+<WindowsPerformanceRecorder Version="1.0" Author="Lynx">
   <Profiles>
     {heap_provider}
 
@@ -496,7 +496,7 @@ fn record_etw_trace_inner(heap_pid: Option<u32>, stream: &mut net::UnixStream) -
     send_json(stream, &StatusMessage::Started)?;
 
     let command: Command =
-        recv_json(&mut BufReader::new(&mut *stream)).context("Receive command from Zed")?;
+        recv_json(&mut BufReader::new(&mut *stream)).context("Receive command from Lynx")?;
 
     match command {
         Command::Cancel => {

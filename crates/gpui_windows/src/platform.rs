@@ -1561,7 +1561,7 @@ fn handle_gpu_device_lost(
     Ok(())
 }
 
-const PLATFORM_WINDOW_CLASS_NAME: PCWSTR = w!("Zed::PlatformWindow");
+const PLATFORM_WINDOW_CLASS_NAME: PCWSTR = w!("Lynx::PlatformWindow");
 
 fn register_platform_window_class() {
     let wc = WNDCLASSW {
@@ -1649,9 +1649,9 @@ mod tests {
         assert_eq!(
             encode_restart_arguments(&[
                 OsString::from("--user-data-dir"),
-                OsString::from(r"C:\Zed Data"),
+                OsString::from(r"C:\Lynx Data"),
             ]),
-            OsStr::new(r#""--user-data-dir" "C:\Zed Data""#)
+            OsStr::new(r#""--user-data-dir" "C:\Lynx Data""#)
         );
         assert_eq!(
             encode_restart_arguments(&[OsString::from(r"C:\")]),

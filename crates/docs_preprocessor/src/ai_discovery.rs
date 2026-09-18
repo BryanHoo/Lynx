@@ -120,12 +120,12 @@ fn front_matter_comment_regex() -> &'static Regex {
 
 fn write_llms_txt(destination: &Path, site_url: &str, pages: &[DocsPage]) -> Result<()> {
     let mut contents = String::new();
-    contents.push_str("# Zed Docs\n\n");
+    contents.push_str("# Lynx Docs\n\n");
     contents.push_str(
-        "> Official Zed documentation index with links to Markdown versions of each docs page.\n\n",
+        "> Official Lynx documentation index with links to Markdown versions of each docs page.\n\n",
     );
     contents.push_str(
-        "Use these links for concise Markdown copies of Zed documentation pages. Each linked page mirrors the corresponding `/docs/*.html` page without site navigation or styling.\n\n",
+        "Use these links for concise Markdown copies of Lynx documentation pages. Each linked page mirrors the corresponding `/docs/*.html` page without site navigation or styling.\n\n",
     );
     let mut current_section = None;
     for page in pages {
@@ -496,11 +496,11 @@ mod tests {
             DocsPage {
                 section: "Docs".to_string(),
                 title: "Getting Started".to_string(),
-                description: Some("Start using Zed.".to_string()),
+                description: Some("Start using Lynx.".to_string()),
                 source_path: PathBuf::from("getting-started.md"),
                 content: format!(
                     "{}\n# Getting Started\n",
-                    FRONT_MATTER_COMMENT.replace("{}", r#"{"description":"Start using Zed."}"#)
+                    FRONT_MATTER_COMMENT.replace("{}", r#"{"description":"Start using Lynx."}"#)
                 ),
             },
             DocsPage {
@@ -521,7 +521,7 @@ mod tests {
         let llms_txt = std::fs::read_to_string(destination.join("llms.txt"))?;
         assert!(llms_txt.contains("## Docs"));
         assert!(llms_txt.contains(
-            "- [Getting Started](https://zed.dev/docs/getting-started.md): Start using Zed."
+            "- [Getting Started](https://zed.dev/docs/getting-started.md): Start using Lynx."
         ));
         assert!(llms_txt.contains("## AI"));
         assert!(

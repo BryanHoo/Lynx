@@ -1,12 +1,12 @@
 # eval-cli
 
-Headless Rust binary for running Zed's agent in evaluation and benchmark
+Headless Rust binary for running Lynx's agent in evaluation and benchmark
 environments. It is designed for containerized harnesses such as
 [Harbor](https://harborframework.com/) and Pier, where the repository is already
 checked out and model API keys are provided via environment variables.
 
 `eval-cli` uses the same `NativeAgent` + `AcpThread` pipeline as the production
-Zed editor: a full agentic loop with tool calls, subagents, and retries, without
+Lynx editor: a full agentic loop with tool calls, subagents, and retries, without
 a GUI.
 
 This directory also contains `zed_eval/`, the Python `zed-eval` package used to

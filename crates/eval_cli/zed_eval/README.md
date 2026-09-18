@@ -1,6 +1,6 @@
 # zed-eval
 
-Python CLI and installed-agent package for building Zed's headless `eval-cli`
+Python CLI and installed-agent package for building Lynx's headless `eval-cli`
 binary, launching benchmark runs on Modal/Harbor/Pier, and fetching results.
 
 This README is for `crates/eval_cli/zed_eval/`. The Rust `eval-cli` binary is

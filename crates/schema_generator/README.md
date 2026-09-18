@@ -1,6 +1,6 @@
-# Zed Schema Generator
+# Lynx Schema Generator
 
-Prints various Zed schemas to stdout.
+Prints various Lynx schemas to stdout.
 
 ## Usage
 

@@ -10678,7 +10678,7 @@ pub fn join_channel(
                         let detail: SharedString = match err.error_code() {
                             ErrorCode::SignedOut => "Please sign in to continue.".into(),
                             ErrorCode::UpgradeRequired => concat!(
-                                "Your are running an unsupported version of Zed. ",
+                                "Your are running an unsupported version of Lynx. ",
                                 "Please update to continue."
                             )
                             .into(),
@@ -12435,7 +12435,7 @@ mod tests {
             file_stem: Some("main".to_string()),
             remote_name: Some("nickname".to_string()),
             remote_host: Some("example.com".to_string()),
-            app_name: "Zed",
+            app_name: "Lynx",
             branch: Some("main".to_string()),
         };
 
@@ -12491,7 +12491,7 @@ mod tests {
             file_stem: Some("main".to_string()),
             remote_name: None,
             remote_host: None,
-            app_name: "Zed",
+            app_name: "Lynx",
             branch: None,
         };
 
@@ -12513,14 +12513,14 @@ mod tests {
     fn test_render_window_title_format_renders_new_variables() {
         let context = WindowTitleContext {
             project_name: "project".to_string(),
-            app_name: "Zed",
+            app_name: "Lynx",
             branch: Some("feature/foo".to_string()),
             ..Default::default()
         };
 
         assert_eq!(
             render_window_title_format("${projectName}${separator}${appName}", " — ", &context),
-            "project — Zed"
+            "project — Lynx"
         );
         assert_eq!(
             render_window_title_format("${projectName}${separator}${branch}", " — ", &context),
@@ -12922,7 +12922,7 @@ mod tests {
             });
         });
         cx.executor().run_until_parked();
-        assert_eq!(cx.window_title().as_deref(), Some("Zed — root1, root2"));
+        assert_eq!(cx.window_title().as_deref(), Some("Lynx — root1, root2"));
 
         let item = cx.new(|cx| {
             TestItem::new(cx).with_project_items(&[TestProjectItem::new_in_worktree(
@@ -12939,7 +12939,7 @@ mod tests {
         let expected_file_path = path!("/root1/src/one.txt");
         assert_eq!(
             cx.window_title().as_deref(),
-            Some(format!("Zed — root1, root2 — one — {expected_file_path}").as_str())
+            Some(format!("Lynx — root1, root2 — one — {expected_file_path}").as_str())
         );
     }
 

@@ -442,7 +442,7 @@ pub(crate) fn perform_update(
         #[allow(clippy::disallowed_methods, reason = "doesn't run in the main binary")]
         let _child = zed_launch_command(app_dir, launch_arguments)
             .spawn()
-            .context("Failed to launch Zed after update")?;
+            .context("Failed to launch Lynx after update")?;
     }
     log::info!("Update completed successfully");
     Ok(())
@@ -458,13 +458,13 @@ mod test {
     fn test_zed_launch_command_preserves_arguments() {
         let arguments = vec![
             OsString::from("--user-data-dir"),
-            OsString::from(r"C:\Zed Data"),
+            OsString::from(r"C:\Lynx Data"),
         ];
-        let command = zed_launch_command(Path::new(r"C:\Program Files\Zed"), &arguments);
+        let command = zed_launch_command(Path::new(r"C:\Program Files\Lynx"), &arguments);
 
         assert_eq!(
             command.get_program(),
-            Path::new(r"C:\Program Files\Zed\Zed.exe").as_os_str()
+            Path::new(r"C:\Program Files\Lynx\Zed.exe").as_os_str()
         );
         assert_eq!(
             command.get_args().collect::<Vec<_>>(),

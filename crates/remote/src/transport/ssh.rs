@@ -2206,10 +2206,10 @@ mod tests {
     fn test_sftp_put_command_quotes_paths() {
         assert_eq!(
             sftp_put_command(
-                "/tmp/Zed Repro/remote_server",
+                "/tmp/Lynx Repro/remote_server",
                 ".zed_server/downloaded server",
             ),
-            "put \"/tmp/Zed Repro/remote_server\" \".zed_server/downloaded server\"\n"
+            "put \"/tmp/Lynx Repro/remote_server\" \".zed_server/downloaded server\"\n"
         );
     }
 
@@ -2217,10 +2217,10 @@ mod tests {
     fn test_sftp_put_command_escapes_quotes_in_paths() {
         assert_eq!(
             sftp_put_command(
-                r#"/tmp/Zed "Nightly"/remote_server"#,
+                r#"/tmp/Lynx "Nightly"/remote_server"#,
                 ".zed_server/remote_server",
             ),
-            "put \"/tmp/Zed \\\"Nightly\\\"/remote_server\" \".zed_server/remote_server\"\n"
+            "put \"/tmp/Lynx \\\"Nightly\\\"/remote_server\" \".zed_server/remote_server\"\n"
         );
     }
 
@@ -2247,10 +2247,10 @@ mod tests {
     fn test_sftp_put_command_doubles_windows_source_backslashes_on_all_platforms() {
         assert_eq!(
             sftp_put_command(
-                r"C:\Users\Smit\Zed Repro\remote_server",
+                r"C:\Users\Smit\Lynx Repro\remote_server",
                 ".zed_server/remote_server",
             ),
-            "put \"C:\\\\Users\\\\Smit\\\\Zed Repro\\\\remote_server\" \".zed_server/remote_server\"\n"
+            "put \"C:\\\\Users\\\\Smit\\\\Lynx Repro\\\\remote_server\" \".zed_server/remote_server\"\n"
         );
     }
 

@@ -2782,7 +2782,7 @@ impl ConversationView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let (heading_label, description_label) = (
-            format!("Upgrade {} to work with Zed", self.agent.agent_id()),
+            format!("Upgrade {} to work with Lynx", self.agent.agent_id()),
             if version.is_empty() {
                 format!(
                     "Currently using {}, which does not report a valid --version",
@@ -3803,7 +3803,7 @@ pub(crate) mod tests {
 
         assert!(
             matches!(error, ThreadError::ZedPaymentRequired),
-            "expected Zed upgrade prompt, got: {error:?}"
+            "expected Lynx upgrade prompt, got: {error:?}"
         );
     }
 

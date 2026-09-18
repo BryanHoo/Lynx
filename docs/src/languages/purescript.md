@@ -1,6 +1,6 @@
 ---
 title: PureScript
-description: "Configure PureScript language support in Zed, including language servers, formatting, and debugging."
+description: "Configure PureScript language support in Lynx, including language servers, formatting, and debugging."
 ---
 
 # PureScript

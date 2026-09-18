@@ -1,6 +1,6 @@
 ---
-title: Project Panel - Zed
-description: Navigate workspace files and directories with Zed's project panel. Create, rename, trash and delete files and directories.
+title: Project Panel - Lynx
+description: Navigate workspace files and directories with Lynx's project panel. Create, rename, trash and delete files and directories.
 ---
 
 # Project Panel
@@ -97,7 +97,7 @@ cancel.
 - {#action project_panel::Paste} ({#kb project_panel::Paste}) places them in the
   selected directory.
 
-When pasting would create a name conflict, Zed appends a "copy" suffix (e.g.,
+When pasting would create a name conflict, Lynx appends a "copy" suffix (e.g.,
 `file copy.txt`, `file copy 2.txt`). If a single file is pasted with a generated
 suffix, the rename editor opens automatically so you can adjust the name.
 
@@ -208,7 +208,7 @@ The following operations are tracked:
 - {#action project_panel::Duplicate}
 
 Besides these actions, moving items within the panel using drag and drop, as
-well as dragging files into the panel from outside Zed, are also tracked.
+well as dragging files into the panel from outside Lynx, are also tracked.
 
 Undoing a move or rename (for example {#action project_panel::Rename}, a
 {#action project_panel::Cut} followed by paste, or a drag within the panel)
@@ -217,7 +217,7 @@ returns the item to its original name or location.
 Undoing an operation that creates a file or directory (for example
 {#action project_panel::NewFile}, {#action project_panel::NewDirectory},
 {#action project_panel::Duplicate}, a {#action project_panel::Copy} followed by
-paste, or a drag from outside Zed) moves the new item to your system trash
+paste, or a drag from outside Lynx) moves the new item to your system trash
 rather than deleting it. This keeps it recoverable and lets redo restore it, but
 it also means you may notice these items appear in your trash.
 
@@ -241,12 +241,12 @@ single step, and a failure in one of the operations does not block the rest.
 - Undoing a {#action project_panel::Trash} restores the item from your system's
   trash. If you empty the trash, the item can no longer be restored.
 - Undo and redo act on the current state of the filesystem. If something changed
-  outside Zed, for example, a conflicting file now exists at the destination, or
+  outside Lynx, for example, a conflicting file now exists at the destination, or
   the item was moved or deleted by another program, the operation may no longer
-  be undoable, and Zed will show a notification accordingly.
+  be undoable, and Lynx will show a notification accordingly.
 - On remote hosts without system trash support, {#action project_panel::Trash}
   will fail when used, along with anything that relies on it, such as undoing a
   trash or undoing an operation that creates a file or directory. At the time of
-  writing, Zed does not reliably detect trash support ahead of time, so the
+  writing, Lynx does not reliably detect trash support ahead of time, so the
   action is always available but may report an error.
-- The undo history is not persisted across sessions, so quitting Zed clears it.
+- The undo history is not persisted across sessions, so quitting Lynx clears it.

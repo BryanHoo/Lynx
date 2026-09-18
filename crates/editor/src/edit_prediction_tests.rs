@@ -514,7 +514,7 @@ async fn test_edit_prediction_jump_disabled_for_non_zed_providers(cx: &mut gpui:
                 }
                 EditPrediction::MoveWithin { .. } | EditPrediction::MoveOutside { .. } => {
                     panic!(
-                        "Non-Zed providers should not show Move predictions (jump functionality)"
+                        "Non-Lynx providers should not show Move predictions (jump functionality)"
                     );
                 }
             }
@@ -1845,7 +1845,7 @@ impl EditPredictionDelegate for FakeNonZedEditPredictionDelegate {
     }
 
     fn display_name() -> &'static str {
-        "Fake Non-Zed Provider"
+        "Fake Non-Lynx Provider"
     }
 
     fn show_predictions_in_menu() -> bool {

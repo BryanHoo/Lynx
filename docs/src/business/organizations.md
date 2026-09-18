@@ -1,25 +1,25 @@
 ---
-title: Organizations - Zed Business
-description: Create and manage a Zed Business organization, invite members, and control access for your team.
+title: Organizations - Lynx Business
+description: Create and manage a Lynx Business organization, invite members, and control access for your team.
 ---
 
 # Organizations
 
-A Zed organization is your team's Zed Business subscription, with members, billing, and admin controls in one place.
+A Lynx organization is your team's Lynx Business subscription, with members, billing, and admin controls in one place.
 
 ## Personal Organizations
 
-Every Zed account gets a personal organization at sign-up. It has its own subscription, billing, and settings, separate from any team you belong to.
+Every Lynx account gets a personal organization at sign-up. It has its own subscription, billing, and settings, separate from any team you belong to.
 
-Your personal organization always stays active. Joining a Zed Business organization doesn't replace or affect it.
+Your personal organization always stays active. Joining a Lynx Business organization doesn't replace or affect it.
 
-In the Zed editor, an organization menu in the title bar shows your current organization by name. Click it to see all your organizations and switch between them.
+In the Lynx editor, an organization menu in the title bar shows your current organization by name. Click it to see all your organizations and switch between them.
 
 ## Multiple Organizations
 
-A Zed account can belong to more than one organization at the same time. If you're invited to a second organization while already a member of one, you join both. Each organization has its own subscription, billing, and admin controls.
+A Lynx account can belong to more than one organization at the same time. If you're invited to a second organization while already a member of one, you join both. Each organization has its own subscription, billing, and admin controls.
 
-To switch organizations in the dashboard, use the org switcher in the top-left corner. In the Zed editor, click the organization name in the title bar to see all your organizations and move between them.
+To switch organizations in the dashboard, use the org switcher in the top-left corner. In the Lynx editor, click the organization name in the title bar to see all your organizations and move between them.
 
 ## Creating an organization
 
@@ -29,7 +29,7 @@ If you don't have a payment method on file, you'll be taken through a checkout f
 
 ## Inviting members
 
-Members are invited by email address. When an invite is accepted, the member's Zed account joins the organization. Owners, admins, and members count toward paid Business seats. Billing Managers can access billing without a paid Business seat.
+Members are invited by email address. When an invite is accepted, the member's Lynx account joins the organization. Owners, admins, and members count toward paid Business seats. Billing Managers can access billing without a paid Business seat.
 
 To invite a member:
 
@@ -54,7 +54,7 @@ Owners and admins can manage members from the Members page in the dashboard.
 1. On the Members page, find the member.
 2. Select **Remove** and confirm.
 
-Removing a member ends their access to the organization's subscription, billing, and admin-managed settings for that organization. Their personal Zed account and any other organization memberships are unaffected.
+Removing a member ends their access to the organization's subscription, billing, and admin-managed settings for that organization. Their personal Lynx account and any other organization memberships are unaffected.
 
 ## Organization Dashboard
 

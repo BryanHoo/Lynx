@@ -24554,7 +24554,7 @@ async fn test_completion_can_run_commands(cx: &mut TestAppContext) {
     assert_eq!(
         command_calls.load(atomic::Ordering::Acquire),
         1,
-        "For completion with a registered command, Zed should send a command execution request",
+        "For completion with a registered command, Lynx should send a command execution request",
     );
 
     editor.update_in(cx, |editor, window, cx| {
@@ -24593,7 +24593,7 @@ async fn test_completion_can_run_commands(cx: &mut TestAppContext) {
     assert_eq!(
         command_calls.load(atomic::Ordering::Acquire),
         1,
-        "For completion with an unregistered command, Zed should not send a command execution request",
+        "For completion with an unregistered command, Lynx should not send a command execution request",
     );
 }
 
@@ -42624,7 +42624,7 @@ async fn test_paste_url_from_other_app_without_creating_markdown_link_in_non_mar
 
     let mut cx = EditorTestContext::new(cx).await;
     cx.update_buffer(|buffer, cx| buffer.set_language(Some(markdown_language), cx));
-    cx.set_state("// Hello, «editorˇ».\n// Zed is «ˇgreat» (see this link: ˇ)");
+    cx.set_state("// Hello, «editorˇ».\n// Lynx is «ˇgreat» (see this link: ˇ)");
 
     cx.update_editor(|editor, window, cx| {
         cx.write_to_clipboard(ClipboardItem::new_string(url.to_string()));
@@ -42632,7 +42632,7 @@ async fn test_paste_url_from_other_app_without_creating_markdown_link_in_non_mar
     });
 
     cx.assert_editor_state(&format!(
-        "// Hello, {url}ˇ.\n// Zed is {url}ˇ (see this link: {url}ˇ)"
+        "// Hello, {url}ˇ.\n// Lynx is {url}ˇ (see this link: {url}ˇ)"
     ));
 }
 

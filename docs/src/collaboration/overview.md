@@ -1,11 +1,11 @@
 ---
 title: Collaboration
-description: "Real-time collaboration in Zed: share projects, edit code together, and communicate with voice chat."
+description: "Real-time collaboration in Lynx: share projects, edit code together, and communicate with voice chat."
 ---
 
 # Collaboration {#collaboration}
 
-Zed supports real-time multiplayer editing. Multiple people can work in the same project simultaneously, seeing each other's cursors and edits as they happen.
+Lynx supports real-time multiplayer editing. Multiple people can work in the same project simultaneously, seeing each other's cursors and edits as they happen.
 
 Open the Collaboration Panel with {#kb collab_panel::ToggleFocus}. You'll need to [sign in](../authentication.md#signing-in) to access collaboration features.
 
@@ -30,7 +30,7 @@ You can select specific input and output audio devices instead of using system d
 2. Navigate to **Collaboration** > **Experimental**
 3. Use the **Output Audio Device** and **Input Audio Device** dropdowns to select your preferred devices
 
-Changes take effect immediately. If you select a device that becomes unavailable, Zed falls back to system defaults.
+Changes take effect immediately. If you select a device that becomes unavailable, Lynx falls back to system defaults.
 
 To test your audio configuration, click **Test Audio** in the same section. This opens a window where you can verify your microphone and speaker work correctly with the selected devices.
 

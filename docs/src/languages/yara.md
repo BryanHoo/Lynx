@@ -1,6 +1,6 @@
 ---
 title: YARA
-description: "Configure YARA language support in Zed, including language servers, formatting, and debugging."
+description: "Configure YARA language support in Lynx, including language servers, formatting, and debugging."
 ---
 
 # YARA

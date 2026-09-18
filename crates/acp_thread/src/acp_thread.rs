@@ -6191,7 +6191,7 @@ mod tests {
             .unwrap();
 
         thread
-            .update(cx, |thread, cx| thread.send_raw("Hello from Zed!", cx))
+            .update(cx, |thread, cx| thread.send_raw("Hello from Lynx!", cx))
             .await
             .unwrap();
 
@@ -6328,12 +6328,12 @@ mod tests {
             .unwrap();
 
         thread
-            .update(cx, |thread, cx| thread.send_raw("Hello from Zed!", cx))
+            .update(cx, |thread, cx| thread.send_raw("Hello from Lynx!", cx))
             .await
             .unwrap();
 
         let output = thread.read_with(cx, |thread, cx| thread.to_markdown(cx));
-        assert_eq!(output.matches("Hello from Zed!").count(), 1);
+        assert_eq!(output.matches("Hello from Lynx!").count(), 1);
         thread.read_with(cx, |thread, _cx| {
             let Some(AgentThreadEntry::UserMessage(message)) = thread.entries.first() else {
                 panic!("expected optimistic user message");

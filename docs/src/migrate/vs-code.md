@@ -1,31 +1,31 @@
 ---
-title: How to Migrate from VS Code to Zed
-description: "Guide for migrating from VS Code to Zed, including settings and keybindings."
+title: How to Migrate from VS Code to Lynx
+description: "Guide for migrating from VS Code to Lynx, including settings and keybindings."
 ---
 
-# How to Migrate from VS Code to Zed
+# How to Migrate from VS Code to Lynx
 
-This guide explains how to move from VS Code to Zed without rebuilding your workflow.
+This guide explains how to move from VS Code to Lynx without rebuilding your workflow.
 
 It covers which settings import automatically, which shortcuts map cleanly, and which behaviors differ so you can adjust quickly.
 
-## Install Zed
+## Install Lynx
 
-Zed is available on macOS, Windows, and Linux.
+Lynx is available on macOS, Windows, and Linux.
 
 For macOS, you can download it from zed.dev/download, or install via Homebrew:
 `brew install --cask zed`
 
-For most Linux users, the easiest way to install Zed is through our installation script:
+For most Linux users, the easiest way to install Lynx is through our installation script:
 `curl -f https://zed.dev/install.sh | sh`
 
-After installation, you can launch Zed from your Applications folder (macOS) or directly from the terminal (Linux) using:
+After installation, you can launch Lynx from your Applications folder (macOS) or directly from the terminal (Linux) using:
 `zed .`
-This opens the current directory in Zed.
+This opens the current directory in Lynx.
 
 ## Import Settings from VS Code
 
-During setup, you have the option to import key settings from VS Code. Zed imports the following settings:
+During setup, you have the option to import key settings from VS Code. Lynx imports the following settings:
 
 ### Settings Imported from VS Code
 
@@ -33,7 +33,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Editor**
 
-| VS Code Setting                             | Zed Setting                                    |
+| VS Code Setting                             | Lynx Setting                                    |
 | ------------------------------------------- | ---------------------------------------------- |
 | `editor.fontFamily`                         | `buffer_font_family`                           |
 | `editor.fontSize`                           | `buffer_font_size`                             |
@@ -82,7 +82,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Files & Workspace**
 
-| VS Code Setting             | Zed Setting                    |
+| VS Code Setting             | Lynx Setting                    |
 | --------------------------- | ------------------------------ |
 | `files.autoSave`            | `autosave`                     |
 | `files.autoSaveDelay`       | `autosave.milliseconds`        |
@@ -96,7 +96,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Terminal**
 
-| VS Code Setting                       | Zed Setting                         |
+| VS Code Setting                       | Lynx Setting                         |
 | ------------------------------------- | ----------------------------------- |
 | `terminal.integrated.fontFamily`      | `terminal.font_family`              |
 | `terminal.integrated.fontSize`        | `terminal.font_size`                |
@@ -111,7 +111,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Tabs & Panels**
 
-| VS Code Setting                                    | Zed Setting                                        |
+| VS Code Setting                                    | Lynx Setting                                        |
 | -------------------------------------------------- | -------------------------------------------------- |
 | `workbench.editor.showTabs`                        | `tab_bar.show`                                     |
 | `workbench.editor.showIcons`                       | `tabs.file_icons`                                  |
@@ -128,7 +128,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Project Panel (File Explorer)**
 
-| VS Code Setting                | Zed Setting                         |
+| VS Code Setting                | Lynx Setting                         |
 | ------------------------------ | ----------------------------------- |
 | `explorer.compactFolders`      | `project_panel.auto_fold_dirs`      |
 | `explorer.autoReveal`          | `project_panel.auto_reveal_entries` |
@@ -138,7 +138,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Git**
 
-| VS Code Setting                      | Zed Setting                                    |
+| VS Code Setting                      | Lynx Setting                                    |
 | ------------------------------------ | ---------------------------------------------- |
 | `git.enabled`                        | `git_panel.button`                             |
 | `git.defaultBranchName`              | `git_panel.fallback_branch_name`               |
@@ -147,7 +147,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Window & Behavior**
 
-| VS Code Setting                                  | Zed Setting                              |
+| VS Code Setting                                  | Lynx Setting                              |
 | ------------------------------------------------ | ---------------------------------------- |
 | `window.confirmBeforeClose`                      | `confirm_quit`                           |
 | `window.nativeTabs`                              | `use_system_window_tabs`                 |
@@ -156,7 +156,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Other**
 
-| VS Code Setting            | Zed Setting                                                  |
+| VS Code Setting            | Lynx Setting                                                  |
 | -------------------------- | ------------------------------------------------------------ |
 | `http.proxy`               | `proxy`                                                      |
 | `npm.packageManager`       | `node.npm_path`                                              |
@@ -165,7 +165,7 @@ The following VS Code settings are automatically imported when you use **Import 
 | `chat.agent.enabled`       | `agent.enabled`                                              |
 | `mcp`                      | `context_servers`                                            |
 
-Zed doesn’t import extensions or keybindings, but this import gets core editor behavior close to your VS Code setup. If you skip that step during setup, you can still import settings manually later via the command palette:
+Lynx doesn’t import extensions or keybindings, but this import gets core editor behavior close to your VS Code setup. If you skip that step during setup, you can still import settings manually later via the command palette:
 
 `Cmd+Shift+P → {#action zed::ImportVsCodeSettings}`
 
@@ -174,24 +174,24 @@ Zed doesn’t import extensions or keybindings, but this import gets core editor
 You can configure most settings in the Settings Editor ({#kb zed::OpenSettings}). For advanced settings, run {#action zed::OpenSettingsFile} from the Command Palette to edit your settings file directly.
 
 Here’s how common VS Code settings translate:
-| VS Code | Zed | Notes |
+| VS Code | Lynx | Notes |
 | --- | --- | --- |
-| editor.fontFamily | buffer_font_family | Zed uses Zed Mono by default |
+| editor.fontFamily | buffer_font_family | Lynx uses Lynx Mono by default |
 | editor.fontSize | buffer_font_size | Set in pixels |
 | editor.tabSize | tab_size | Can override per language |
 | editor.insertSpaces | insert_spaces | Boolean |
 | editor.formatOnSave | format_on_save | Works with formatter enabled |
 | editor.wordWrap | soft_wrap | Supports optional wrap column |
 
-Zed also supports per-project settings. You can find these in the Settings Editor as well.
+Lynx also supports per-project settings. You can find these in the Settings Editor as well.
 
 ## Open or Create a Project
 
 After setup, press `Cmd+O` (`Ctrl+O` on Linux) to open a folder. By default, new folders open in the current window's threads sidebar, letting you work on multiple projects without juggling windows. See [Windows & Projects](../windows-and-projects.md) for details on managing multiple projects and opening in new windows.
 
-To start a new project, create a directory using your terminal or file manager, then open it in Zed. The editor will treat that folder as the root of your project.
+To start a new project, create a directory using your terminal or file manager, then open it in Lynx. The editor will treat that folder as the root of your project.
 
-You can also launch Zed from the terminal inside any folder with:
+You can also launch Lynx from the terminal inside any folder with:
 `zed .`
 
 Once inside a project, use `Cmd+P` to jump between files quickly. `Cmd+Shift+P` (`Ctrl+Shift+P` on Linux) opens the command palette for running actions / tasks, toggling settings, or starting a collaboration session.
@@ -203,7 +203,7 @@ Open buffers appear as tabs across the top. The Project Panel shows your file tr
 If you chose the VS Code keymap during onboarding, most shortcuts should already feel familiar.
 Here’s a quick reference for where keybindings match and where they differ.
 
-### Common Shared Keybindings (Zed <> VS Code)
+### Common Shared Keybindings (Lynx <> VS Code)
 
 | Action                      | Shortcut               |
 | --------------------------- | ---------------------- |
@@ -224,16 +224,16 @@ Here’s a quick reference for where keybindings match and where they differ.
 | Navigate open tabs          | `Cmd + Opt + Arrow`    |
 | Syntactic fold / unfold     | `Cmd + Opt + {` or `}` |
 
-### Different Keybindings (Zed <> VS Code)
+### Different Keybindings (Lynx <> VS Code)
 
-| Action              | VS Code               | Zed                    |
+| Action              | VS Code               | Lynx                    |
 | ------------------- | --------------------- | ---------------------- |
 | Open recent project | `Ctrl + R`            | `Cmd + Opt + O`        |
 | Move lines up/down  | `Opt + Up/Down`       | `Cmd + Ctrl + Up/Down` |
 | Split panes         | `Cmd + \`             | `Cmd + K, Arrow Keys`  |
 | Expand Selection    | `Shift + Alt + Right` | `Opt + Up`             |
 
-### Unique to Zed
+### Unique to Lynx
 
 | Action              | Shortcut                     | Notes                                            |
 | ------------------- | ---------------------------- | ------------------------------------------------ |
@@ -249,16 +249,16 @@ To edit your keybindings:
 
 This opens a list of all available bindings. You can override individual shortcuts, remove conflicts, or build a layout that works better for your setup.
 
-Zed also supports chords (multi-key sequences) like `Cmd+K Cmd+C`, like VS Code does.
+Lynx also supports chords (multi-key sequences) like `Cmd+K Cmd+C`, like VS Code does.
 
 ## Differences in User Interfaces
 
 ### Projects and Windows
 
 VS Code uses a dedicated Workspace concept, with multi-root folders, `.code-workspace` files, and a clear distinction between “a window” and “a workspace.”
-Zed takes a different approach.
+Lynx takes a different approach.
 
-In Zed:
+In Lynx:
 
 - **Multiple projects in one window**: You can open multiple folders in the same window. Each appears in the threads sidebar on the left, and you can switch between them while preserving your layout and agent threads. See [Windows & Projects](../windows-and-projects.md).
 
@@ -268,18 +268,18 @@ In Zed:
 
 - **Per-project settings are optional**: You can add a `.zed/settings.json` file inside a project to override global settings.
 
-- **You can start from a single file or an empty window**: Zed doesn’t require you to open a folder to begin editing.
+- **You can start from a single file or an empty window**: Lynx doesn’t require you to open a folder to begin editing.
 
 The result is flexibility without complexity: multiple projects per window via the sidebar, or multiple folders per project via Add Folder to Project.
 
 ### Navigating in a Project
 
 In VS Code, the standard entry point is opening a folder. From there, the left-hand panel is central to navigation.
-Zed takes a different approach:
+Lynx takes a different approach:
 
 - You can still open folders, but you don’t need to. Opening a single file or even starting with an empty workspace is valid.
 - The Command Palette (`Cmd+Shift+P`) and File Finder (`Cmd+P`) are primary navigation tools. The File Finder searches files, symbols, and commands across the workspace.
-- Instead of a persistent panel, Zed encourages you to:
+- Instead of a persistent panel, Lynx encourages you to:
   - Fuzzy-find files by name (`Cmd+P`)
   - Jump directly to symbols (`Cmd+Shift+O`)
   - Use split panes and tabs for context, rather than keeping a large file tree open (though you can do this with the Project Panel if you prefer).
@@ -288,9 +288,9 @@ The UI keeps auxiliary panels out of the way so navigation stays centered on cod
 
 ### Extensions vs. Marketplace
 
-Zed does not offer as many extensions as VS Code. The available extensions are focused on language support, themes, syntax highlighting, and other core editing enhancements.
+Lynx does not offer as many extensions as VS Code. The available extensions are focused on language support, themes, syntax highlighting, and other core editing enhancements.
 
-Several features that typically require extensions in VS Code are built into Zed:
+Several features that typically require extensions in VS Code are built into Lynx:
 
 - Real-time collaboration with voice and cursor sharing (no Live Share required)
 - AI coding assistance (no Copilot extension needed)
@@ -299,11 +299,11 @@ Several features that typically require extensions in VS Code are built into Zed
 - Task runner with JSON config
 - Inline diagnostics and code actions via LSP
 
-You won’t find one-to-one replacements for every VS Code extension, especially if you rely on tools for DevOps, containers, or test runners. Zed's extension catalog is still growing and remains smaller.
+You won’t find one-to-one replacements for every VS Code extension, especially if you rely on tools for DevOps, containers, or test runners. Lynx's extension catalog is still growing and remains smaller.
 
-### Collaboration in Zed vs. VS Code
+### Collaboration in Lynx vs. VS Code
 
-Unlike VS Code, Zed doesn’t require an extension to collaborate. It’s built into the core experience.
+Unlike VS Code, Lynx doesn’t require an extension to collaborate. It’s built into the core experience.
 
 - Open the Collab Panel in the left dock.
 - Create a channel and [invite your collaborators](https://zed.dev/docs/collaboration#inviting-a-collaborator) to join.
@@ -311,11 +311,11 @@ Unlike VS Code, Zed doesn’t require an extension to collaborate. It’s built 
 
 Once connected, you’ll see each other's cursors, selections, and edits in real time. Voice chat is included, so you can talk as you work. There’s no need for separate tools or third-party logins.
 
-Learn how [Zed uses Zed](https://zed.dev/blog/zed-is-our-office) to plan work and collaborate.
+Learn how [Lynx uses Lynx](https://zed.dev/blog/zed-is-our-office) to plan work and collaborate.
 
-### Using AI in Zed
+### Using AI in Lynx
 
-If you’re used to GitHub Copilot in VS Code, you can do the same in Zed. You can also explore other agents through Zed Pro, or bring your own keys and connect without authentication. You can disable AI features entirely if you prefer.
+If you’re used to GitHub Copilot in VS Code, you can do the same in Lynx. You can also explore other agents through Lynx Pro, or bring your own keys and connect without authentication. You can disable AI features entirely if you prefer.
 
 #### Configuring GitHub Copilot
 
@@ -324,19 +324,19 @@ If you’re used to GitHub Copilot in VS Code, you can do the same in Zed. You c
 3. Click **Configure** next to "Configure Providers"
 4. Under **GitHub Copilot**, click **Sign in to GitHub**
 
-Once signed in, just start typing. Zed will offer suggestions inline for you to accept.
+Once signed in, just start typing. Lynx will offer suggestions inline for you to accept.
 
 #### Additional AI Options
 
-To use other AI models in Zed, you have several options:
+To use other AI models in Lynx, you have several options:
 
-- Use Zed’s hosted models, with higher rate limits. Requires [authentication](https://zed.dev/docs/authentication) and access through [Zed Pro](https://zed.dev/docs/account/zed-hosted-models.html).
+- Use Lynx’s hosted models, with higher rate limits. Requires [authentication](https://zed.dev/docs/authentication) and access through [Lynx Pro](https://zed.dev/docs/account/zed-hosted-models.html).
 - Bring your own [API keys](https://zed.dev/docs/ai/use-api-access.html), no authentication needed
 - Use [External Agents like Claude Agent](https://zed.dev/docs/ai/external-agents.html).
 
 ### Advanced Config and Productivity Tweaks
 
-Zed exposes advanced settings for power users who want to fine-tune their environment.
+Lynx exposes advanced settings for power users who want to fine-tune their environment.
 
 Here are a few useful tweaks:
 
@@ -364,4 +364,4 @@ Here are a few useful tweaks:
 ```
 
 **Bring over custom snippets**
-Copy your VS Code snippet JSON directly into Zed's snippets folder ({#action snippets::ConfigureSnippets}).
+Copy your VS Code snippet JSON directly into Lynx's snippets folder ({#action snippets::ConfigureSnippets}).

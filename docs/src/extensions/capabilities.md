@@ -1,11 +1,11 @@
 ---
 title: Extension Capabilities
-description: "Extension Capabilities for Zed extensions."
+description: "Extension Capabilities for Lynx extensions."
 ---
 
 # Extension Capabilities
 
-The operations that Zed extensions are able to perform are governed by a capability system.
+The operations that Lynx extensions are able to perform are governed by a capability system.
 
 ## Restricting capabilities
 

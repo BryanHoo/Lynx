@@ -1997,7 +1997,7 @@ async fn join_project(
             .map(|c| c.zed_version.to_string());
         drop(pool);
         Err(anyhow!(
-            "The host (v{}) and guest (v{}) are using incompatible versions of Zed. The peer with the older version must update to collaborate.",
+            "The host (v{}) and guest (v{}) are using incompatible versions of Lynx. The peer with the older version must update to collaborate.",
             host_version.as_deref().unwrap_or("unknown"),
             guest_version.as_deref().unwrap_or("unknown"),
         ))?;
@@ -3714,7 +3714,7 @@ async fn send_channel_message(
     _response: Response<proto::SendChannelMessage>,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Delete a channel message
@@ -3723,7 +3723,7 @@ async fn remove_channel_message(
     _response: Response<proto::RemoveChannelMessage>,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 async fn update_channel_message(
@@ -3731,7 +3731,7 @@ async fn update_channel_message(
     _response: Response<proto::UpdateChannelMessage>,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Mark a channel message as read
@@ -3739,7 +3739,7 @@ async fn acknowledge_channel_message(
     _request: proto::AckChannelMessage,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Mark a buffer version as synced
@@ -3767,7 +3767,7 @@ async fn join_channel_chat(
     _response: Response<proto::JoinChannelChat>,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Stop receiving chat updates for a channel
@@ -3775,7 +3775,7 @@ async fn leave_channel_chat(
     _request: proto::LeaveChannelChat,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Retrieve the chat history for a channel
@@ -3784,7 +3784,7 @@ async fn get_channel_messages(
     _response: Response<proto::GetChannelMessages>,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Retrieve specific chat messages
@@ -3793,7 +3793,7 @@ async fn get_channel_messages_by_id(
     _response: Response<proto::GetChannelMessagesById>,
     _session: MessageContext,
 ) -> Result<()> {
-    Err(anyhow!("chat has been removed in the latest version of Zed").into())
+    Err(anyhow!("chat has been removed in the latest version of Lynx").into())
 }
 
 /// Retrieve the current users notifications

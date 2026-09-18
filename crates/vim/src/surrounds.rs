@@ -1353,9 +1353,9 @@ mod test {
         cx.simulate_keystrokes("c s b [");
         cx.assert_state(indoc! {"ˇ[ bracketed ]"}, Mode::Normal);
 
-        cx.set_state(indoc! {"(< name: ˇ'Zed' >)"}, Mode::Normal);
+        cx.set_state(indoc! {"(< name: ˇ'Lynx' >)"}, Mode::Normal);
         cx.simulate_keystrokes("c s b }");
-        cx.assert_state(indoc! {"(ˇ{ name: 'Zed' })"}, Mode::Normal);
+        cx.assert_state(indoc! {"(ˇ{ name: 'Lynx' })"}, Mode::Normal);
 
         cx.set_state(
             indoc! {"
@@ -1403,9 +1403,9 @@ mod test {
         cx.simulate_keystrokes("c s b [");
         cx.assert_state(indoc! {"ˇ[ bracketed ]"}, Mode::Normal);
 
-        cx.set_state(indoc! {"(<ˇZed>)"}, Mode::Normal);
+        cx.set_state(indoc! {"(<ˇLynx>)"}, Mode::Normal);
         cx.simulate_keystrokes("c s b )");
-        cx.assert_state(indoc! {"(ˇ(Zed))"}, Mode::Normal);
+        cx.assert_state(indoc! {"(ˇ(Lynx))"}, Mode::Normal);
 
         cx.set_state(
             indoc! {"
