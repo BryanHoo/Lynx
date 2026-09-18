@@ -76,10 +76,8 @@ Lynx supports the following macOS releases:
 | macOS 14.x    | Sonoma   | Supported      | Supported           |
 | macOS 13.x    | Ventura  | Supported      | Supported           |
 | macOS 12.x    | Monterey | EOL 2024-09-16 | Supported           |
-| macOS 11.x    | Big Sur  | EOL 2023-09-26 | Partially Supported |
-| macOS 10.15.x | Catalina | EOL 2022-09-12 | Partially Supported |
-
-The macOS releases labelled "Partially Supported" (Big Sur and Catalina) do not support screen sharing via Lynx Collaboration. These features use the [LiveKit SDK](https://livekit.io) which relies upon [ScreenCaptureKit.framework](https://developer.apple.com/documentation/screencapturekit/) only available on macOS 12 (Monterey) and newer.
+| macOS 11.x    | Big Sur  | EOL 2023-09-26 | Supported           |
+| macOS 10.15.x | Catalina | EOL 2022-09-12 | Supported           |
 
 #### Mac Hardware
 

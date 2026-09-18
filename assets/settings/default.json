@@ -566,13 +566,6 @@
     "space": "•",
     "tab": "→",
   },
-  // Settings related to calls in Lynx
-  "calls": {
-    // Join calls with the microphone live by default
-    "mute_on_join": false,
-    // Share your project when you are the first to join a channel
-    "share_on_join": false,
-  },
   // Toolbar related settings
   "toolbar": {
     // Whether to show breadcrumbs.
