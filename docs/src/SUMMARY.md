@@ -24,22 +24,13 @@
 - [Running & Testing](./running-testing.md)
   - [Terminal](./terminal.md)
   - [Tasks](./tasks.md)
-  - [Debugger](./debugger.md)
-  - [REPL](./repl.md)
 - [Git](./git.md)
 - [Modelines](./modelines.md)
-
-# Collaboration
-
-- [Overview](./collaboration/overview.md)
-  - [Channels](./collaboration/channels.md)
-  - [Contacts and Private Calls](./collaboration/contacts-and-private-calls.md)
 
 # Remote Development
 
 - [Overview](./remote-development.md)
 - [Environment Variables](./environment.md)
-- [Dev Containers](./dev-containers.md)
 
 # AI
 

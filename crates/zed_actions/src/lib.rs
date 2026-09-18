@@ -77,8 +77,6 @@ actions!(
         GetMerch,
         /// Opens the telemetry log.
         OpenTelemetryLog,
-        /// Opens the performance profiler.
-        OpenPerformanceProfiler,
         /// Opens the onboarding view.
         OpenOnboarding,
         /// Shows the auto-update notification for testing.
@@ -247,8 +245,6 @@ pub mod dev {
     actions!(
         dev,
         [
-            /// Toggles the developer inspector for debugging UI elements.
-            ToggleInspector,
             /// Cycles the debug frame-time overlay between hidden, current
             /// frame-time, and detailed frame-time statistics.
             ToggleFpsOverlay,
@@ -429,22 +425,6 @@ pub mod project_panel {
         ]
     );
 }
-pub mod feedback {
-    use gpui::actions;
-
-    actions!(
-        feedback,
-        [
-            /// Opens email client to send feedback to Zed support.
-            EmailZed,
-            /// Opens the bug report form.
-            FileBugReport,
-            /// Opens the feature request form.
-            RequestFeature
-        ]
-    );
-}
-
 pub mod theme {
     use gpui::actions;
 
@@ -712,12 +692,6 @@ pub struct OpenRemote {
     #[serde(default)]
     pub create_new_window: Option<bool>,
 }
-
-/// Opens the dev container connection modal.
-#[derive(PartialEq, Clone, Deserialize, Default, JsonSchema, Action)]
-#[action(namespace = projects)]
-#[serde(deny_unknown_fields)]
-pub struct OpenDevContainer;
 
 /// Where to spawn the task in the UI.
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

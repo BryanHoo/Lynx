@@ -2286,7 +2286,6 @@ impl Sidebar {
     ) -> Option<AnyElement> {
         let remote_icon_per_type = match host? {
             RemoteConnectionOptions::Wsl(_) => IconName::Linux,
-            RemoteConnectionOptions::Docker(_) => IconName::Box,
             _ => IconName::Server,
         };
 

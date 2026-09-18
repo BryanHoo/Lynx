@@ -29,8 +29,8 @@ use project::{
 
 use language::{LanguageName, Toolchain, ToolchainScope};
 use remote::{
-    DockerConnectionOptions, RemoteConnectionIdentity, RemoteConnectionOptions,
-    SshConnectionOptions, WslConnectionOptions, remote_connection_identity,
+    RemoteConnectionIdentity, RemoteConnectionOptions, SshConnectionOptions, WslConnectionOptions,
+    remote_connection_identity,
 };
 use serde::{Deserialize, Serialize};
 use sqlez::{
@@ -1707,10 +1707,6 @@ impl WorkspaceDb {
         let mut host = None;
         let mut port = None;
         let mut distro = None;
-        let mut name = None;
-        let mut container_id = None;
-        let mut use_podman = None;
-        let mut remote_env = None;
 
         match identity {
             RemoteConnectionIdentity::Ssh {
@@ -1731,16 +1727,6 @@ impl WorkspaceDb {
                 distro = Some(distro_name);
                 user = identity_user;
             }
-            RemoteConnectionIdentity::Docker {
-                container_id: identity_container_id,
-                name: identity_name,
-                remote_user,
-            } => {
-                kind = RemoteConnectionKind::Docker;
-                container_id = Some(identity_container_id);
-                name = Some(identity_name);
-                user = Some(remote_user);
-            }
             #[cfg(any(test, feature = "test-support"))]
             RemoteConnectionIdentity::Mock { id } => {
                 kind = RemoteConnectionKind::Ssh;
@@ -1749,22 +1735,8 @@ impl WorkspaceDb {
             }
         }
 
-        if let RemoteConnectionOptions::Docker(options) = options {
-            use_podman = Some(options.use_podman);
-            remote_env = serde_json::to_string(&options.remote_env).ok();
-        }
-
         Self::get_or_create_remote_connection_query(
-            this,
-            kind,
-            host,
-            port,
-            user,
-            distro,
-            name,
-            container_id,
-            use_podman,
-            remote_env,
+            this, kind, host, port, user, distro, None, None, None, None,
         )
     }
 
@@ -2004,10 +1976,10 @@ impl WorkspaceDb {
         port: Option<u16>,
         user: Option<String>,
         distro: Option<String>,
-        container_id: Option<String>,
-        name: Option<String>,
-        use_podman: Option<bool>,
-        remote_env: Option<String>,
+        _container_id: Option<String>,
+        _name: Option<String>,
+        _use_podman: Option<bool>,
+        _remote_env: Option<String>,
     ) -> Option<RemoteConnectionOptions> {
         match RemoteConnectionKind::deserialize(&kind)? {
             RemoteConnectionKind::Wsl => Some(RemoteConnectionOptions::Wsl(WslConnectionOptions {
@@ -2020,18 +1992,6 @@ impl WorkspaceDb {
                 username: user,
                 ..Default::default()
             })),
-            RemoteConnectionKind::Docker => {
-                let remote_env: BTreeMap<String, String> =
-                    serde_json::from_str(&remote_env?).ok()?;
-                Some(RemoteConnectionOptions::Docker(DockerConnectionOptions {
-                    container_id: container_id?,
-                    name: name?,
-                    remote_user: user?,
-                    upload_binary_over_docker_exec: false,
-                    use_podman: use_podman?,
-                    remote_env,
-                }))
-            }
         }
     }
 

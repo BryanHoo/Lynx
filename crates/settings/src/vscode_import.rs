@@ -183,10 +183,8 @@ impl VsCodeSettings {
         SettingsContent {
             agent: self.agent_settings_content(),
             agent_servers: None,
-            audio: None,
             auto_update: None,
             base_keymap: Some(BaseKeymapContent::VSCode),
-            collaboration_panel: None,
             command_palette: self
                 .read_u64("workbench.commandPalette.history")
                 .map(|history| CommandPaletteSettingsContent {
@@ -226,7 +224,6 @@ impl VsCodeSettings {
                 _ => None,
             }),
             remote: RemoteSettingsContent::default(),
-            repl: None,
             server_url: None,
             session: None,
             status_bar: self.status_bar_settings_content(),
@@ -242,7 +239,6 @@ impl VsCodeSettings {
             which_key: None,
             modeline_lines: None,
             feature_flags: None,
-            instrumentation: None,
         }
     }
 
@@ -297,7 +293,6 @@ impl VsCodeSettings {
             hover_popover_hiding_delay: self.read_u64("editor.hover.hidingDelay").map(Into::into),
             inline_code_actions: None,
             code_lens: None,
-            jupyter: None,
             lsp_document_colors: None,
             lsp_document_links: self.read_bool("editor.links"),
             lsp_highlight_debounce: None,

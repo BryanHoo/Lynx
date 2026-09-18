@@ -1,6 +1,6 @@
 ---
 title: Authenticate with Lynx
-description: "Sign in to Lynx to access collaboration features and AI services."
+description: "Sign in to Lynx to access hosted AI services."
 ---
 
 # Authenticate with Lynx
@@ -9,8 +9,7 @@ Signing in to Lynx is not required. You can use most features you'd expect in a 
 
 ## What Features Require Signing In?
 
-1. All real-time [collaboration features](./collaboration/overview.md).
-2. [LLM-powered features](./ai/overview.md), if you are using Lynx as the provider of your LLM models. To use AI without signing in, you can [bring and configure your own API keys](./ai/use-api-access.md).
+1. [LLM-powered features](./ai/overview.md), if you are using Lynx as the provider of your LLM models. To use AI without signing in, you can [bring and configure your own API keys](./ai/use-api-access.md).
 
 ## Signing In
 

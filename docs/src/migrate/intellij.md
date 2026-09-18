@@ -348,5 +348,4 @@ Now that you're set up, here are some resources to help you get the most out of 
 - [Key Bindings](../key-bindings.md) — Learn how to customize and extend your keymap
 - [Tasks](../tasks.md) — Set up build and run commands for your projects
 - [AI Features](../ai/overview.md) — Explore Lynx's AI capabilities beyond code completion
-- [Collaboration](../collaboration/overview.md) — Share your projects and code together in real time
 - [Languages](../languages.md) — Language-specific setup guides, including Java and Kotlin

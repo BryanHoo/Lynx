@@ -86,7 +86,7 @@ Headers managed by Lynx for each provider, such as `Authorization`, `Content-Typ
 
 ## Remote Projects {#remote-projects}
 
-Lynx LLM providers for Lynx AI features are initialized in the local Lynx app. In SSH, dev container, and other remote projects, API keys saved in Lynx are read from the local system keychain, and provider environment variables are read from the local Lynx process environment.
+Lynx LLM providers for Lynx AI features are initialized in the local Lynx app. In SSH and other remote projects, API keys saved in Lynx are read from the local system keychain, and provider environment variables are read from the local Lynx process environment.
 
 External Agents and Terminal Threads may run their own processes and use their own remote or local environment. See [External Agents](./external-agents.md) and [Terminal Threads](./terminal-threads.md).
 

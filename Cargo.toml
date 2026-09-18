@@ -33,7 +33,6 @@ members = [
     "crates/command_palette",
     "crates/command_palette_hooks",
     "crates/component",
-    "crates/component_preview",
     "crates/context_server",
     "crates/copilot",
     "crates/copilot_chat",
@@ -43,9 +42,6 @@ members = [
     "crates/dap_adapters",
     "crates/db",
     "crates/debug_adapter_extension",
-    "crates/debugger_tools",
-    "crates/debugger_ui",
-    "crates/dev_container",
     "crates/diagnostics",
     "crates/docs_preprocessor",
     "crates/edit_prediction",
@@ -69,7 +65,6 @@ members = [
     "crates/extensions_ui",
     "crates/feature_flags",
     "crates/feature_flags_macros",
-    "crates/feedback",
     "crates/file_finder",
     "crates/file_icons",
     "crates/fs",
@@ -101,8 +96,6 @@ members = [
     "crates/http_proxy",
     "crates/icons",
     "crates/image_viewer",
-    "crates/input_latency_ui",
-    "crates/inspector_ui",
     "crates/install_cli",
     "crates/journal",
     "crates/json_schema_store",
@@ -129,7 +122,6 @@ members = [
     "crates/menu",
     "crates/mermaid_render",
     "crates/migrator",
-    "crates/miniprofiler_ui",
     "crates/multi_buffer",
     "crates/net",
     "crates/node_runtime",
@@ -161,7 +153,6 @@ members = [
     "crates/remote",
     "crates/remote_connection",
     "crates/remote_server",
-    "crates/repl",
     "crates/reqwest_client",
     "crates/rope",
     "crates/rpc",
@@ -291,7 +282,6 @@ command_palette = { path = "crates/command_palette" }
 command_palette_hooks = { path = "crates/command_palette_hooks" }
 compliance = { path = "tooling/compliance" }
 component = { path = "crates/component" }
-component_preview = { path = "crates/component_preview" }
 context_server = { path = "crates/context_server" }
 copilot = { path = "crates/copilot" }
 copilot_chat = { path = "crates/copilot_chat" }
@@ -302,10 +292,7 @@ dap = { path = "crates/dap" }
 dap_adapters = { path = "crates/dap_adapters" }
 db = { path = "crates/db" }
 debug_adapter_extension = { path = "crates/debug_adapter_extension" }
-debugger_tools = { path = "crates/debugger_tools" }
-debugger_ui = { path = "crates/debugger_ui" }
 derive_refineable = { path = "crates/refineable/derive_refineable" }
-dev_container = { path = "crates/dev_container" }
 diagnostics = { path = "crates/diagnostics" }
 edit_prediction = { path = "crates/edit_prediction" }
 edit_prediction_context = { path = "crates/edit_prediction_context" }
@@ -322,7 +309,6 @@ extension_host = { path = "crates/extension_host" }
 extensions_ui = { path = "crates/extensions_ui" }
 feature_flags = { path = "crates/feature_flags" }
 feature_flags_macros = { path = "crates/feature_flags_macros" }
-feedback = { path = "crates/feedback" }
 file_finder = { path = "crates/file_finder" }
 file_icons = { path = "crates/file_icons" }
 fs = { path = "crates/fs" }
@@ -353,8 +339,6 @@ http_client_tls = { path = "crates/http_client_tls" }
 http_proxy = { path = "crates/http_proxy" }
 icons = { path = "crates/icons" }
 image_viewer = { path = "crates/image_viewer" }
-input_latency_ui = { path = "crates/input_latency_ui" }
-inspector_ui = { path = "crates/inspector_ui" }
 install_cli = { path = "crates/install_cli" }
 journal = { path = "crates/journal" }
 json_schema_store = { path = "crates/json_schema_store" }
@@ -381,7 +365,6 @@ markdown_preview = { path = "crates/markdown_preview" }
 menu = { path = "crates/menu" }
 mermaid_render = { path = "crates/mermaid_render" }
 migrator = { path = "crates/migrator" }
-miniprofiler_ui = { path = "crates/miniprofiler_ui" }
 multi_buffer = { path = "crates/multi_buffer" }
 net = { path = "crates/net" }
 node_runtime = { path = "crates/node_runtime" }
@@ -412,7 +395,6 @@ release_channel = { path = "crates/release_channel" }
 remote = { path = "crates/remote" }
 remote_connection = { path = "crates/remote_connection" }
 remote_server = { path = "crates/remote_server" }
-repl = { path = "crates/repl" }
 reqwest_client = { path = "crates/reqwest_client" }
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "e50e726ddd0292f6ef9de0dda6b90af4ed1fb66a", default-features = false, features = ["wav", "playback", "wav_output", "recording", "dither"] }
 rope = { path = "crates/rope" }
@@ -638,8 +620,6 @@ js-sys = "0.3"
 json_dotpath = "1.1"
 jsonschema = { version = "0.51", default-features = false }
 jsonwebtoken = "10.0"
-jupyter-protocol = "1.4.0"
-jupyter-websocket-client = "1.1.0"
 libc = "0.2"
 libsqlite3-sys = { version = "0.30.1", features = ["bundled"] }
 linkify = "0.10.0"
@@ -797,7 +777,6 @@ serde_json_lenient = { version = "0.2", features = [
 ] }
 serde_path_to_error = "0.1.17"
 serde_urlencoded = "0.7"
-serde_yaml = "0.9.34"
 serde_yaml_ng = "0.10"
 sha2 = "0.10"
 shellexpand = "3.1"
@@ -895,7 +874,6 @@ wgpu = "29.0.4"
 which = "8"
 windows-core = "0.62"
 windows-registry = "0.6.0"
-yaml-rust2 = "0.8"
 yawc = { git = "https://github.com/zed-industries/yawc", rev = "71a452f551cac178367eaac5d7418a09afa1f3a2", version = "0.3.3" }
 zeroize = "1.8"
 zstd = "0.11"

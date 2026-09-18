@@ -152,7 +152,7 @@ If an External Agent supports subscription-backed behavior, configure that in th
 
 ## Remote Projects {#remote-projects}
 
-External Agents may read credentials locally, remotely, or through their own sign-in flow. Check the specific agent's setup path when using SSH, dev containers, or other remote projects.
+External Agents may read credentials locally, remotely, or through their own sign-in flow. Check the specific agent's setup path when using SSH or other remote projects.
 
 Lynx LLM provider API keys saved in the local keychain are not automatically the same as an External Agent's credentials.
 

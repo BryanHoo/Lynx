@@ -454,23 +454,6 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut App) {
             .detach();
         }
 
-        cx.spawn_in(window, async move |_this, cx| {
-            const TELEMETRY_INTERVAL: std::time::Duration = std::time::Duration::from_mins(5);
-            loop {
-                cx.background_executor().timer(TELEMETRY_INTERVAL).await;
-                if cx
-                    .update(|window, cx| {
-                        input_latency_ui::report_input_latency_telemetry(window, cx);
-                        input_latency_ui::report_frame_duration_telemetry(window, cx);
-                    })
-                    .is_err()
-                {
-                    break;
-                }
-            }
-        })
-        .detach();
-
         let multi_workspace_handle = cx.entity().downgrade();
         window.on_window_should_close(cx, move |window, cx| {
             multi_workspace_handle
@@ -891,52 +874,7 @@ fn register_actions(
     _: &mut Window,
     cx: &mut Context<Workspace>,
 ) {
-    workspace.register_action(
-            |workspace: &mut Workspace,
-             _: &input_latency_ui::DumpInputLatencyHistogram,
-             window: &mut Window,
-             cx: &mut Context<Workspace>| {
-                let project = workspace.project().clone();
-                // In a collab session the report buffer is visible to other
-                // participants, so attribute the data to this user's machine.
-                let reported_by = if project.read(cx).is_shared()
-                    || project.read(cx).is_via_collab()
-                {
-                    workspace
-                        .user_store()
-                        .read(cx)
-                        .current_user()
-                        .map(|user| user.username.to_string())
-                } else {
-                    None
-                };
-                let report_data = input_latency_ui::snapshot_input_latency_report(
-                    window,
-                    reported_by,
-                    cx,
-                );
-                cx.spawn_in(window, async move |workspace, cx| {
-                    let report = cx
-                        .background_spawn(async move {
-                            input_latency_ui::format_input_latency_report(&report_data)
-                        })
-                        .await;
-                    let buffer = project
-                        .update(cx, |project, cx| project.create_buffer(None, true, cx))
-                        .await?;
-                    buffer.update(cx, |buffer, cx| {
-                        buffer.set_text(report, cx);
-                    });
-                    workspace.update_in(cx, |workspace, window, cx| {
-                        let editor = cx
-                            .new(|cx| Editor::for_buffer(buffer, Some(project), window, cx));
-                        workspace
-                            .add_item_to_active_pane(Box::new(editor), None, true, window, cx);
-                    })
-                })
-                .detach_and_log_err(cx);
-            },
-        )
+    workspace
         .register_action(
             |workspace: &mut Workspace,
              _: &DumpAccessibilityTree,
@@ -5843,7 +5781,6 @@ mod tests {
                 "edit_prediction",
                 "editor",
                 "encoding_selector",
-                "feedback",
                 "file_finder",
                 "git",
                 "git_graph",
@@ -5866,8 +5803,6 @@ mod tests {
                 "markdown",
                 "menu",
                 "multi_workspace",
-                "new_process_modal",
-                "notebook",
                 "onboarding",
                 "outline",
                 "outline_panel",
@@ -5879,7 +5814,6 @@ mod tests {
                 "projects",
                 "recent_projects",
                 "remote_debug",
-                "repl",
                 "search",
                 "settings_editor",
                 "settings_profile_selector",

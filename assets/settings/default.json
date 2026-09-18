@@ -610,16 +610,6 @@
     // The layout of window control buttons in the title bar (Linux only).
     "button_layout": "platform_default",
   },
-  "audio": {
-    // Select specific output audio device.
-    // `null` means use system default.
-    // Any unrecognized output device will fall back to system default.
-    "experimental.output_audio_device": null,
-    // Select specific input audio device.
-    // `null` means use system default.
-    // Any unrecognized input device will fall back to system default.
-    "experimental.input_audio_device": null,
-  },
   // Scrollbar related settings
   "scrollbar": {
     // When to show the scrollbar in the editor.
@@ -1039,14 +1029,6 @@
     // showing only files and directories.
     // Does not affect single-file views.
     "multi_buffer_hide_symbols": false,
-  },
-  "collaboration_panel": {
-    // Whether to show the collaboration panel button in the status bar.
-    "button": true,
-    // Where to dock the collaboration panel. Can be 'left' or 'right'.
-    "dock": "right",
-    // Default width of the collaboration panel.
-    "default_width": 240,
   },
   "git_panel": {
     // Whether to show the git panel button in the status bar.
@@ -2738,31 +2720,6 @@
     // Default rules are viewable via the "zed: show default semantic token rules" action.
     "semantic_token_rules": [],
   },
-  // Jupyter settings
-  "jupyter": {
-    "enabled": true,
-    "kernel_selections": {},
-    // Specify the language name as the key and the kernel name as the value.
-    // "kernel_selections": {
-    //    "python": "conda-base"
-    //    "typescript": "deno"
-    // }
-  },
-  // REPL settings.
-  "repl": {
-    // Maximum number of columns to keep in REPL's scrollback buffer.
-    // Clamped with [20, 512] range.
-    "max_columns": 128,
-    // Maximum number of lines to keep in REPL's scrollback buffer.
-    // Clamped with [4, 256] range.
-    "max_lines": 32,
-    // Maximum number of lines of output to display before scrolling.
-    // Set to 0 to disable output height limits.
-    "output_max_height_lines": 0,
-    // Maximum number of columns of output to display before scaling images.
-    // Set to 0 to disable output width limits.
-    "output_max_width_columns": 0,
-  },
   // Vim settings
   "vim": {
     "default_mode": "normal",
@@ -2804,11 +2761,6 @@
   // Mostly useful for developers who are managing multiple instances of Lynx.
   "nightly": {
     // "theme": "Andromeda"
-    "instrumentation": {
-      "performance_profiler": {
-        "enabled": true,
-      },
-    },
   },
   // Settings overrides to use when using Lynx Stable.
   // Mostly useful for developers who are managing multiple instances of Lynx.
@@ -2819,11 +2771,6 @@
   // Mostly useful for developers who are managing multiple instances of Lynx.
   "dev": {
     // "theme": "Andromeda"
-    "instrumentation": {
-      "performance_profiler": {
-        "enabled": true,
-      },
-    },
   },
   // Settings overrides to use when using Linux.
   "linux": {},
@@ -2944,15 +2891,4 @@
   // Example: {"log": {"client": "warn"}}
   "log": {},
 
-  // Configuration for developer-oriented instrumentation tools that can be
-  // toggled at runtime.
-  "instrumentation": {
-    // Performance profiler, accessed via the `zed: open performance profiler`
-    // action. Collects timing data for foreground and background executor
-    // tasks. Enabling this may lead to increased memory usage, hence it's
-    // disabled by default for regular builds.
-    "performance_profiler": {
-      "enabled": false,
-    },
-  },
 }

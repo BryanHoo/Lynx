@@ -98,7 +98,7 @@ macro_rules! settings_overrides {
         }
     }
 }
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::hash::Hash;
 use std::sync::Arc;
 pub use util::serde::default_true;
@@ -209,9 +209,6 @@ pub struct SettingsContent {
     pub agent: Option<AgentSettingsContent>,
     pub agent_servers: Option<AllAgentServersSettings>,
 
-    /// Configuration of audio in Zed.
-    pub audio: Option<AudioSettingsContent>,
-
     /// Whether or not to automatically check for updates.
     ///
     /// Default: true
@@ -223,9 +220,6 @@ pub struct SettingsContent {
     ///
     /// Default: VSCode
     pub base_keymap: Option<BaseKeymapContent>,
-
-    /// Configuration for the collab panel visual settings.
-    pub collaboration_panel: Option<PanelSettingsContent>,
 
     pub debugger: Option<DebuggerSettingsContent>,
 
@@ -243,8 +237,6 @@ pub struct SettingsContent {
 
     /// The settings for the markdown preview.
     pub markdown_preview: Option<MarkdownPreviewSettingsContent>,
-
-    pub repl: Option<ReplSettingsContent>,
 
     /// Whether or not to enable Helix mode.
     ///
@@ -325,33 +317,6 @@ pub struct SettingsContent {
 
     /// Local overrides for feature flags, keyed by flag name.
     pub feature_flags: Option<FeatureFlagsMap>,
-
-    /// Settings for developer-oriented instrumentation tools (profilers,
-    /// tracers, etc.) that can be toggled at runtime.
-    pub instrumentation: Option<InstrumentationSettingsContent>,
-}
-
-/// Configuration for developer-oriented instrumentation tools that collect
-/// diagnostic data about a running Zed instance.
-#[with_fallible_options]
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
-pub struct InstrumentationSettingsContent {
-    /// Configuration for the performance profiler, accessed via the
-    /// `zed: open performance profiler` action.
-    pub performance_profiler: Option<PerformanceProfilerSettingsContent>,
-}
-
-/// Configuration for the performance profiler which collects timing data
-/// for foreground and background executor tasks.
-#[with_fallible_options]
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
-pub struct PerformanceProfilerSettingsContent {
-    /// Whether to collect timing data for foreground and background executor
-    /// tasks. Enabling this may lead to increased memory usage, hence it's
-    /// disabled by default for regular builds.
-    ///
-    /// Default: false
-    pub enabled: Option<bool>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, MergeFrom)]
@@ -400,13 +365,12 @@ fallible_options::flattened_deserialize!(SettingsContent {
     sections: { project, theme, extension, workspace, editor, remote },
     options: {
         call_hierarchy, command_palette, file_finder, git_panel, tabs, tab_bar, status_bar, preview_tabs, agent,
-        agent_servers, audio, auto_update, base_keymap, collaboration_panel, debugger, diagnostics,
+        agent_servers, auto_update, base_keymap, debugger, diagnostics,
         git,
-        global_lsp_settings, image_viewer, markdown_preview, repl, helix_mode, hide_mouse,
+        global_lsp_settings, image_viewer, markdown_preview, helix_mode, hide_mouse,
         journal, log, line_indicator_format, language_models, outline_panel, project_panel,
         node, proxy, reduce_motion, server_url, credentials_url, session, telemetry, terminal,
         title_bar, vim_mode, which_key, vim, modeline_lines, feature_flags,
-        instrumentation,
     },
     defaults: {},
 });
@@ -552,50 +516,6 @@ impl strum::VariantNames for BaseKeymapContent {
         "Cursor",
         "None",
     ];
-}
-
-/// Configuration of audio in Zed.
-#[with_fallible_options]
-#[derive(Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema, MergeFrom, Debug)]
-pub struct AudioSettingsContent {
-    /// Select specific output audio device.
-    #[serde(rename = "experimental.output_audio_device")]
-    pub output_audio_device: Option<AudioOutputDeviceName>,
-    /// Select specific input audio device.
-    #[serde(rename = "experimental.input_audio_device")]
-    pub input_audio_device: Option<AudioInputDeviceName>,
-}
-
-#[derive(Clone, Default, Debug, Serialize, Deserialize, JsonSchema, MergeFrom, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct AudioOutputDeviceName(pub Option<String>);
-
-impl AsRef<Option<String>> for AudioInputDeviceName {
-    fn as_ref(&self) -> &Option<String> {
-        &self.0
-    }
-}
-
-impl From<Option<String>> for AudioInputDeviceName {
-    fn from(value: Option<String>) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(Clone, Default, Debug, Serialize, Deserialize, JsonSchema, MergeFrom, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct AudioInputDeviceName(pub Option<String>);
-
-impl AsRef<Option<String>> for AudioOutputDeviceName {
-    fn as_ref(&self) -> &Option<String> {
-        &self.0
-    }
-}
-
-impl From<Option<String>> for AudioOutputDeviceName {
-    fn from(value: Option<String>) -> Self {
-        Self(value)
-    }
 }
 
 /// Control what info is collected by Zed.
@@ -1339,32 +1259,8 @@ pub enum ImageFileSizeUnit {
 pub struct RemoteSettingsContent {
     pub ssh_connections: Option<Vec<SshConnection>>,
     pub wsl_connections: Option<Vec<WslConnection>>,
-    pub dev_container_connections: Option<Vec<DevContainerConnection>>,
     pub read_ssh_config: Option<bool>,
     pub use_podman: Option<bool>,
-    /// Whether to build dev container images with BuildKit.
-    ///
-    /// When unset, Zed auto-detects BuildKit by probing for the `buildx` CLI
-    /// plugin. Set to `false` to force the classic Docker builder, which is
-    /// required for Docker-compatible engines that lack an integrated BuildKit
-    /// (e.g. Apple Container via a Docker-API bridge), where BuildKit builds
-    /// cannot resolve locally-built images.
-    ///
-    /// Default: null (auto-detect)
-    pub dev_container_use_buildkit: Option<bool>,
-}
-
-#[with_fallible_options]
-#[derive(
-    Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, JsonSchema, MergeFrom, Hash,
-)]
-pub struct DevContainerConnection {
-    pub name: String,
-    pub remote_user: String,
-    pub container_id: String,
-    pub use_podman: bool,
-    pub extension_ids: Vec<String>,
-    pub remote_env: BTreeMap<String, String>,
 }
 
 #[with_fallible_options]
@@ -1414,36 +1310,6 @@ pub struct SshPortForwardOption {
     pub local_port: u16,
     pub remote_host: Option<String>,
     pub remote_port: u16,
-}
-
-/// Settings for configuring REPL display and behavior.
-#[with_fallible_options]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema, MergeFrom)]
-pub struct ReplSettingsContent {
-    /// Maximum number of lines to keep in REPL's scrollback buffer.
-    /// Clamped with [4, 256] range.
-    ///
-    /// Default: 32
-    pub max_lines: Option<usize>,
-    /// Maximum number of columns to keep in REPL's scrollback buffer.
-    /// Clamped with [20, 512] range.
-    ///
-    /// Default: 128
-    pub max_columns: Option<usize>,
-    /// Whether to show small single-line outputs inline instead of in a block.
-    ///
-    /// Default: true
-    pub inline_output: Option<bool>,
-    /// Maximum number of characters for an output to be shown inline.
-    /// Only applies when `inline_output` is true.
-    ///
-    /// Default: 50
-    pub inline_output_max_length: Option<usize>,
-    /// Maximum number of lines of output to display before scrolling.
-    /// Set to 0 to disable output height limits.
-    ///
-    /// Default: 0
-    pub output_max_height_lines: Option<usize>,
 }
 
 /// Settings for configuring the which-key popup behaviour.

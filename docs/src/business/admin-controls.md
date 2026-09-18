@@ -7,19 +7,13 @@ description: Configure AI, collaboration, and data sharing settings for your ent
 
 Owners and admins can configure settings that apply to every member of the organization.
 
-Most controls apply server-side to anything that routes through Lynx's infrastructure. Some, like the Collaboration toggle, are enforced client-side and require members to be on a minimum Lynx version. These controls don't cover [bring-your-own-key (BYOK) configurations](../ai/llm-providers.md), [gateways](../ai/use-a-gateway.md), [local or self-hosted models](../ai/use-a-local-model.md), [External Agents](../ai/external-agents.md), [Terminal Threads](../ai/terminal-threads.md), or [third-party extensions](../extensions.md), since those work independently of Lynx's servers.
+Most controls apply server-side to anything that routes through Lynx's infrastructure. These controls don't cover [bring-your-own-key (BYOK) configurations](../ai/llm-providers.md), [gateways](../ai/use-a-gateway.md), [local or self-hosted models](../ai/use-a-local-model.md), [External Agents](../ai/external-agents.md), [Terminal Threads](../ai/terminal-threads.md), or [third-party extensions](../extensions.md), since those work independently of Lynx's servers.
 
 ## Accessing admin controls
 
 Admin controls are available to owners and admins in the organization dashboard at [dashboard.zed.dev](https://dashboard.zed.dev). Navigate to your organization, then select Data & Privacy from the sidebar to configure these settings.
 
 ---
-
-## Collaboration
-
-The **Collaboration** toggle controls whether members can use Lynx's real-time collaboration features, including [Channels](../collaboration/channels.md), shared projects, and voice chat. Collaboration is off by default for Business organizations.
-
-This control is configured from the Data & Privacy page in the organization dashboard. It is enforced client-side and requires members to be on Lynx **0.233 or later**. Members on older versions will not have the setting enforced.
 
 ## Hosted AI models
 

@@ -3644,32 +3644,6 @@ If you wish to exclude certain hosts from using the proxy, set the `NO_PROXY` en
 }
 ```
 
-## Instrumentation
-
-- Description: Configuration for developer-oriented instrumentation tools (profilers, tracers, etc.) that can be toggled at runtime.
-- Setting: `instrumentation`
-- Default:
-
-```json
-{
-  "instrumentation": {
-    "performance_profiler": {
-      "enabled": false
-    }
-  }
-}
-```
-
-### Performance Profiler
-
-- Description: Collects timing data for foreground and background executor tasks so they can be inspected via the {#action zed::OpenPerformanceProfiler} action. Enabling this may lead to increased memory usage, hence it's disabled by default for regular builds.
-- Setting: `instrumentation.performance_profiler.enabled`
-- Default: `false`
-
-**Options**
-
-`boolean` values
-
 ## Profiles
 
 - Description: Configuration profiles that can be temporarily applied on top of existing settings or Lynx's defaults.
@@ -5277,25 +5251,6 @@ Example command to set the title: `echo -e "\e]2;New Title\007";`
 - Setting: `path_hyperlink_timeout_ms`
 - Default: `1`
 
-## REPL
-
-- Description: Repl settings.
-- Setting: `repl`
-- Default:
-
-```json [settings]
-{
-  "repl": {
-    // Maximum number of columns to keep in REPL's scrollback buffer.
-    // Clamped with [20, 512] range.
-    "max_columns": 128,
-    // Maximum number of lines to keep in REPL's scrollback buffer.
-    // Clamped with [4, 256] range.
-    "max_lines": 32
-  }
-}
-```
-
 ## Theme
 
 - Description: The theme setting can be specified in two forms - either as the name of a theme or as an object containing the `mode`, `dark`, and `light` themes for the Lynx UI.
@@ -5960,28 +5915,6 @@ Visit [AI Quick Start](../ai/quick-start.md) under the AI section to learn more 
 **Options**
 
 `boolean` values
-
-## Collaboration Panel
-
-- Description: Customizations for the collaboration panel.
-- Setting: `collaboration_panel`
-- Default:
-
-```json [settings]
-{
-  "collaboration_panel": {
-    "button": true,
-    "dock": "right",
-    "default_width": 240
-  }
-}
-```
-
-**Options**
-
-- `button`: Whether to show the collaboration panel button in the status bar
-- `dock`: Where to dock the collaboration panel. Can be `left` or `right`
-- `default_width`: Default width of the collaboration panel
 
 ## Debugger
 
