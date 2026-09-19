@@ -114,7 +114,6 @@ impl SessionCapabilities {
             .map(|command| AvailableCommand {
                 name: command.name.clone().into(),
                 description: command.description.clone().into(),
-                requires_argument: command.input.is_some(),
                 source: None,
                 category: acp_thread::command_category_from_meta(&command.meta),
             })
@@ -177,10 +176,6 @@ impl PromptCompletionProviderDelegate for MessageEditorCompletionDelegate {
                 cx.emit(MessageEditorEvent::SlashAutocompleteOpened);
             });
         });
-    }
-
-    fn confirm_command(&self, cx: &mut App) {
-        let _ = self.message_editor.update(cx, |this, cx| this.send(cx));
     }
 }
 
@@ -2778,6 +2773,8 @@ mod tests {
                 ),
             ],
         )));
+        let received_events: Arc<parking_lot::Mutex<Vec<MessageEditorEvent>>> =
+            Arc::new(parking_lot::Mutex::new(Vec::new()));
 
         let editor = workspace.update_in(&mut cx, |workspace, window, cx| {
             let workspace_handle = cx.weak_entity();
@@ -2797,6 +2794,14 @@ mod tests {
                     cx,
                 )
             });
+            let received_events = received_events.clone();
+            cx.subscribe(
+                &message_editor,
+                move |_workspace, _, event: &MessageEditorEvent, _cx| {
+                    received_events.lock().push(event.clone());
+                },
+            )
+            .detach();
             workspace.active_pane().update(cx, |pane, cx| {
                 pane.add_item(
                     Box::new(cx.new(|_| MessageEditorItem(message_editor.clone()))),
@@ -2852,6 +2857,13 @@ mod tests {
             assert!(!editor.has_visible_completions_menu());
             editor.set_text("", window, cx);
         });
+        assert!(
+            received_events
+                .lock()
+                .iter()
+                .all(|event| !matches!(event, MessageEditorEvent::Send)),
+            "selecting a command should leave it in the editor"
+        );
 
         cx.simulate_input("/say");
 

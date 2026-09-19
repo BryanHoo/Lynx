@@ -332,7 +332,6 @@ fn skill_completion_documentation(skill: &AvailableSkill) -> CompletionDocumenta
 pub struct AvailableCommand {
     pub name: Arc<str>,
     pub description: Arc<str>,
-    pub requires_argument: bool,
     pub source: Option<SharedString>,
     /// Source category used to group the command in the slash popup. `None`
     /// means the command came from an external ACP agent.
@@ -411,8 +410,6 @@ pub trait PromptCompletionProviderDelegate: Send + Sync + 'static {
     fn available_skills(&self, _cx: &App) -> Vec<AvailableSkill> {
         Vec::new()
     }
-
-    fn confirm_command(&self, cx: &mut App);
 
     /// Called once each time the user opens slash-command autocomplete
     /// in the editor this delegate serves. Implementations may use it
@@ -1506,8 +1503,6 @@ impl<T: PromptCompletionProviderDelegate> CompletionProvider for PromptCompletio
                                     (None, None) => format!("/{} ", command.name),
                                 };
 
-                                let is_missing_argument =
-                                    command.requires_argument && argument.is_none();
                                 let group = show_section_headers.then(|| command.group());
 
                                 let icon_path = (command.category
@@ -1530,25 +1525,7 @@ impl<T: PromptCompletionProviderDelegate> CompletionProvider for PromptCompletio
                                     match_start: None,
                                     snippet_deduplication_key: None,
                                     insert_text_mode: None,
-                                    confirm: Some(Arc::new({
-                                        let source = source.clone();
-                                        move |intent, _window, cx| {
-                                            if !is_missing_argument {
-                                                cx.defer({
-                                                    let source = source.clone();
-                                                    move |cx| match intent {
-                                                        CompletionIntent::Complete
-                                                        | CompletionIntent::CompleteWithInsert
-                                                        | CompletionIntent::CompleteWithReplace => {
-                                                            source.confirm_command(cx);
-                                                        }
-                                                        CompletionIntent::Compose => {}
-                                                    }
-                                                });
-                                            }
-                                            false
-                                        }
-                                    })),
+                                    confirm: None,
                                     group,
                                 }
                             }

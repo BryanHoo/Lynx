@@ -986,8 +986,6 @@ impl PromptCompletionProviderDelegate for PromptEditorCompletionProviderDelegate
     fn available_commands(&self, _cx: &App) -> Vec<crate::completion_provider::AvailableCommand> {
         Vec::new()
     }
-
-    fn confirm_command(&self, _cx: &mut App) {}
 }
 
 impl PromptEditor<BufferCodegen> {
