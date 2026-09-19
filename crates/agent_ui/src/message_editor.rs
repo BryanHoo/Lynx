@@ -2216,7 +2216,7 @@ fn find_matching_bracket(text: &str, open: char, close: char) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use std::{ops::Range, path::Path, path::PathBuf, rc::Rc, sync::Arc};
+    use std::{ops::Range, path::Path, path::PathBuf, sync::Arc};
 
     use acp_thread::MentionUri;
     use agent::{ThreadStore, outline};

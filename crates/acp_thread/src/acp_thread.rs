@@ -6201,7 +6201,7 @@ mod tests {
             indoc! {r#"
             ## User
 
-            Hello from Zed!
+            Hello from Lynx!
 
             ## Assistant
 

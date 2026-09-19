@@ -184,6 +184,7 @@ impl VsCodeSettings {
             agent: self.agent_settings_content(),
             agent_servers: None,
             base_keymap: Some(BaseKeymapContent::VSCode),
+            ui_locale: None,
             command_palette: self
                 .read_u64("workbench.commandPalette.history")
                 .map(|history| CommandPaletteSettingsContent {

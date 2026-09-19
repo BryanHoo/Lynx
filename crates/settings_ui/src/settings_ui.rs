@@ -327,8 +327,8 @@ impl SettingFieldRenderer {
                     field,
                     settings_file.clone(),
                     metadata,
-                    item.title,
-                    item.description,
+                    i18n::translate_in(cx, item.title),
+                    i18n::translate_in(cx, item.description),
                     window,
                     cx,
                 );
@@ -560,6 +560,7 @@ fn init_renderers(cx: &mut App) {
         .add_basic_renderer::<settings::TextRenderingMode>(render_dropdown)
         .add_basic_renderer::<settings::FontFamilyName>(render_font_picker)
         .add_basic_renderer::<settings::BaseKeymapContent>(render_dropdown)
+        .add_basic_renderer::<settings::UiLocale>(render_locale_dropdown)
         .add_basic_renderer::<settings::MultiCursorModifier>(render_dropdown)
         .add_basic_renderer::<settings::HideMouseMode>(render_dropdown)
         .add_basic_renderer::<settings::ReduceMotionMode>(render_dropdown)
@@ -885,7 +886,7 @@ fn open_settings_editor_with(
         cx.open_window(
             WindowOptions {
                 titlebar: Some(TitlebarOptions {
-                    title: Some("Lynx — Settings".into()),
+                    title: Some(format!("Lynx — {}", i18n::translate_in(cx, "Settings")).into()),
                     appears_transparent: true,
                     traffic_light_position: Some(point(px(12.0), px(12.0))),
                 }),
@@ -1190,7 +1191,8 @@ impl SettingsPageItem {
 
         match self {
             SettingsPageItem::SectionHeader(header) => {
-                SettingsSectionHeader::new(SharedString::new_static(header)).into_any_element()
+                SettingsSectionHeader::new(SharedString::new_static(i18n::translate_in(cx, header)))
+                    .into_any_element()
             }
             SettingsPageItem::SettingItem(setting_item) => {
                 let (field_with_padding, _) =
@@ -1408,6 +1410,9 @@ fn render_settings_item_layout(
     sub_field: bool,
     cx: &mut Context<'_, SettingsWindow>,
 ) -> Stateful<Div> {
+    let localized_title = i18n::translate_in(cx, title);
+    let localized_description = i18n::translate_in(cx, description);
+
     // Note: the row itself is intentionally not exposed as a labeled group.
     // Each control names and describes itself (via the setting title and
     // description), so adding a group with the same label here would make
@@ -1426,14 +1431,17 @@ fn render_settings_item_layout(
                     h_flex()
                         .w_full()
                         .gap_1()
-                        .child(Label::new(SharedString::new_static(title)))
+                        .child(Label::new(SharedString::new_static(localized_title)))
                         .when_some(reset_fn, |this, reset_to_default| {
                             this.child(
                                 IconButton::new("reset-to-default-btn", IconName::Undo)
                                     .icon_color(Color::Muted)
                                     .icon_size(IconSize::Small)
-                                    .aria_label("Reset to Default")
-                                    .tooltip(Tooltip::text("Reset to Default"))
+                                    .aria_label(i18n::translate_in(cx, "Reset to Default"))
+                                    .tooltip(Tooltip::text(i18n::translate_in(
+                                        cx,
+                                        "Reset to Default",
+                                    )))
                                     .on_click(move |_, window, cx| {
                                         reset_to_default(window, cx);
                                     }),
@@ -1448,7 +1456,7 @@ fn render_settings_item_layout(
                         }),
                 )
                 .child(
-                    Label::new(SharedString::new_static(description))
+                    Label::new(SharedString::new_static(localized_description))
                         .size(LabelSize::Small)
                         .color(Color::Muted)
                         .render_code_spans(),
@@ -1564,8 +1572,8 @@ fn render_settings_item_link(
                 .icon_color(link_icon_color)
                 .icon_size(IconSize::Small)
                 .shape(IconButtonShape::Square)
-                .aria_label("Copy Link")
-                .tooltip(Tooltip::text("Copy Link"))
+                .aria_label(i18n::translate_in(cx, "Copy Link"))
+                .tooltip(Tooltip::text(i18n::translate_in(cx, "Copy Link")))
                 .when_some(json_path, |this, path| {
                     this.on_click(cx.listener(move |this, _, _, cx| {
                         let link = format!("zed://settings/{}", path);
@@ -1788,7 +1796,7 @@ impl SettingsWindow {
         let current_file = SettingsUiFile::User;
         let search_bar = cx.new(|cx| {
             let mut editor = Editor::single_line(window, cx);
-            editor.set_placeholder_text("Search settings…", window, cx);
+            editor.set_placeholder_text(i18n::translate_in(cx, "Search settings…"), window, cx);
             editor
         });
         cx.subscribe(&search_bar, |this, _, event: &EditorEvent, cx| {
@@ -1805,8 +1813,22 @@ impl SettingsWindow {
         .detach();
 
         let mut ui_font_size = ThemeSettings::get_global(cx).ui_font_size(cx);
+        let mut ui_locale = i18n::locale(cx);
         cx.observe_global_in::<SettingsStore>(window, move |this, window, cx| {
             this.fetch_files(window, cx);
+
+            let new_ui_locale = i18n::locale(cx);
+            if new_ui_locale != ui_locale {
+                ui_locale = new_ui_locale;
+                this.search_bar.update(cx, |editor, cx| {
+                    editor.set_placeholder_text(
+                        i18n::translate_in(cx, "Search settings…"),
+                        window,
+                        cx,
+                    );
+                });
+                this.build_search_index(cx);
+            }
 
             // Whenever settings are changed, it's possible that the changed
             // settings affects the rendering of the `SettingsWindow`, like is
@@ -2029,7 +2051,7 @@ impl SettingsWindow {
 
         this.fetch_files(window, cx);
         this.build_ui(window, cx);
-        this.build_search_index();
+        this.build_search_index(cx);
 
         this.search_bar.update(cx, |editor, cx| {
             editor.focus_handle(cx).focus(window, cx);
@@ -2386,7 +2408,7 @@ impl SettingsWindow {
             .collect::<Vec<_>>();
     }
 
-    fn build_search_index(&mut self) {
+    fn build_search_index(&mut self, cx: &App) {
         fn split_into_words(parts: &[&str]) -> Vec<String> {
             parts
                 .iter()
@@ -2434,18 +2456,27 @@ impl SettingsWindow {
                             id: key_index,
                             words: split_into_words(&[
                                 page.title,
+                                i18n::translate_in(cx, page.title),
                                 header_str,
+                                i18n::translate_in(cx, header_str),
                                 item.title,
+                                i18n::translate_in(cx, item.title),
                                 item.description,
+                                i18n::translate_in(cx, item.description),
                             ]),
                         });
                         push_candidates(&mut fuzzy_match_candidates, key_index, item.title);
+                        push_candidates(
+                            &mut fuzzy_match_candidates,
+                            key_index,
+                            i18n::translate_in(cx, item.title),
+                        );
                         push_candidates(&mut fuzzy_match_candidates, key_index, item.description);
                     }
                     SettingsPageItem::SectionHeader(header) => {
                         documents.push(SearchDocument {
                             id: key_index,
-                            words: split_into_words(&[header]),
+                            words: split_into_words(&[header, i18n::translate_in(cx, header)]),
                         });
                         push_candidates(&mut fuzzy_match_candidates, key_index, header);
                         header_index = item_index;
@@ -2547,7 +2578,7 @@ impl SettingsWindow {
         self.navbar_focus_subscriptions.clear();
         self.content_handles.clear();
         self.build_ui(window, cx);
-        self.build_search_index();
+        self.build_search_index(cx);
     }
 
     #[track_caller]
@@ -3203,7 +3234,7 @@ impl SettingsWindow {
                 v_flex()
                     .id("settings-ui-nav")
                     .role(Role::Tree)
-                    .aria_label("Settings Navigation")
+                    .aria_label(i18n::translate_in(cx, "Settings Navigation"))
                     .flex_1()
                     .overflow_hidden()
                     .track_focus(&self.navbar_focus_handle.focus_handle(cx))
@@ -3220,7 +3251,7 @@ impl SettingsWindow {
                                     .map(|(entry_index, entry)| {
                                         TreeViewItem::new(
                                             ("settings-ui-navbar-entry", entry_index),
-                                            entry.title,
+                                            i18n::translate_in(cx, entry.title),
                                         )
                                         .track_focus(&entry.focus_handle)
                                         .root_item(entry.is_root)
@@ -3538,17 +3569,18 @@ impl SettingsWindow {
             .child(Label::new("/").color(Color::Muted))
             .children(
                 itertools::intersperse(
-                    std::iter::once(self.current_page().title.into()).chain(
-                        self.sub_page_stack
-                            .iter()
-                            .enumerate()
-                            .flat_map(|(index, page)| {
-                                (index == 0)
-                                    .then(|| page.section_header.clone())
-                                    .into_iter()
-                                    .chain(std::iter::once(page.link.title.clone()))
-                            }),
-                    ),
+                    std::iter::once(i18n::translate_in(cx, self.current_page().title).into())
+                        .chain(
+                            self.sub_page_stack
+                                .iter()
+                                .enumerate()
+                                .flat_map(|(index, page)| {
+                                    (index == 0)
+                                        .then(|| page.section_header.clone())
+                                        .into_iter()
+                                        .chain(std::iter::once(page.link.title.clone()))
+                                }),
+                        ),
                     "/".into(),
                 )
                 .map(|item| Label::new(item).color(Color::Muted)),
@@ -3563,11 +3595,14 @@ impl SettingsWindow {
             .items_center()
             .justify_center()
             .gap_1()
-            .child(Label::new("No Results"))
+            .child(Label::new(i18n::translate_in(cx, "No Results")))
             .child(
-                Label::new(format!("No settings match \"{}\"", search_query))
-                    .size(LabelSize::Small)
-                    .color(Color::Muted),
+                Label::new(i18n::format_no_settings_match(
+                    i18n::locale(cx),
+                    search_query.as_ref(),
+                ))
+                .size(LabelSize::Small)
+                .color(Color::Muted),
             )
     }
 
@@ -3580,7 +3615,7 @@ impl SettingsWindow {
         let mut page_content = v_flex()
             .id("settings-ui-page")
             .role(Role::Group)
-            .aria_label("Settings Content")
+            .aria_label(i18n::translate_in(cx, "Settings Content"))
             .size_full();
 
         let has_active_search = !self.search_bar.read(cx).is_empty(cx);
@@ -3611,7 +3646,10 @@ impl SettingsWindow {
                             .when(this.sub_page_stack.is_empty(), |this| {
                                 this.when_some(root_nav_label, |this, title| {
                                     this.child(
-                                        Label::new(title).size(LabelSize::Large).mt_2().mb_3(),
+                                        Label::new(i18n::translate_in(cx, title))
+                                            .size(LabelSize::Large)
+                                            .mt_2()
+                                            .mb_3(),
                                     )
                                 })
                             })
@@ -3728,7 +3766,12 @@ impl SettingsWindow {
             page_content
                 .when(self.sub_page_stack.is_empty(), |this| {
                     this.when_some(root_nav_label, |this, title| {
-                        this.child(Label::new(title).size(LabelSize::Large).mt_2().mb_3())
+                        this.child(
+                            Label::new(i18n::translate_in(cx, title))
+                                .size(LabelSize::Large)
+                                .mt_2()
+                                .mb_3(),
+                        )
                     })
                 })
                 .children(items.clone().into_iter().enumerate().map(
@@ -5098,6 +5141,50 @@ where
     .disabled(disabled)
     .tab_index(0)
     .title_case(should_do_titlecase)
+    .into_any_element()
+}
+
+fn render_locale_dropdown(
+    field: SettingField<settings::UiLocale>,
+    file: SettingsUiFile,
+    _metadata: Option<&SettingsFieldMetadata>,
+    title: &'static str,
+    description: &'static str,
+    _window: &mut Window,
+    cx: &mut App,
+) -> AnyElement {
+    let variants = <settings::UiLocale as strum::VariantArray>::VARIANTS;
+    let current_value = get_current_value(&SettingsStore::global(cx), &file, &field, cx);
+    let (current_value, disabled) = current_value
+        .map(|current_value| (*current_value.value, current_value.disabled))
+        .unwrap_or((settings::UiLocale::System, false));
+
+    EnumVariantDropdown::new(
+        "ui-locale-dropdown",
+        current_value,
+        variants,
+        i18n::locale_labels(i18n::locale(cx)),
+        move |value, window, cx| {
+            if value == current_value {
+                return;
+            }
+            update_settings_file(
+                file.clone(),
+                field.json_path,
+                window,
+                cx,
+                move |settings, app| {
+                    (field.write)(settings, Some(value), app);
+                },
+            )
+            .log_err();
+        },
+    )
+    .aria_label(title)
+    .aria_description(description)
+    .disabled(disabled)
+    .tab_index(0)
+    .title_case(false)
     .into_any_element()
 }
 

@@ -453,7 +453,7 @@ impl ExtensionStore {
                 }
             })
             .shared();
-        this.initial_index_load = initial_index_load.clone();
+        this.initial_index_load = initial_index_load;
 
         // Perform all extension loading in a single task to ensure that we
         // never attempt to simultaneously load/unload extensions from multiple

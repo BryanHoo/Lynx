@@ -541,7 +541,7 @@ impl settings::Settings for TelemetrySettings {
         let telemetry = content.telemetry.as_ref().unwrap();
         Self {
             // 本地发行版不允许配置重新启用 Zed 遥测或诊断上传。
-            metrics: cfg!(test),
+            metrics: cfg!(any(test, feature = "test-support")),
             anthropic_retention: telemetry.anthropic_retention.unwrap(),
         }
     }

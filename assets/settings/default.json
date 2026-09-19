@@ -25,6 +25,8 @@
   // 8. "Cursor"
   // 9. "None"
   "base_keymap": "Zed",
+  // The language used by Lynx's interface. "system" follows the operating system.
+  "ui_locale": "system",
   // The name of a font to use for rendering text in the editor
   // ".ZedMono" currently aliases to Lilex
   // but this may change in the future.

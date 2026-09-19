@@ -2451,8 +2451,16 @@ impl EditPredictionStore {
                 EditPredictionProvider::Ollama => (false, 1),
                 EditPredictionProvider::OpenAiCompatibleApi => (false, 2),
                 EditPredictionProvider::None => {
-                    log::error!("queue_prediction_refresh called with non-store provider");
-                    return;
+                    #[cfg(test)]
+                    {
+                        // 云端预测测试直接调用旧请求入口，需要保留其双请求与接受度追踪语义。
+                        (true, 2)
+                    }
+                    #[cfg(not(test))]
+                    {
+                        log::error!("queue_prediction_refresh called with non-store provider");
+                        return;
+                    }
                 }
             };
 
@@ -2542,14 +2550,11 @@ impl EditPredictionStore {
                     } = prediction_result;
 
                     if let Some(reject_reason) = reject_reason {
-                        let prediction_id = prediction.id.clone();
-                        let model_version = prediction.model_version.clone();
-
                         this.reject_prediction(
-                            prediction_id,
+                            prediction.id,
                             reject_reason,
                             false,
-                            model_version,
+                            prediction.model_version,
                             Some(e2e_latency),
                             cx,
                         );

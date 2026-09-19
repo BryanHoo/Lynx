@@ -169,6 +169,33 @@ pub enum ReduceMotionMode {
     Off,
 }
 
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    JsonSchema,
+    MergeFrom,
+    strum::VariantArray,
+)]
+pub enum UiLocale {
+    #[serde(rename = "system")]
+    #[default]
+    System,
+    #[serde(rename = "en")]
+    English,
+    #[serde(rename = "zh-CN")]
+    SimplifiedChinese,
+}
+
+impl strum::VariantNames for UiLocale {
+    const VARIANTS: &'static [&'static str] = &["System", "English", "简体中文"];
+}
+
 #[with_fallible_options]
 #[derive(Debug, PartialEq, Default, Clone, Serialize, JsonSchema, MergeFrom)]
 pub struct SettingsContent {
@@ -215,6 +242,9 @@ pub struct SettingsContent {
     ///
     /// Default: VSCode
     pub base_keymap: Option<BaseKeymapContent>,
+
+    /// Controls the language used by the application interface.
+    pub ui_locale: Option<UiLocale>,
 
     pub debugger: Option<DebuggerSettingsContent>,
 
@@ -360,7 +390,7 @@ fallible_options::flattened_deserialize!(SettingsContent {
     sections: { project, theme, extension, workspace, editor, remote },
     options: {
         call_hierarchy, command_palette, file_finder, git_panel, tabs, tab_bar, status_bar, preview_tabs, agent,
-        agent_servers, base_keymap, debugger, diagnostics,
+        agent_servers, base_keymap, ui_locale, debugger, diagnostics,
         git,
         global_lsp_settings, image_viewer, markdown_preview, helix_mode, hide_mouse,
         journal, log, line_indicator_format, language_models, outline_panel, project_panel,

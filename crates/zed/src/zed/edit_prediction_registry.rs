@@ -235,6 +235,7 @@ mod tests {
     use super::*;
     use editor::MultiBuffer;
     use gpui::{BorrowAppContext, TestAppContext};
+    use project::Project;
     use settings::{EditPredictionPromptFormatContent, EditPredictionProvider, SettingsStore};
     use workspace::AppState;
 
@@ -368,10 +369,17 @@ mod tests {
             init(app_state.client.clone(), app_state.user_store.clone(), cx);
         });
 
-        // Create an editor in a window so observe_new registers it.
+        // Ollama 使用项目级预测存储，测试编辑器需要关联项目。
+        let project = Project::test(app_state.fs.clone(), [], cx).await;
         let editor = cx.add_window(|window, cx| {
             let buffer = cx.new(|_cx| MultiBuffer::new(language::Capability::ReadWrite));
-            Editor::new(editor::EditorMode::full(), buffer, None, window, cx)
+            Editor::new(
+                editor::EditorMode::full(),
+                buffer,
+                Some(project.clone()),
+                window,
+                cx,
+            )
         });
 
         editor
