@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 3,
+  "packageManager": "cargo",
+  "packages": [
+    {
+      "name": "root",
+      "layers": [
+        "shared"
+      ]
+    },
+    {
+      "name": "crates",
+      "layers": [
+        "frontend",
+        "backend",
+        "shared"
+      ]
+    },
+    {
+      "name": "extensions",
+      "layers": [
+        "shared"
+      ]
+    },
+    {
+      "name": "tooling",
+      "layers": [
+        "shared"
+      ]
+    },
+    {
+      "name": "docs",
+      "layers": [
+        "shared"
+      ]
+    }
+  ],
+  "artifactPaths": {
+    "designs": ".superwork/prd",
+    "plans": ".superwork/plans",
+    "specs": ".superwork/spec"
+  },
+  "verification": [
+    "cargo fmt --all -- --check",
+    "./script/clippy",
+    "cargo nextest run --workspace --no-fail-fast --no-tests=warn",
+    "cargo test --workspace --doc --no-fail-fast"
+  ]
+}
