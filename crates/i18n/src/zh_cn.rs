@@ -1,6 +1,50 @@
-pub(super) fn translate(message: &'static str) -> Option<&'static str> {
+#[path = "zh_cn_settings_1.rs"]
+mod zh_cn_settings_1;
+#[path = "zh_cn_settings_2.rs"]
+mod zh_cn_settings_2;
+#[path = "zh_cn_settings_3.rs"]
+mod zh_cn_settings_3;
+#[path = "zh_cn_settings_4.rs"]
+mod zh_cn_settings_4;
+#[path = "zh_cn_settings_5.rs"]
+mod zh_cn_settings_5;
+#[path = "zh_cn_settings_6.rs"]
+mod zh_cn_settings_6;
+#[path = "zh_cn_settings_7.rs"]
+mod zh_cn_settings_7;
+
+pub(super) fn translate(message: &str) -> Option<&'static str> {
+    translate_core(message)
+        .or_else(|| zh_cn_settings_1::translate(message))
+        .or_else(|| zh_cn_settings_2::translate(message))
+        .or_else(|| zh_cn_settings_3::translate(message))
+        .or_else(|| zh_cn_settings_4::translate(message))
+        .or_else(|| zh_cn_settings_5::translate(message))
+        .or_else(|| zh_cn_settings_6::translate(message))
+        .or_else(|| zh_cn_settings_7::translate(message))
+}
+
+fn translate_core(message: &str) -> Option<&'static str> {
     Some(match message {
         "Settings" => "设置",
+        "Agent" => "智能体",
+        "Authentication Required." => "需要身份验证。",
+        "Client Secret Required." => "需要客户端密钥。",
+        "Server has an error." => "服务器发生错误。",
+        "Server is active." => "服务器正在运行。",
+        "Server is starting." => "服务器正在启动。",
+        "Server is stopped." => "服务器已停止。",
+        "Waiting for Authorization…" => "正在等待授权…",
+        "Note: custom tool permissions only apply to the Lynx native agent and don’t extend to external agents connected through the Agent Client Protocol (ACP)." => {
+            "注意：自定义工具权限仅适用于 Lynx 原生智能体，不会扩展到通过 Agent Client Protocol (ACP) 连接的外部智能体"
+        }
+        "No provider set" => "未设置提供商",
+        "Paste a GitHub .md URL to fetch it and fill out the form. For private files, Lynx retries using GITHUB_TOKEN, if set." => {
+            "粘贴 GitHub .md URL 以获取内容并填写表单。对于私有文件，如果已设置 GITHUB_TOKEN，Lynx 会使用它重试。"
+        }
+        "Wrap agent-run terminal commands in an OS-level sandbox. When off, commands run with Lynx's own permissions." => {
+            "将智能体运行的终端命令置于操作系统级沙盒中。关闭后，命令将使用 Lynx 自身的权限运行。"
+        }
         "Search settings…" => "搜索设置…",
         "General" => "常规",
         "General Settings" => "常规设置",

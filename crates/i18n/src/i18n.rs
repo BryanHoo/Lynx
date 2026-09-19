@@ -1,6 +1,6 @@
 mod zh_cn;
 
-use gpui::App;
+use gpui::{App, SharedString};
 use settings::{RegisterSetting, Settings, SettingsContent, UiLocale};
 use std::sync::LazyLock;
 
@@ -56,6 +56,28 @@ pub fn translate(locale: Locale, message: &'static str) -> &'static str {
 
 pub fn translate_in(cx: &App, message: &'static str) -> &'static str {
     translate(locale(cx), message)
+}
+
+/// 动态设置标题无法保留 `'static` 生命周期；命中词典时仍复用静态字符串。
+pub fn translate_shared_in(cx: &App, message: &str) -> SharedString {
+    match locale(cx) {
+        Locale::English => message.to_string().into(),
+        Locale::SimplifiedChinese => {
+            if let Some(translation) = zh_cn::translate(message) {
+                SharedString::new_static(translation)
+            } else if let Some(provider) = message
+                .strip_prefix("Add ")
+                .and_then(|message| message.strip_suffix("-Compatible Provider"))
+            {
+                format!("添加 {provider} 兼容提供商").into()
+            } else if let Some(tool) = message.strip_suffix(" Tool") {
+                let tool = zh_cn::translate(tool).unwrap_or(tool);
+                format!("{tool}工具").into()
+            } else {
+                message.to_string().into()
+            }
+        }
+    }
 }
 
 pub fn locale_labels(locale: Locale) -> &'static [&'static str] {
@@ -121,6 +143,23 @@ mod tests {
             translate(Locale::SimplifiedChinese, "Unregistered message"),
             "Unregistered message"
         );
+        assert_eq!(
+            translate(Locale::SimplifiedChinese, "LLM Providers"),
+            "LLM 提供商"
+        );
+        assert_eq!(
+            translate(
+                Locale::SimplifiedChinese,
+                "View, add, configure, and remove Model Context Protocol servers.",
+            ),
+            "查看、添加、配置和移除 Model Context Protocol 服务器"
+        );
+    }
+
+    #[test]
+    fn chinese_catalog_should_support_runtime_setting_titles() {
+        let message = String::from("Tool Permissions");
+        assert_eq!(zh_cn::translate(&message), Some("工具权限"));
     }
 
     #[test]

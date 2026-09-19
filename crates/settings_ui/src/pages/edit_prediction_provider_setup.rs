@@ -34,7 +34,7 @@ pub(crate) fn render_edit_prediction_setup_page(
                 IconName::AiOpenAiCompat,
                 "OpenAI Compatible API",
                 ApiKeyDocs::Custom {
-                    message: "The API key sent as Authorization: Bearer {key}.".into(),
+                    message: "The API key sent as Authorization: Bearer {key}.",
                 },
                 open_ai_compatible_api_token(cx),
                 |cx| open_ai_compatible_api_url(cx),
@@ -75,7 +75,9 @@ fn render_provider_dropdown(window: &mut Window, cx: &mut App) -> AnyElement {
     let current_provider = AllLanguageSettings::get_global(cx)
         .edit_predictions
         .provider;
-    let current_provider_name = current_provider.display_name().unwrap_or("No provider set");
+    let current_provider_name = current_provider
+        .display_name()
+        .unwrap_or_else(|| i18n::translate_in(cx, "No provider set"));
 
     let menu = ContextMenu::build(window, cx, move |mut menu, _, cx| {
         let available_providers = get_available_providers(cx);
@@ -101,7 +103,9 @@ fn render_provider_dropdown(window: &mut Window, cx: &mut App) -> AnyElement {
         .id("provider-selector")
         .min_w_0()
         .gap_1p5()
-        .child(SettingsSectionHeader::new("Active Provider").no_padding(true))
+        .child(
+            SettingsSectionHeader::new(i18n::translate_in(cx, "Active Provider")).no_padding(true),
+        )
         .child(
             h_flex()
                 .pt_2p5()
@@ -113,11 +117,14 @@ fn render_provider_dropdown(window: &mut Window, cx: &mut App) -> AnyElement {
                         .w_full()
                         .min_w_0()
                         .max_w_1_2()
-                        .child(Label::new("Provider"))
+                        .child(Label::new(i18n::translate_in(cx, "Provider")))
                         .child(
-                            Label::new("Select which provider to use for edit predictions.")
-                                .size(LabelSize::Small)
-                                .color(Color::Muted),
+                            Label::new(i18n::translate_in(
+                                cx,
+                                "Select which provider to use for edit predictions.",
+                            ))
+                            .size(LabelSize::Small)
+                            .color(Color::Muted),
                         ),
                 )
                 .child(
@@ -145,7 +152,7 @@ fn render_ollama_provider(
         .pt_8()
         .gap_1p5()
         .child(
-            SettingsSectionHeader::new("Ollama")
+            SettingsSectionHeader::new(i18n::translate_in(cx, "Ollama"))
                 .icon(IconName::AiOllama)
                 .no_padding(true),
         )

@@ -91,11 +91,18 @@ impl EnumVariantDropdown {
 
 impl RenderOnce for EnumVariantDropdown {
     fn render(self, window: &mut ui::Window, cx: &mut ui::App) -> impl gpui::IntoElement {
-        let current_value_label = self.labels[self.selected_index];
+        // 枚举值与设置标题共用词典，语言切换后无需重建设置数据。
+        let labels = self
+            .labels
+            .iter()
+            .map(|label| i18n::translate_in(cx, label))
+            .collect::<Vec<_>>();
+        let current_value_label = labels[self.selected_index];
 
         let context_menu = window.use_keyed_state(current_value_label, cx, |window, cx| {
+            let labels = labels.clone();
             ContextMenu::new(window, cx, move |mut menu, _, _| {
-                for (index, &label) in self.labels.iter().enumerate() {
+                for (index, &label) in labels.iter().enumerate() {
                     let on_change = self.on_change.clone();
                     menu = menu.toggleable_entry(
                         if self.should_do_title_case {

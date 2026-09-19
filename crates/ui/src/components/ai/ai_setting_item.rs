@@ -135,8 +135,15 @@ impl RenderOnce for AiSettingItem {
 
         let source_id = format!("source-{}", id);
         let icon_id = format!("icon-{}", id);
-        let status_tooltip = status.tooltip_text();
-        let source_tooltip = source.tooltip_text(&label);
+        let status_tooltip = i18n::translate_in(cx, status.tooltip_text());
+        let source_tooltip = match i18n::locale(cx) {
+            i18n::Locale::English => source.tooltip_text(&label),
+            i18n::Locale::SimplifiedChinese => match source {
+                AiSettingItemSource::Extension => format!("{label} 通过扩展安装。"),
+                AiSettingItemSource::Registry => format!("{label} 通过 ACP 注册表安装。"),
+                AiSettingItemSource::Custom => format!("{label} 由手动配置。"),
+            },
+        };
 
         let icon_element = icon.unwrap_or_else(|| {
             let letter = label.chars().next().unwrap_or('?').to_ascii_uppercase();

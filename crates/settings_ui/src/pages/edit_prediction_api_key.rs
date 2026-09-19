@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub(super) enum ApiKeyDocs {
-    Custom { message: SharedString },
+    Custom { message: &'static str },
 }
 
 pub(super) fn render_api_key_provider(
@@ -67,29 +67,38 @@ pub(super) fn render_api_key_provider(
         .no_padding(true);
     let description = match docs {
         ApiKeyDocs::Custom { message } => div().min_w_0().w_full().child(
-            Label::new(message)
+            Label::new(i18n::translate_in(cx, message))
                 .size(LabelSize::Small)
                 .color(Color::Muted),
         ),
     };
 
-    let configured_label = if is_from_env_var {
-        "API Key Set in Environment Variable"
-    } else {
-        "API Key Configured"
-    };
+    let configured_label = i18n::translate_in(
+        cx,
+        if is_from_env_var {
+            "API Key Set in Environment Variable"
+        } else {
+            "API Key Configured"
+        },
+    );
     let container = if has_key {
         container.child(header).child(
             ConfiguredApiCard::new(format!("{title}-reset-key"), configured_label)
-                .button_label("Reset Key")
+                .button_label(i18n::translate_in(cx, "Reset Key"))
                 .button_tab_index(0)
                 .disabled(is_from_env_var)
                 .when_some(env_var_name, |this, env_var_name| {
                     this.when(is_from_env_var, |this| {
-                        this.tooltip_label(format!(
-                            "To reset your API key, unset the {} environment variable.",
-                            env_var_name
-                        ))
+                        let tooltip = match i18n::locale(cx) {
+                            i18n::Locale::English => format!(
+                                "To reset your API key, unset the {} environment variable.",
+                                env_var_name
+                            ),
+                            i18n::Locale::SimplifiedChinese => {
+                                format!("要重置 API 密钥，请取消设置 {env_var_name} 环境变量。")
+                            }
+                        };
+                        this.tooltip_label(tooltip)
                     })
                 })
                 .on_click(move |_, _, cx| write_key(None, cx)),
@@ -107,16 +116,23 @@ pub(super) fn render_api_key_provider(
                         .min_w_0()
                         .max_w_1_2()
                         .gap_0p5()
-                        .child(Label::new("API Key"))
+                        .child(Label::new(i18n::translate_in(cx, "API Key")))
                         .child(description)
                         .when_some(env_var_name, |this, env_var_name| {
-                            this.child(
-                                Label::new(format!(
+                            let env_hint = match i18n::locale(cx) {
+                                i18n::Locale::English => format!(
                                     "Or set the {} env var and restart Lynx.",
                                     env_var_name.as_ref()
-                                ))
-                                .size(LabelSize::Small)
-                                .color(Color::Muted),
+                                ),
+                                i18n::Locale::SimplifiedChinese => format!(
+                                    "或设置 {} 环境变量并重启 Lynx。",
+                                    env_var_name.as_ref()
+                                ),
+                            };
+                            this.child(
+                                Label::new(env_hint)
+                                    .size(LabelSize::Small)
+                                    .color(Color::Muted),
                             )
                         }),
                 )
@@ -124,7 +140,10 @@ pub(super) fn render_api_key_provider(
                     SettingsInputField::new(format!("{}-api-key-input", title))
                         .tab_index(0)
                         .with_placeholder("xxxxxxxxxxxxxxxxxxxx")
-                        .aria_label(format!("{} API Key", title))
+                        .aria_label(match i18n::locale(cx) {
+                            i18n::Locale::English => format!("{title} API Key"),
+                            i18n::Locale::SimplifiedChinese => format!("{title} API 密钥"),
+                        })
                         .on_confirm(move |api_key, _window, cx| {
                             write_key(api_key.filter(|key| !key.is_empty()), cx);
                         }),

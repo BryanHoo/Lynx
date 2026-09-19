@@ -85,7 +85,7 @@ pub(crate) fn render_add_llm_provider_popover(
 
     PopoverMenu::new("add-llm-provider-popover")
         .trigger(
-            Button::new("add-llm-provider", "Add Provider")
+            Button::new("add-llm-provider", i18n::translate_in(cx, "Add Provider"))
                 .style(ButtonStyle::Outlined)
                 .track_focus(&focus_handle)
                 .label_size(LabelSize::Small)
@@ -102,8 +102,8 @@ pub(crate) fn render_add_llm_provider_popover(
         })
         .menu(move |window, cx| {
             let settings_window = settings_window.clone();
-            Some(ContextMenu::build(window, cx, move |menu, _window, _cx| {
-                menu.header("Compatible APIs")
+            Some(ContextMenu::build(window, cx, move |menu, _window, cx| {
+                menu.header(i18n::translate_in(cx, "Compatible APIs"))
                     .entry("OpenAI", None, {
                         let settings_window = settings_window.clone();
                         move |window, cx| {
@@ -165,6 +165,7 @@ fn render_provider_section(
                 settings.title,
                 settings.description,
                 view,
+                cx,
             )
         }
         Some(ProviderSettingsView::SubPage(settings)) => {
@@ -213,7 +214,7 @@ fn render_api_key_providers_item(
     provider: &Arc<dyn LanguageModelProvider>,
     provider_name: SharedString,
     config: ApiKeyConfiguration,
-    _cx: &mut Context<SettingsWindow>,
+    cx: &mut Context<SettingsWindow>,
 ) -> AnyElement {
     let provider_id = provider.id();
     let has_key = config.has_key;
@@ -222,21 +223,30 @@ fn render_api_key_providers_item(
     let api_key_url = config.api_key_url;
 
     if has_key {
-        let configured_label = if is_from_env_var {
-            "API Key Set in Environment Variable"
-        } else {
-            "API Key Configured"
-        };
+        let configured_label = i18n::translate_in(
+            cx,
+            if is_from_env_var {
+                "API Key Set in Environment Variable"
+            } else {
+                "API Key Configured"
+            },
+        );
         let button_id = format!("reset-api-key-{}", provider_id.0);
 
         let card = ConfiguredApiCard::new(button_id, configured_label)
-            .button_label("Reset Key")
+            .button_label(i18n::translate_in(cx, "Reset Key"))
             .button_tab_index(0)
             .disabled(is_from_env_var)
             .when(is_from_env_var, |this| {
-                this.tooltip_label(format!(
-                    "To reset your API key, unset the {env_var_name} environment variable."
-                ))
+                let tooltip = match i18n::locale(cx) {
+                    i18n::Locale::English => format!(
+                        "To reset your API key, unset the {env_var_name} environment variable."
+                    ),
+                    i18n::Locale::SimplifiedChinese => {
+                        format!("要重置 API 密钥，请取消设置 {env_var_name} 环境变量。")
+                    }
+                };
+                this.tooltip_label(tooltip)
             })
             .on_click({
                 let provider = provider.clone();
@@ -250,7 +260,10 @@ fn render_api_key_providers_item(
     }
 
     let input_id = format!("{}-api-key-input", provider_id.0);
-    let aria_label = format!("{provider_name} API Key");
+    let aria_label = match i18n::locale(cx) {
+        i18n::Locale::English => format!("{provider_name} API Key"),
+        i18n::Locale::SimplifiedChinese => format!("{provider_name} API 密钥"),
+    };
 
     v_flex()
         .gap_2()
@@ -267,7 +280,7 @@ fn render_api_key_providers_item(
                         .min_w_0()
                         .max_w_1_2()
                         .gap_0p5()
-                        .child(Label::new("API Key"))
+                        .child(Label::new(i18n::translate_in(cx, "API Key")))
                         .child(
                             h_flex()
                                 .w_full()
@@ -275,32 +288,45 @@ fn render_api_key_providers_item(
                                 .flex_wrap()
                                 .gap_0p5()
                                 .child(
-                                    Label::new("Visit the")
+                                    Label::new(i18n::translate_in(cx, "Visit the"))
                                         .size(LabelSize::Small)
                                         .color(Color::Muted),
                                 )
                                 .child(
-                                    ButtonLink::new(
-                                        format!("{provider_name} dashboard"),
-                                        api_key_url,
-                                    )
+                                    ButtonLink::new(match i18n::locale(cx) {
+                                        i18n::Locale::English => {
+                                            format!("{provider_name} dashboard")
+                                        }
+                                        i18n::Locale::SimplifiedChinese => {
+                                            format!("{provider_name} 控制台")
+                                        }
+                                    }, api_key_url)
                                     .no_icon(true)
                                     .label_size(LabelSize::Small)
                                     .label_color(Color::Muted),
                                 )
                                 .child(
-                                    Label::new("to generate an API key.")
+                                    Label::new(i18n::translate_in(
+                                        cx,
+                                        "to generate an API key.",
+                                    ))
                                         .size(LabelSize::Small)
                                         .color(Color::Muted),
                                 ),
                         )
-                        .child(
-                            Label::new(format!(
-                                "Or set the {env_var_name} env var and restart Lynx for it to take effect."
-                            ))
+                        .child({
+                            let env_hint = match i18n::locale(cx) {
+                                i18n::Locale::English => format!(
+                                    "Or set the {env_var_name} env var and restart Lynx for it to take effect."
+                                ),
+                                i18n::Locale::SimplifiedChinese => format!(
+                                    "或者设置 {env_var_name} 环境变量并重启 Lynx 以使其生效。"
+                                ),
+                            };
+                            Label::new(env_hint)
                             .size(LabelSize::XSmall)
-                            .color(Color::Muted),
-                        ),
+                            .color(Color::Muted)
+                        }),
                 )
                 .child(
                     SettingsInputField::new(input_id)
@@ -325,6 +351,7 @@ fn render_inline_body(
     title: Option<SharedString>,
     description: Option<InlineDescription>,
     view: impl IntoElement,
+    cx: &App,
 ) -> AnyElement {
     let view = view.into_any_element();
 
@@ -351,7 +378,7 @@ fn render_inline_body(
                 .debug_selector(|| "inline-provider-description".into())
                 .when_some(title, |this, title| this.child(Label::new(title)))
                 .when_some(description, |this, description| {
-                    this.child(render_inline_description(provider_name, description))
+                    this.child(render_inline_description(provider_name, description, cx))
                 }),
         )
         .child(
@@ -385,24 +412,27 @@ fn render_subpage_item(
                 .min_w_0()
                 .max_w_1_2()
                 .gap_0p5()
-                .child(Label::new("Configure Provider"))
+                .child(Label::new(i18n::translate_in(cx, "Configure Provider")))
                 .when_some(description, |this, description| {
-                    this.child(render_inline_description(provider_name, description))
+                    this.child(render_inline_description(provider_name, description, cx))
                 }),
         )
         .child(
-            Button::new(format!("configure-{}", provider_id.0), "Configure")
-                .style(ButtonStyle::OutlinedGhost)
-                .size(ButtonSize::Medium)
-                .end_icon(
-                    Icon::new(IconName::ChevronRight)
-                        .size(IconSize::Small)
-                        .color(Color::Muted),
-                )
-                .tab_index(0isize)
-                .on_click(cx.listener(move |this, _, window, cx| {
-                    open_provider_configuration(this, provider_id.clone(), window, cx);
-                })),
+            Button::new(
+                format!("configure-{}", provider_id.0),
+                i18n::translate_in(cx, "Configure"),
+            )
+            .style(ButtonStyle::OutlinedGhost)
+            .size(ButtonSize::Medium)
+            .end_icon(
+                Icon::new(IconName::ChevronRight)
+                    .size(IconSize::Small)
+                    .color(Color::Muted),
+            )
+            .tab_index(0isize)
+            .on_click(cx.listener(move |this, _, window, cx| {
+                open_provider_configuration(this, provider_id.clone(), window, cx);
+            })),
         )
         .into_any_element()
 }
@@ -410,12 +440,13 @@ fn render_subpage_item(
 fn render_inline_description(
     provider_name: SharedString,
     description: InlineDescription,
+    cx: &App,
 ) -> AnyElement {
     match description {
         InlineDescription::ApiKeyUrl(url) => h_flex()
             .gap_0p5()
             .child(
-                Label::new("To find an API key, visit the")
+                Label::new(i18n::translate_in(cx, "To find an API key, visit the"))
                     .size(LabelSize::Small)
                     .color(Color::Muted),
             )
@@ -764,9 +795,9 @@ fn render_models_section(
         .child(
             h_flex()
                 .justify_between()
-                .child(Label::new("Models"))
+                .child(Label::new(i18n::translate_in(cx, "Models")))
                 .child(
-                    Button::new("add-model", "Add Model")
+                    Button::new("add-model", i18n::translate_in(cx, "Add Model"))
                         .start_icon(
                             Icon::new(IconName::Plus)
                                 .size(IconSize::XSmall)
@@ -832,23 +863,26 @@ fn render_model(
         .child(render_model_capabilities(kind, model, index, window, cx))
         .when(model_count > 1, |this| {
             this.child(
-                Button::new(("remove-model", index), "Remove Model")
-                    .start_icon(
-                        Icon::new(IconName::Trash)
-                            .size(IconSize::XSmall)
-                            .color(Color::Muted),
-                    )
-                    .label_size(LabelSize::Small)
-                    .style(ButtonStyle::Outlined)
-                    .full_width()
-                    .on_click(cx.listener(move |this, _, _window, cx| {
-                        if let Some(form) = this.llm_provider_form.as_mut()
-                            && index < form.models.len()
-                        {
-                            form.models.remove(index);
-                        }
-                        cx.notify();
-                    })),
+                Button::new(
+                    ("remove-model", index),
+                    i18n::translate_in(cx, "Remove Model"),
+                )
+                .start_icon(
+                    Icon::new(IconName::Trash)
+                        .size(IconSize::XSmall)
+                        .color(Color::Muted),
+                )
+                .label_size(LabelSize::Small)
+                .style(ButtonStyle::Outlined)
+                .full_width()
+                .on_click(cx.listener(move |this, _, _window, cx| {
+                    if let Some(form) = this.llm_provider_form.as_mut()
+                        && index < form.models.len()
+                    {
+                        form.models.remove(index);
+                    }
+                    cx.notify();
+                })),
             )
         })
         .into_any_element()
@@ -996,7 +1030,9 @@ fn render_reasoning_effort_selector(
 
     v_flex()
         .gap_1()
-        .child(Label::new("Default reasoning effort").size(LabelSize::Small))
+        .child(
+            Label::new(i18n::translate_in(cx, "Default reasoning effort")).size(LabelSize::Small),
+        )
         .child(
             DropdownMenu::new(
                 ElementId::Name(format!("reasoning-effort-selector-{index}").into()),
@@ -1006,7 +1042,7 @@ fn render_reasoning_effort_selector(
             .style(DropdownStyle::Outlined)
             .trigger_size(ButtonSize::Compact)
             .full_width(true)
-            .aria_label("Default reasoning effort"),
+            .aria_label(i18n::translate_in(cx, "Default reasoning effort")),
         )
 }
 
@@ -1028,19 +1064,22 @@ fn render_form_actions(cx: &mut Context<SettingsWindow>) -> impl IntoElement {
         .gap_1()
         .justify_end()
         .child(
-            Button::new("llm-provider-form-cancel", "Cancel").on_click(cx.listener(
-                |this, _, window, cx| {
+            Button::new("llm-provider-form-cancel", i18n::translate_in(cx, "Cancel")).on_click(
+                cx.listener(|this, _, window, cx| {
                     this.llm_provider_form = None;
                     this.pop_sub_page(window, cx);
-                },
-            )),
+                }),
+            ),
         )
         .child(
-            Button::new("llm-provider-form-save", "Save Provider")
-                .style(ButtonStyle::Filled)
-                .on_click(cx.listener(|this, _, window, cx| {
-                    save_llm_provider_form(this, window, cx);
-                })),
+            Button::new(
+                "llm-provider-form-save",
+                i18n::translate_in(cx, "Save Provider"),
+            )
+            .style(ButtonStyle::Filled)
+            .on_click(cx.listener(|this, _, window, cx| {
+                save_llm_provider_form(this, window, cx);
+            })),
         )
 }
 
