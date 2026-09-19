@@ -10312,13 +10312,11 @@ pub async fn apply_restored_multiworkspace_state(
             .ok();
     }
 
-    if *sidebar_open {
-        window_handle
-            .update(cx, |multi_workspace, _, cx| {
-                multi_workspace.restore_open_sidebar(cx);
-            })
-            .ok();
-    }
+    window_handle
+        .update(cx, |multi_workspace, _, cx| {
+            multi_workspace.restore_sidebar_open(*sidebar_open, cx);
+        })
+        .ok();
 
     if let Some(sidebar_state) = sidebar_state {
         window_handle

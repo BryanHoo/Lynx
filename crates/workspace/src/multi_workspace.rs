@@ -19,7 +19,7 @@ use util::ResultExt;
 use util::path_list::PathList;
 use zed_actions::agents_sidebar::ToggleThreadSwitcher;
 
-use agent_settings::AgentSettings;
+use agent_settings::{AgentSettings, WindowLayout};
 use settings::SidebarDockPosition;
 use ui::{ContextMenu, right_click_menu};
 
@@ -339,6 +339,9 @@ impl MultiWorkspace {
     }
 
     pub fn new(workspace: Entity<Workspace>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        // Agentic 工作台首次创建时直接展示项目与任务，后续仍由持久化状态接管。
+        let sidebar_open = AgentSettings::get_global(cx).threads_sidebar_auto_open
+            && matches!(AgentSettings::get_layout(cx), WindowLayout::Agent(_));
         let release_subscription = cx.on_release(|this: &mut MultiWorkspace, _cx| {
             if let Some(task) = this._serialize_task.take() {
                 task.detach();
@@ -351,12 +354,23 @@ impl MultiWorkspace {
             let mut previous_multi_workspace_enabled = !DisableAiSettings::get_global(cx)
                 .disable_ai
                 && AgentSettings::get_global(cx).enabled;
+            let mut previous_agent_layout =
+                matches!(AgentSettings::get_layout(cx), WindowLayout::Agent(_));
             move |this, window, cx| {
                 let multi_workspace_enabled = this.multi_workspace_enabled(cx);
                 if previous_multi_workspace_enabled && !multi_workspace_enabled {
                     this.collapse_to_single_workspace(window, cx);
                 }
+                let agent_layout = matches!(AgentSettings::get_layout(cx), WindowLayout::Agent(_));
+                if multi_workspace_enabled
+                    && !previous_agent_layout
+                    && agent_layout
+                    && AgentSettings::get_global(cx).threads_sidebar_auto_open
+                {
+                    this.apply_open_sidebar(cx);
+                }
                 previous_multi_workspace_enabled = multi_workspace_enabled;
+                previous_agent_layout = agent_layout;
             }
         });
         Self::subscribe_to_workspace(&workspace, window, cx);
@@ -365,7 +379,7 @@ impl MultiWorkspace {
         workspace.update(cx, |workspace, cx| {
             workspace.set_multi_workspace(weak_self, active_workspace_id.clone(), cx);
         });
-        Self {
+        let mut multi_workspace = Self {
             window_id: window.window_handle().window_id(),
             held: vec![HeldWorkspace {
                 workspace,
@@ -375,13 +389,18 @@ impl MultiWorkspace {
             project_groups: Vec::new(),
             active_workspace_id,
             sidebar: None,
-            sidebar_open: false,
+            sidebar_open,
             sidebar_overlay: None,
             pending_removal_tasks: Vec::new(),
             _serialize_task: None,
             _subscriptions: vec![release_subscription, settings_subscription],
             previous_focus_handle: None,
+        };
+        if sidebar_open {
+            let project_group = multi_workspace.workspace().read(cx).project_group_key(cx);
+            multi_workspace.pin(0, project_group, cx);
         }
+        multi_workspace
     }
 
     pub fn register_sidebar<T: Sidebar>(&mut self, sidebar: Entity<T>, cx: &mut Context<Self>) {
@@ -396,6 +415,17 @@ impl MultiWorkspace {
                 }
             }));
         self.sidebar = Some(Box::new(sidebar));
+        if self.sidebar_open {
+            let focus_handle = self
+                .sidebar
+                .as_ref()
+                .map(|sidebar| sidebar.focus_handle(cx));
+            for workspace in self.workspaces().cloned().collect::<Vec<_>>() {
+                workspace.update(cx, |workspace, _cx| {
+                    workspace.set_sidebar_focus_handle(focus_handle.clone());
+                });
+            }
+        }
     }
 
     pub fn sidebar(&self) -> Option<&dyn SidebarHandle> {
@@ -493,10 +523,20 @@ impl MultiWorkspace {
         self.apply_open_sidebar(cx);
     }
 
-    /// Restores the sidebar to open state from persisted session data without
-    /// firing a telemetry event, since this is not a user-initiated action.
-    pub(crate) fn restore_open_sidebar(&mut self, cx: &mut Context<Self>) {
-        self.apply_open_sidebar(cx);
+    /// Restores the exact persisted sidebar state without recording a user action.
+    pub(crate) fn restore_sidebar_open(&mut self, open: bool, cx: &mut Context<Self>) {
+        if open {
+            self.apply_open_sidebar(cx);
+            return;
+        }
+
+        self.sidebar_open = false;
+        for workspace in self.workspaces().cloned().collect::<Vec<_>>() {
+            workspace.update(cx, |workspace, _cx| {
+                workspace.set_sidebar_focus_handle(None);
+            });
+        }
+        cx.notify();
     }
 
     fn apply_open_sidebar(&mut self, cx: &mut Context<Self>) {

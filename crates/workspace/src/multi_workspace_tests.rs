@@ -5,7 +5,7 @@ use crate::item::test::TestItem;
 use agent_settings::AgentSettings;
 use client::proto;
 use fs::{FakeFs, Fs};
-use gpui::{TestAppContext, VisualTestContext};
+use gpui::{TestAppContext, UpdateGlobal, VisualTestContext};
 use project::DisableAiSettings;
 use serde_json::json;
 use settings::{Settings, SettingsStore};
@@ -17,6 +17,14 @@ fn init_test(cx: &mut TestAppContext) {
         cx.set_global(settings_store);
         theme_settings::init(theme::LoadThemes::JustBase, cx);
         DisableAiSettings::register(cx);
+    });
+}
+
+fn disable_sidebar_auto_open(cx: &mut TestAppContext) {
+    cx.update(|cx| {
+        let mut settings = AgentSettings::get_global(cx).clone();
+        settings.threads_sidebar_auto_open = false;
+        AgentSettings::override_global(settings, cx);
     });
 }
 
@@ -44,6 +52,118 @@ fn setup_multi_workspace<'a>(
     cx.run_until_parked();
 
     (multi_workspace, cx)
+}
+
+#[gpui::test]
+async fn test_agent_layout_opens_sidebar_by_default(cx: &mut TestAppContext) {
+    init_test(cx);
+    let fs = FakeFs::new(cx.executor());
+    let project = Project::test(fs, [], cx).await;
+
+    let (multi_workspace, cx) =
+        cx.add_window_view(|window, cx| MultiWorkspace::test_new(project, window, cx));
+
+    multi_workspace.read_with(cx, |multi_workspace, _cx| {
+        assert!(
+            multi_workspace.sidebar_open(),
+            "Agentic 布局应默认打开 Threads Sidebar"
+        );
+    });
+}
+
+#[gpui::test]
+async fn test_default_open_sidebar_contains_active_project(cx: &mut TestAppContext) {
+    init_test(cx);
+    let fs = FakeFs::new(cx.executor());
+    fs.insert_tree("/project", json!({ "file.txt": "" })).await;
+    let project = Project::test(fs, ["/project".as_ref()], cx).await;
+
+    let (multi_workspace, cx) =
+        cx.add_window_view(|window, cx| MultiWorkspace::test_new(project, window, cx));
+
+    multi_workspace.read_with(cx, |multi_workspace, _cx| {
+        assert_eq!(
+            multi_workspace.project_group_keys().len(),
+            1,
+            "默认打开的 Threads Sidebar 应立即包含当前项目"
+        );
+    });
+}
+
+#[gpui::test]
+async fn test_restored_closed_sidebar_overrides_agent_layout_default(cx: &mut TestAppContext) {
+    init_test(cx);
+    let fs = FakeFs::new(cx.executor());
+    let project = Project::test(fs, [], cx).await;
+
+    let (multi_workspace, cx) =
+        cx.add_window_view(|window, cx| MultiWorkspace::test_new(project, window, cx));
+
+    multi_workspace.update(cx, |multi_workspace, cx| {
+        multi_workspace.restore_sidebar_open(false, cx);
+    });
+
+    multi_workspace.read_with(cx, |multi_workspace, _cx| {
+        assert!(
+            !multi_workspace.sidebar_open(),
+            "持久化的关闭状态应覆盖 Agentic 默认值"
+        );
+    });
+}
+
+#[gpui::test]
+async fn test_switching_to_agent_layout_opens_sidebar(cx: &mut TestAppContext) {
+    init_test(cx);
+    cx.update(|cx| {
+        SettingsStore::update_global(cx, |store, cx| {
+            store
+                .set_user_settings(
+                    r#"{
+                        "agent": { "dock": "right" },
+                        "project_panel": { "dock": "left" },
+                        "outline_panel": { "dock": "left" },
+                        "git_panel": { "dock": "left" }
+                    }"#,
+                    cx,
+                )
+                .unwrap();
+        });
+    });
+    let fs = FakeFs::new(cx.executor());
+    let project = Project::test(fs, [], cx).await;
+    let (multi_workspace, cx) =
+        cx.add_window_view(|window, cx| MultiWorkspace::test_new(project, window, cx));
+
+    multi_workspace.read_with(cx, |multi_workspace, _cx| {
+        assert!(
+            !multi_workspace.sidebar_open(),
+            "Editor 布局应保持 Threads Sidebar 关闭"
+        );
+    });
+
+    cx.update(|_window, cx| {
+        SettingsStore::update_global(cx, |store, cx| {
+            store
+                .set_user_settings(
+                    r#"{
+                        "agent": { "dock": "left" },
+                        "project_panel": { "dock": "right" },
+                        "outline_panel": { "dock": "right" },
+                        "git_panel": { "dock": "right" }
+                    }"#,
+                    cx,
+                )
+                .unwrap();
+        });
+    });
+    cx.run_until_parked();
+
+    multi_workspace.read_with(cx, |multi_workspace, _cx| {
+        assert!(
+            multi_workspace.sidebar_open(),
+            "切换到 Agentic 布局应打开 Threads Sidebar"
+        );
+    });
 }
 
 #[gpui::test]
@@ -274,6 +394,7 @@ async fn test_move_active_project_group_actions(cx: &mut TestAppContext) {
 #[gpui::test]
 async fn test_open_new_window_does_not_open_sidebar_on_existing_window(cx: &mut TestAppContext) {
     init_test(cx);
+    disable_sidebar_auto_open(cx);
 
     let app_state = cx.update(AppState::test);
     let fs = app_state.fs.as_fake();
@@ -406,6 +527,7 @@ async fn test_open_directory_in_existing_window_respects_auto_open_setting(
 #[gpui::test]
 async fn test_open_directory_in_empty_workspace_does_not_open_sidebar(cx: &mut TestAppContext) {
     init_test(cx);
+    disable_sidebar_auto_open(cx);
 
     let app_state = cx.update(AppState::test);
     let fs = app_state.fs.as_fake();
@@ -548,6 +670,7 @@ async fn test_find_or_create_local_workspace_reuses_active_workspace_when_sideba
     cx: &mut TestAppContext,
 ) {
     init_test(cx);
+    disable_sidebar_auto_open(cx);
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree("/root_a", json!({ "file.txt": "" })).await;
     let project = Project::test(fs, ["/root_a".as_ref()], cx).await;
@@ -1072,6 +1195,7 @@ async fn test_remove_project_group_opens_unloaded_local_neighbor(cx: &mut TestAp
 #[gpui::test]
 async fn test_remove_project_group_replaces_unretained_active_workspace(cx: &mut TestAppContext) {
     init_test(cx);
+    disable_sidebar_auto_open(cx);
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree("/project-a", json!({})).await;
 
@@ -1149,6 +1273,7 @@ async fn test_switching_projects_with_sidebar_closed_retains_old_active_workspac
     cx: &mut TestAppContext,
 ) {
     init_test(cx);
+    disable_sidebar_auto_open(cx);
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree("/root_a", json!({ "file_a.txt": "" })).await;
     fs.insert_tree("/root_b", json!({ "file_b.txt": "" })).await;

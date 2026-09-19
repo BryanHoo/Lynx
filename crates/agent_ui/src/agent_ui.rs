@@ -42,7 +42,7 @@ use std::sync::Arc;
 
 use ::ui::IconName;
 use agent_client_protocol::schema::v1 as acp;
-use agent_settings::{AgentProfileId, AgentSettings};
+use agent_settings::{AgentProfileId, AgentSettings, WindowLayout};
 use command_palette_hooks::CommandPaletteFilter;
 use editor::{Editor, SelectionEffects, scroll::Autoscroll};
 use feature_flags::FeatureFlagAppExt as _;
@@ -184,7 +184,7 @@ pub(crate) fn open_abs_path_at_point(
 }
 
 pub const DEFAULT_THREAD_TITLE: &str = "New Agent Thread";
-const PARALLEL_AGENT_LAYOUT_BACKFILL_KEY: &str = "parallel_agent_layout_backfilled";
+const DEFAULT_AGENT_LAYOUT_MIGRATION_KEY: &str = "lynx_default_agent_layout_v1";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AgentThreadSource {
@@ -709,7 +709,7 @@ pub fn init(
         rules_to_skills_migration::migrate_rules_to_skills_if_needed(fs.clone(), cx);
     }
 
-    maybe_backfill_editor_layout(fs, is_new_install, cx);
+    maybe_migrate_default_agent_layout(fs, is_new_install, cx);
 }
 
 fn rerun_rules_to_skills_migration(
@@ -761,21 +761,25 @@ fn show_rules_to_skills_migration_toast(
     }
 }
 
-fn maybe_backfill_editor_layout(fs: Arc<dyn Fs>, is_new_install: bool, cx: &mut App) {
+fn maybe_migrate_default_agent_layout(fs: Arc<dyn Fs>, is_new_install: bool, cx: &mut App) {
     let kvp = db::kvp::KeyValueStore::global(cx);
-    let already_backfilled =
-        util::ResultExt::log_err(kvp.read_kvp(PARALLEL_AGENT_LAYOUT_BACKFILL_KEY))
+    let already_migrated =
+        util::ResultExt::log_err(kvp.read_kvp(DEFAULT_AGENT_LAYOUT_MIGRATION_KEY))
             .flatten()
             .is_some();
 
-    if !already_backfilled {
-        if !is_new_install {
-            AgentSettings::backfill_editor_layout(fs, cx);
-        }
+    if !already_migrated {
+        // 只迁移完整的旧 Editor 预设，保留用户已经组合出的 Custom 布局。
+        let migration = (!is_new_install
+            && matches!(AgentSettings::get_layout(cx), WindowLayout::Editor(_)))
+        .then(|| AgentSettings::set_layout(WindowLayout::agent(), fs, cx));
 
         db::write_and_log(cx, move || async move {
+            if let Some(migration) = migration {
+                migration.await??;
+            }
             kvp.write_kvp(
-                PARALLEL_AGENT_LAYOUT_BACKFILL_KEY.to_string(),
+                DEFAULT_AGENT_LAYOUT_MIGRATION_KEY.to_string(),
                 "1".to_string(),
             )
             .await
@@ -930,7 +934,7 @@ mod tests {
     use command_palette_hooks::CommandPaletteFilter;
     use db::kvp::KeyValueStore;
     use editor::actions::AcceptEditPrediction;
-    use gpui::{BorrowAppContext, TestAppContext, px};
+    use gpui::{BorrowAppContext, TestAppContext, UpdateGlobal, px};
     use project::DisableAiSettings;
     use settings::{
         DockPosition, NotifyWhenAgentWaiting, PlaySoundWhenAgentDone, Settings, SettingsStore,
@@ -1135,7 +1139,7 @@ mod tests {
         });
     }
 
-    async fn setup_backfill_test(cx: &mut TestAppContext) -> Arc<dyn Fs> {
+    async fn setup_layout_migration_test(cx: &mut TestAppContext) -> Arc<dyn Fs> {
         let fs = fs::FakeFs::new(cx.background_executor.clone());
         fs.save(
             paths::settings_file().as_path(),
@@ -1158,44 +1162,46 @@ mod tests {
     }
 
     #[gpui::test]
-    async fn test_backfill_sets_kvp_flag(cx: &mut TestAppContext) {
-        let fs = setup_backfill_test(cx).await;
+    async fn test_default_agent_layout_migration_sets_kvp_flag(cx: &mut TestAppContext) {
+        let fs = setup_layout_migration_test(cx).await;
 
         cx.update(|cx| {
             let kvp = KeyValueStore::global(cx);
             assert!(
-                kvp.read_kvp(PARALLEL_AGENT_LAYOUT_BACKFILL_KEY)
+                kvp.read_kvp(DEFAULT_AGENT_LAYOUT_MIGRATION_KEY)
                     .unwrap()
                     .is_none()
             );
 
-            maybe_backfill_editor_layout(fs.clone(), false, cx);
+            maybe_migrate_default_agent_layout(fs.clone(), false, cx);
         });
 
         cx.run_until_parked();
 
         let kvp = cx.update(|cx| KeyValueStore::global(cx));
         assert!(
-            kvp.read_kvp(PARALLEL_AGENT_LAYOUT_BACKFILL_KEY)
+            kvp.read_kvp(DEFAULT_AGENT_LAYOUT_MIGRATION_KEY)
                 .unwrap()
                 .is_some(),
-            "flag should be set after backfill"
+            "flag should be set after migration"
         );
     }
 
     #[gpui::test]
-    async fn test_backfill_new_install_sets_flag_without_writing_settings(cx: &mut TestAppContext) {
-        let fs = setup_backfill_test(cx).await;
+    async fn test_default_agent_layout_migration_does_not_write_new_install_settings(
+        cx: &mut TestAppContext,
+    ) {
+        let fs = setup_layout_migration_test(cx).await;
 
         cx.update(|cx| {
-            maybe_backfill_editor_layout(fs.clone(), true, cx);
+            maybe_migrate_default_agent_layout(fs.clone(), true, cx);
         });
 
         cx.run_until_parked();
 
         let kvp = cx.update(|cx| KeyValueStore::global(cx));
         assert!(
-            kvp.read_kvp(PARALLEL_AGENT_LAYOUT_BACKFILL_KEY)
+            kvp.read_kvp(DEFAULT_AGENT_LAYOUT_MIGRATION_KEY)
                 .unwrap()
                 .is_some(),
             "flag should be set even for new installs"
@@ -1206,11 +1212,11 @@ mod tests {
     }
 
     #[gpui::test]
-    async fn test_backfill_is_idempotent(cx: &mut TestAppContext) {
-        let fs = setup_backfill_test(cx).await;
+    async fn test_default_agent_layout_migration_is_idempotent(cx: &mut TestAppContext) {
+        let fs = setup_layout_migration_test(cx).await;
 
         cx.update(|cx| {
-            maybe_backfill_editor_layout(fs.clone(), false, cx);
+            maybe_migrate_default_agent_layout(fs.clone(), false, cx);
         });
 
         cx.run_until_parked();
@@ -1218,7 +1224,7 @@ mod tests {
         let after_first = fs.load(paths::settings_file().as_path()).await.unwrap();
 
         cx.update(|cx| {
-            maybe_backfill_editor_layout(fs.clone(), false, cx);
+            maybe_migrate_default_agent_layout(fs.clone(), false, cx);
         });
 
         cx.run_until_parked();
@@ -1228,6 +1234,74 @@ mod tests {
             after_first, after_second,
             "second call should not change settings"
         );
+    }
+
+    #[gpui::test]
+    async fn test_default_agent_layout_migration_replaces_editor_layout(cx: &mut TestAppContext) {
+        let fs = setup_layout_migration_test(cx).await;
+        let editor_settings = r#"{
+            "agent": { "dock": "right" },
+            "project_panel": { "dock": "left" },
+            "outline_panel": { "dock": "left" },
+            "git_panel": { "dock": "left" }
+        }"#;
+        fs.save(
+            paths::settings_file().as_path(),
+            &editor_settings.into(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+
+        cx.update(|cx| {
+            SettingsStore::update_global(cx, |store, cx| {
+                store.set_user_settings(editor_settings, cx).unwrap();
+            });
+            maybe_migrate_default_agent_layout(fs.clone(), false, cx);
+        });
+        cx.run_until_parked();
+
+        let written = fs.load(paths::settings_file().as_path()).await.unwrap();
+        cx.update(|cx| {
+            SettingsStore::update_global(cx, |store, cx| {
+                store.set_user_settings(&written, cx).unwrap();
+            });
+            assert!(matches!(
+                AgentSettings::get_layout(cx),
+                WindowLayout::Agent(_)
+            ));
+        });
+    }
+
+    #[gpui::test]
+    async fn test_default_agent_layout_migration_preserves_custom_layout(cx: &mut TestAppContext) {
+        let fs = setup_layout_migration_test(cx).await;
+        let custom_settings = r#"{
+            "agent": { "dock": "left" },
+            "project_panel": { "dock": "left" }
+        }"#;
+        fs.save(
+            paths::settings_file().as_path(),
+            &custom_settings.into(),
+            Default::default(),
+        )
+        .await
+        .unwrap();
+
+        cx.update(|cx| {
+            SettingsStore::update_global(cx, |store, cx| {
+                store.set_user_settings(custom_settings, cx).unwrap();
+            });
+            maybe_migrate_default_agent_layout(fs.clone(), false, cx);
+        });
+        cx.run_until_parked();
+
+        cx.update(|cx| {
+            assert!(matches!(
+                AgentSettings::get_layout(cx),
+                WindowLayout::Custom(_)
+            ));
+        });
     }
 
     #[test]

@@ -48,7 +48,7 @@ use crate::{
     },
     ui::{AgentNotification, AgentNotificationEvent},
 };
-use agent_settings::AgentSettings;
+use agent_settings::{AgentSettings, WindowLayout};
 use anyhow::{Context as _, Result, anyhow};
 use chrono::{DateTime, Utc};
 use collections::HashMap;
@@ -4937,6 +4937,10 @@ impl Panel for AgentPanel {
         AGENT_PANEL_KEY
     }
 
+    fn starts_open(&self, _: &Window, cx: &App) -> bool {
+        matches!(AgentSettings::get_layout(cx), WindowLayout::Agent(_))
+    }
+
     fn activation_focus_handle(&self, cx: &App) -> FocusHandle {
         match self.visible_surface() {
             VisibleSurface::Uninitialized => self.focus_handle.clone(),
@@ -9163,6 +9167,16 @@ mod tests {
         // Lines are 1-based and inclusive; the path is presented as
         // `<rel-path>:<start>-<end>`, with a trailing space.
         assert_eq!(pasted, "file.rs:2-3 ");
+    }
+
+    #[gpui::test]
+    async fn agent_panel_starts_open_in_agent_layout(cx: &mut TestAppContext) {
+        let (panel, mut cx) = setup_panel(cx).await;
+
+        let starts_open =
+            panel.update_in(&mut cx, |panel, window, cx| panel.starts_open(window, cx));
+
+        assert!(starts_open, "Agentic 布局应默认打开 AgentPanel");
     }
 
     async fn setup_panel(cx: &mut TestAppContext) -> (Entity<AgentPanel>, VisualTestContext) {
