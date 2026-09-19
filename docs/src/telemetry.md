@@ -5,11 +5,11 @@ description: "What data Lynx collects and how to control telemetry settings."
 
 # Telemetry in Lynx
 
-Lynx collects anonymous telemetry to understand usage patterns and diagnose issues.
+Lynx collects anonymous telemetry to understand usage patterns.
 
 Telemetry falls into two categories:
 
-- **Client-side**: Usage metrics and crash reports. You can disable these in settings.
+- **Client-side**: Usage metrics. You can disable these in settings.
 - **Server-side**: Collected when using hosted services like AI or Collaboration. Required for these features to function.
 
 ## Configuring Telemetry Settings
@@ -19,7 +19,6 @@ To enable or disable some or all telemetry types, open Settings ({#kb zed::OpenS
 
 ```json [settings]
 "telemetry": {
-    "diagnostics": false,
     "metrics": false
 },
 ```
@@ -28,8 +27,7 @@ To enable or disable some or all telemetry types, open Settings ({#kb zed::OpenS
 
 Telemetry is sent from the application to our servers every 5 minutes (or when 50 events accumulate), then routed to the appropriate service. We currently use:
 
-- [Sentry](https://sentry.io): Crash-monitoring service - stores diagnostic events
-- [Snowflake](https://snowflake.com): Data warehouse - stores both diagnostic and metric events
+- [Snowflake](https://snowflake.com): Data warehouse - stores metric events
 - [Hex](https://www.hex.tech): Dashboards and data exploration - accesses data stored in Snowflake
 - [Amplitude](https://www.amplitude.com): Dashboards and data exploration - accesses data stored in Snowflake
 
@@ -60,13 +58,13 @@ For the full list of event types, see the `Event` enum in [telemetry_events.rs](
 
 ### Server-Side Metrics
 
-When using Lynx's hosted services, we collect metadata for rate limiting and billing (e.g., token usage). Lynx does not store your prompts or code unless you explicitly share feedback or opt into Edit Prediction training data collection.
+When using Lynx's hosted services, we collect metadata for rate limiting and billing (e.g., token usage). Lynx does not store your prompts or code.
 
-For details on AI request paths and opt-in data sharing, see [AI Privacy](./ai/privacy-and-security.md) and [Feedback and Training Data](./ai/ai-improvement.md).
+For details on AI request paths, see [AI Privacy](./ai/privacy-and-security.md).
 
 ## Lynx Business
 
-Administrators on Lynx Business can enforce a no-sharing policy org-wide; members can't opt into [Edit Prediction training data sharing](./ai/ai-improvement.md#edit-predictions) or [AI feedback ratings](./ai/ai-improvement.md#ai-feedback-with-ratings). See [Data Sharing](./business/admin-controls.md#data-sharing) in Admin Controls.
+Administrators on Lynx Business can control hosted AI access for the organization. See [Admin Controls](./business/admin-controls.md).
 
 <!-- TODO: link to telemetry org-wide disable control once it ships (currently planned for a future release) -->
 

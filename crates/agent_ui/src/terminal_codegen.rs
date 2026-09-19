@@ -130,12 +130,6 @@ impl TerminalCodegen {
         cx.notify();
     }
 
-    pub fn completion(&self) -> Option<String> {
-        self.transaction
-            .as_ref()
-            .map(|transaction| transaction.completion.clone())
-    }
-
     pub fn stop(&mut self, cx: &mut Context<Self>) {
         self.status = CodegenStatus::Done;
         self.generation = Task::ready(());

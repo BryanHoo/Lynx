@@ -1,4 +1,3 @@
-use auto_update::DismissMessage;
 use editor::Editor;
 use extension_host::{ExtensionOperation, ExtensionStore};
 use futures::StreamExt;
@@ -31,6 +30,8 @@ pub const DEFERRED_SCAN_MESSAGE_TIMEOUT: Duration = Duration::from_secs(10);
 actions!(
     activity_indicator,
     [
+        /// Dismisses the current activity status message.
+        DismissMessage,
         /// Displays error messages from language servers in the status bar.
         ShowErrorMessage
     ]

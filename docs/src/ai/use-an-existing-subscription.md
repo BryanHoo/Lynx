@@ -14,7 +14,7 @@ Some subscriptions work as Lynx model providers. Others are used through an Exte
 | Lynx Pro, Business, or Student | [Lynx-hosted models](../account/zed-hosted-models.md) | No                                    | No                             | Billed through Lynx                                               |
 | ChatGPT Plus / Pro            | ChatGPT Subscription                                 | Codex where supported                 | Codex CLI                      | Sign in with OpenAI in Lynx; separate from OpenAI API keys        |
 | Claude Pro / Max              | No direct Lynx LLM provider path                      | Claude Agent                          | Claude Code                    | Separate from Anthropic API keys                                 |
-| GitHub Copilot                | GitHub Copilot Chat; Copilot edit prediction         | Copilot agent where available         | CLI where available            | Requires Copilot/Copilot Chat auth                               |
+| GitHub Copilot                | No direct Lynx LLM provider path                     | Copilot agent where available         | CLI where available            | Use the ACP agent or CLI                                         |
 | OpenCode Zen / Go             | OpenCode provider                                    | OpenCode agent where available        | `opencode` CLI                 | Requires OpenCode API key; subscription affects available models |
 | Cursor subscription           | No Lynx LLM provider path                             | Cursor External Agent where available | Cursor CLI/TUI where available | Use agent/CLI paths instead of Lynx LLM provider settings         |
 
@@ -34,9 +34,7 @@ See [What Anthropic's New Claude Billing Means for Lynx Users](https://zed.dev/b
 
 ## GitHub Copilot {#github-copilot}
 
-GitHub Copilot can be used as a Copilot Chat model provider for Lynx AI features where supported. Copilot can also be used for [Edit Prediction](./edit-prediction.md).
-
-If you use a Copilot agent or CLI, that setup is owned by Copilot. See [External Agents](./external-agents.md) and [Terminal Threads](./terminal-threads.md).
+Use Copilot through an ACP External Agent or its CLI. Authentication and model behavior are owned by Copilot. See [External Agents](./external-agents.md) and [Terminal Threads](./terminal-threads.md).
 
 ## OpenCode Zen / Go {#opencode}
 

@@ -11,7 +11,7 @@ Use [Terminal Threads](./terminal-threads.md) instead when you want to run a CLI
 
 External Agents run through their own process and provider relationship. Billing, legal terms, retention, and data handling are between you and the agent provider. Lynx does not charge for External Agents.
 
-For Lynx-hosted models and Lynx-managed AI features, see [AI Privacy](./privacy-and-security.md) and [Feedback and Training Data](./ai-improvement.md).
+For Lynx-hosted models and Lynx-managed AI features, see [AI Privacy](./privacy-and-security.md).
 
 ## Install from the ACP Registry {#registry}
 
@@ -70,7 +70,7 @@ Install OpenCode from the [ACP Registry](#registry), then start an OpenCode thre
 
 Use Copilot External Agents where available when you want Copilot running as an ACP-integrated External Agent in Lynx.
 
-Copilot agent auth is owned by the Copilot integration. To use Copilot Chat models in Lynx Agent or Copilot for edit prediction, see [Use an Existing Subscription](./use-an-existing-subscription.md#github-copilot).
+Copilot agent auth and model behavior are owned by the Copilot integration. See [Use an Existing Subscription](./use-an-existing-subscription.md#github-copilot).
 
 ## Cursor {#cursor}
 

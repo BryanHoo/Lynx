@@ -61,7 +61,6 @@ pub struct Organization {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrganizationConfiguration {
     pub is_zed_model_provider_enabled: bool,
-    pub is_agent_thread_feedback_enabled: bool,
     pub is_collaboration_enabled: bool,
     pub edit_prediction: OrganizationEditPredictionConfiguration,
 }
@@ -93,37 +92,6 @@ pub struct UpdateSystemSettingsBody {
 #[derive(Debug, Default, PartialEq, Clone, Serialize, Deserialize)]
 pub struct SystemSettings {
     pub selected_organization_id: Option<OrganizationId>,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubmitAgentThreadFeedbackBody {
-    pub organization_id: Option<OrganizationId>,
-    pub agent: String,
-    pub session_id: String,
-    pub parent_session_id: Option<String>,
-    pub rating: String,
-    pub thread: serde_json::Value,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubmitAgentThreadFeedbackCommentsBody {
-    pub organization_id: Option<OrganizationId>,
-    pub agent: String,
-    pub session_id: String,
-    pub comments: String,
-    pub thread: serde_json::Value,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubmitEditPredictionFeedbackBody {
-    pub organization_id: Option<OrganizationId>,
-    pub request_id: String,
-    pub rating: String,
-    pub inputs: serde_json::Value,
-    pub output: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expected_output: Option<String>,
-    pub feedback: String,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]

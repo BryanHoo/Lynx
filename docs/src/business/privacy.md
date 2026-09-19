@@ -1,38 +1,21 @@
 ---
 title: Privacy for Business - Lynx Business
-description: How Lynx Business handles data privacy across your organization, including enforced protections for prompts and training data.
+description: How Lynx Business handles data privacy across your organization.
 ---
 
 # Privacy for Business
 
-Lynx Business removes the per-member data-sharing options that Free and Pro
-expose. These protections are on by default for every Business organization.
-Administrators can adjust them from
-[Admin Controls](./admin-controls.md); individual members can't opt in or out.
+Lynx Business applies organization-wide privacy controls. Administrators can
+adjust them from [Admin Controls](./admin-controls.md).
 
 ## What's enforced by default
 
 For all members of a Lynx Business organization:
 
-- **No prompt sharing:** Conversations and prompts are never shared with Lynx.
-  Members can't opt into
-  [AI feedback via ratings](../ai/ai-improvement.md#ai-feedback-with-ratings).
-  Administrators can enable Agent Thread Feedback to allow this.
-- **No training data sharing:** Code context is never shared with Lynx for
-  [Edit Prediction model training](../ai/ai-improvement.md#edit-predictions).
-  Members can't opt in individually. Administrators can enable Edit Prediction
-  Feedback to allow this.
+- **No prompt sharing:** Conversations and prompts are not submitted as feedback.
+- **No training data sharing:** Code context is not submitted for model training.
 
 These protections are enforced server-side and apply to all org members.
-
-## How individual plans differ
-
-On Free and Pro, data sharing is opt-in:
-
-- Members can rate AI responses, which shares that conversation with Lynx.
-- Members can opt into Edit Prediction training data collection for open source projects.
-
-Neither option is available to Lynx Business members.
 
 ## What data still leaves the organization
 
@@ -47,8 +30,6 @@ Administrators have additional options in [Admin Controls](./admin-controls.md):
 - Disable Lynx-hosted models entirely via the Lynx Model Provider toggle, so no
   prompts reach Lynx's infrastructure
 - Disable Edit Predictions org-wide
-- Disable Edit Prediction Feedback
-- Disable Agent Thread Feedback
 - Disable real-time collaboration
 
 See [Admin Controls](./admin-controls.md) for the full list.

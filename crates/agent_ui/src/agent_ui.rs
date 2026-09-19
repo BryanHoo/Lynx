@@ -273,10 +273,6 @@ actions!(
         RejectOnce,
         /// Follows the agent's suggestions.
         Follow,
-        /// Resets the trial upsell notification.
-        ResetTrialUpsell,
-        /// Resets the trial end upsell notification.
-        ResetTrialEndUpsell,
         /// Re-enables the fast mode warning for every provider and model.
         ResetFastModeWarnings,
         /// Opens the "Add Context" menu in the message editor.
@@ -820,12 +816,9 @@ fn update_command_palette_filter(cx: &mut App) {
             filter.hide_namespace("agent");
             filter.hide_namespace("agents");
             filter.hide_namespace("assistant");
-            filter.hide_namespace("copilot");
-            filter.hide_namespace("zed_predict_onboarding");
             filter.hide_namespace("edit_prediction");
 
             filter.hide_action_types(&edit_prediction_actions);
-            filter.hide_action_types(&[TypeId::of::<zed_actions::OpenZedPredictOnboarding>()]);
         } else {
             if agent_enabled {
                 filter.show_namespace("agent");
@@ -840,27 +833,13 @@ fn update_command_palette_filter(cx: &mut App) {
             match edit_prediction_provider {
                 EditPredictionProvider::None => {
                     filter.hide_namespace("edit_prediction");
-                    filter.hide_namespace("copilot");
                     filter.hide_action_types(&edit_prediction_actions);
                 }
-                EditPredictionProvider::Copilot => {
+                EditPredictionProvider::Ollama | EditPredictionProvider::OpenAiCompatibleApi => {
                     filter.show_namespace("edit_prediction");
-                    filter.show_namespace("copilot");
-                    filter.show_action_types(edit_prediction_actions.iter());
-                }
-                EditPredictionProvider::Zed
-                | EditPredictionProvider::Codestral
-                | EditPredictionProvider::Ollama
-                | EditPredictionProvider::OpenAiCompatibleApi
-                | EditPredictionProvider::Mercury => {
-                    filter.show_namespace("edit_prediction");
-                    filter.hide_namespace("copilot");
                     filter.show_action_types(edit_prediction_actions.iter());
                 }
             }
-
-            filter.show_namespace("zed_predict_onboarding");
-            filter.show_action_types(&[TypeId::of::<zed_actions::OpenZedPredictOnboarding>()]);
 
             filter.show_namespace("multi_workspace");
         }
@@ -999,7 +978,6 @@ mod tests {
                 enabled: false,
                 threshold: agent_settings::AutoCompactThreshold::DEFAULT,
             },
-            enable_feedback: false,
             expand_edit_card: true,
             expand_terminal_card: true,
             terminal_init_command: None,
@@ -1089,7 +1067,7 @@ mod tests {
         });
 
         // Test EditPredictionProvider
-        // Enable EditPredictionProvider::Copilot
+        // Enable a local edit prediction provider.
         cx.update(|cx| {
             cx.update_global::<SettingsStore, _>(|store, cx| {
                 store.update_user_settings(cx, |s| {
@@ -1097,7 +1075,7 @@ mod tests {
                         .all_languages
                         .edit_predictions
                         .get_or_insert(Default::default())
-                        .provider = Some(EditPredictionProvider::Copilot);
+                        .provider = Some(EditPredictionProvider::Ollama);
                 });
             });
             update_command_palette_filter(cx);
@@ -1107,7 +1085,7 @@ mod tests {
             let filter = CommandPaletteFilter::try_global(cx).unwrap();
             assert!(
                 !filter.is_hidden(&AcceptEditPrediction),
-                "EditPrediction should be visible when provider is Copilot"
+                "EditPrediction should be visible when a local provider is enabled"
             );
         });
 

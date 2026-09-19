@@ -25,13 +25,3 @@ The **Lynx Model Provider** toggle controls whether members can use Lynx's [host
 ## Edit Predictions
 
 The **Edit Prediction** toggle controls whether members can use Lynx's hosted [Edit Predictions](../ai/edit-prediction.md) via the Zeta model family. Members using third-party providers or local models for edit predictions are not affected.
-
-**Edit Prediction Feedback** controls whether members can submit feedback on edit predictions. This setting is only configurable when Edit Prediction is enabled.
-
-## Agent Thread Feedback
-
-The **Agent Thread Feedback** toggle controls whether members can submit feedback on agent thread responses. When disabled, members cannot rate or provide feedback on AI agent conversations.
-
-## Data sharing
-
-On Free and Pro, [AI feedback and training data sharing](../ai/ai-improvement.md) is opt-in per member. On Business, it's off by default and controlled by the Agent Thread Feedback and Edit Prediction Feedback toggles above.

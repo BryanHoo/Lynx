@@ -324,10 +324,6 @@ pub struct AgentSettingsContent {
     /// earlier messages to free up room in the model's context window once the
     /// context grows too large.
     pub auto_compact: Option<AutoCompactSettingsContent>,
-    /// Whether to show thumb buttons for feedback in the agent panel.
-    ///
-    /// Default: true
-    pub enable_feedback: Option<bool>,
     /// Whether to have edit cards in the agent panel expanded, showing a preview of the full diff.
     ///
     /// Default: true

@@ -378,9 +378,6 @@ message Envelope {
     GetDefaultBranch get_default_branch = 359;
     GetDefaultBranchResponse get_default_branch_response = 360;
 
-    GetCrashFiles get_crash_files = 361;
-    GetCrashFilesResponse get_crash_files_response = 362;
-
     GitClone git_clone = 363;
     GitCloneResponse git_clone_response = 364;
 
@@ -546,6 +543,7 @@ message Envelope {
   reserved 270;
   reserved 280 to 281;
   reserved 332 to 333;
+  reserved 361 to 362;
   reserved 394 to 396;
   reserved 429 to 430;
   reserved 211 to 216, 232 to 233;

@@ -8,7 +8,7 @@ description: Lynx's code completions from language servers and edit predictions.
 Lynx supports two sources for completions:
 
 1. "Code Completions" provided by Language Servers (LSPs) automatically installed by Lynx or via [Lynx Language Extensions](languages.md).
-2. "Edit Predictions" provided by Lynx's own Zeta model or by external providers like [GitHub Copilot](#github-copilot).
+2. "Edit Predictions" provided by a local Ollama or OpenAI-compatible server.
 
 ## Language Server Code Completions {#code-completions}
 
@@ -31,7 +31,7 @@ For more information, see:
 
 ## Edit Predictions {#edit-predictions}
 
-Lynx has built-in support for predicting multiple edits at a time [via Zeta](https://huggingface.co/zed-industries/zeta), Lynx's open-source and open-data model.
+Lynx supports predicting multiple edits at a time through a configured local or self-hosted model.
 Edit predictions appear as you type, and most of the time, you can accept them by pressing `tab`.
 
 See the [edit predictions documentation](./ai/edit-prediction.md) for more information on how to setup and configure Lynx's edit predictions.

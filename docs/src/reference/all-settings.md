@@ -391,16 +391,6 @@ Note that a save will be triggered when an unsaved tab is closed, even if this i
 
 `boolean` values
 
-## Auto Update
-
-- Description: Whether or not to automatically check for updates.
-- Setting: `auto_update`
-- Default: `true`
-
-**Options**
-
-`boolean` values
-
 ## Base Keymap
 
 - Description: Base key bindings scheme. Base keymaps can be overridden with user keymaps.
@@ -811,26 +801,26 @@ For the case of "open", regular selection behavior can be achieved by holding `a
 
 - Description: Which edit prediction provider to use
 - Setting: `provider`
-- Default: `"zed"`
+- Default: `"none"`
 
 **Options**
 
-1. Use Zeta as the edit prediction provider:
+1. Use Ollama as the edit prediction provider:
 
 ```json [settings]
 {
   "edit_predictions": {
-    "provider": "zed"
+    "provider": "ollama"
   }
 }
 ```
 
-2. Use Copilot as the edit prediction provider:
+2. Use an OpenAI-compatible API as the edit prediction provider:
 
 ```json [settings]
 {
   "edit_predictions": {
-    "provider": "copilot"
+    "provider": "open_ai_compatible_api"
   }
 }
 ```
@@ -859,7 +849,7 @@ List of `string` values.
 
 - Description: How long Lynx waits after you stop typing before automatically requesting an edit prediction.
 - Setting: `edit_predictions.<provider>.prediction_debounce`
-- Default: `75` for GitHub Copilot, `150` for Codestral, and `0` for Lynx, Mercury, Ollama, and OpenAI-compatible APIs.
+- Default: `0` for Ollama and OpenAI-compatible APIs.
 
 **Options**
 
@@ -4548,23 +4538,12 @@ List of `integer` column numbers
 ```json [settings]
 {
   "telemetry": {
-    "diagnostics": true,
     "metrics": true
   }
 }
 ```
 
 **Options**
-
-### Diagnostics
-
-- Description: Setting for sending debug-related data, such as crash reports.
-- Setting: `diagnostics`
-- Default: `true`
-
-**Options**
-
-`boolean` values
 
 ### Metrics
 
@@ -5350,8 +5329,6 @@ Run the {#action theme_selector::Toggle} action in the command palette to see a 
     "show_branch_name": true,
     "show_worktree_name": true,
     "show_project_items": true,
-    "show_onboarding_banner": true,
-    "show_user_picture": true,
     "show_user_menu": true,
     "show_sign_in": true,
     "show_menus": false,
@@ -5366,8 +5343,6 @@ Run the {#action theme_selector::Toggle} action in the command palette to see a 
 - `show_branch_name`: Whether to show the branch name button in the titlebar
 - `show_worktree_name`: Whether to show the worktree name button in the titlebar
 - `show_project_items`: Whether to show the project host and name in the titlebar
-- `show_onboarding_banner`: Whether to show onboarding banners in the titlebar
-- `show_user_picture`: Whether to show user picture in the titlebar
 - `show_user_menu`: Whether to show the user menu button in the titlebar (the one that displays your avatar by default and contains options like Settings, Keymap, Themes, etc.)
 - `show_sign_in`: Whether to show the sign in button in the titlebar
 - `show_menus`: Whether to show the menus in the titlebar

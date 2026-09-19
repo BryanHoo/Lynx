@@ -18,16 +18,9 @@ For the organization:
 - **Enforced data controls:** Administrators configure AI and data settings for
   the whole organization from the Data & Privacy dashboard. Controls include the
   [Lynx Model Provider](./admin-controls.md#hosted-ai-models),
-  [Edit Predictions](./admin-controls.md#edit-predictions),
-  [Edit Prediction Feedback](./admin-controls.md#edit-predictions), and
-  [Agent Thread Feedback](./admin-controls.md#agent-thread-feedback). Members
+  [Edit Predictions](./admin-controls.md#edit-predictions). Members
   can't override these settings individually.
-- **Private by default:** Lynx doesn't store your prompts or train on them
-  without explicit opt-in.
-  [Data sharing for AI improvement](../ai/ai-improvement.md) is opt-in: members
-  can choose to share but are never enrolled automatically. Administrators can
-  [enforce this org-wide](./admin-controls.md#data-sharing), blocking members
-  from opting in at all.
+- **Private by default:** Lynx doesn't store your prompts or train on them.
 - **[Roles and permissions](../roles.md):** Owners, admins, Billing Managers,
   and members have different access levels. Billing Managers can manage billing
   without counting toward paid Business seats or receiving Business

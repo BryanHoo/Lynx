@@ -366,9 +366,6 @@ fn main() {
         return;
     }
 
-    // 本地发行版仅保留本地 backtrace，不启动 Zed 崩溃上传进程。
-    crashes::force_backtrace();
-
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
         if cfg!(target_os = "macos") && option_env!("ZED_BUNDLE").as_deref() == Some("true") {
@@ -573,22 +570,6 @@ fn main() {
             cx.background_executor().clone(),
         );
         command_palette::init(cx);
-        let copilot_chat_configuration = copilot_chat::CopilotChatConfiguration {
-            enterprise_uri: language::language_settings::all_language_settings(None, cx)
-                .edit_predictions
-                .copilot
-                .enterprise_uri
-                .clone(),
-        };
-        let credentials_provider = zed_credentials_provider::global(cx);
-        copilot_chat::init(
-            app_state.client.http_client(),
-            credentials_provider,
-            copilot_chat_configuration,
-            cx,
-        );
-
-        copilot_ui::init(&app_state, cx);
         language_model::init(cx);
         language_models::init(app_state.user_store.clone(), app_state.client.clone(), cx);
         acp_tools::init(cx);
@@ -665,7 +646,6 @@ fn main() {
         svg_preview::init(cx);
         settings_ui::init(cx);
         keymap_editor::init(cx);
-        edit_prediction::init(cx);
         json_schema_store::init(cx);
         which_key::init(cx);
         #[cfg(target_os = "windows")]

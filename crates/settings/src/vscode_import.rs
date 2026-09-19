@@ -183,7 +183,6 @@ impl VsCodeSettings {
         SettingsContent {
             agent: self.agent_settings_content(),
             agent_servers: None,
-            auto_update: None,
             base_keymap: Some(BaseKeymapContent::VSCode),
             command_palette: self
                 .read_u64("workbench.commandPalette.history")
@@ -890,15 +889,13 @@ impl VsCodeSettings {
 
     fn telemetry_settings_content(&self) -> Option<TelemetrySettingsContent> {
         self.read_enum("telemetry.telemetryLevel", |level| {
-            let (metrics, diagnostics) = match level {
-                "all" => (true, true),
-                "error" | "crash" => (false, true),
-                "off" => (false, false),
+            let metrics = match level {
+                "all" => true,
+                "error" | "crash" | "off" => false,
                 _ => return None,
             };
             Some(TelemetrySettingsContent {
                 metrics: Some(metrics),
-                diagnostics: Some(diagnostics),
                 anthropic_retention: None,
             })
         })

@@ -75,23 +75,15 @@ agent_ui.workspace = true
 anyhow.workspace = true
 askpass.workspace = true
 assets.workspace = true
-auto_update.workspace = true
-auto_update_ui.workspace = true
 breadcrumbs.workspace = true
 call_hierarchy.workspace = true
-channel.workspace = true
 chrono.workspace = true
 clap.workspace = true
 cli.workspace = true
 client.workspace = true
 clock = { workspace = true, optional = true }
-codestral.workspace = true
 collections.workspace = true
 command_palette.workspace = true
-copilot.workspace = true
-copilot_chat.workspace = true
-copilot_ui.workspace = true
-crashes.workspace = true
 db.workspace = true
 diagnostics.workspace = true
 editor.workspace = true
@@ -99,7 +91,6 @@ encoding_selector.workspace = true
 env_logger.workspace = true
 extension.workspace = true
 extension_host.workspace = true
-extensions_ui.workspace = true
 feature_flags.workspace = true
 file_finder.workspace = true
 fs.workspace = true
@@ -111,7 +102,6 @@ git_ui_core.workspace = true
 go_to_line.workspace = true
 gpui = { workspace = true, features = ["profiler", "stacker"] }
 gpui_platform = { workspace = true, features = [
-    "screen-capture",
     "font-kit",
     "wayland",
     "x11",
@@ -154,7 +144,6 @@ migrator.workspace = true
 mimalloc = { version = "0.1", optional = true }
 node_runtime.workspace = true
 notifications.workspace = true
-onboarding.workspace = true
 outline.workspace = true
 outline_panel.workspace = true
 parking_lot.workspace = true
@@ -211,7 +200,6 @@ vim.workspace = true
 vim_mode_setting.workspace = true
 watch.workspace = true
 web_search.workspace = true
-web_search_providers.workspace = true
 which_key.workspace = true
 workspace.workspace = true
 zed_actions.workspace = true

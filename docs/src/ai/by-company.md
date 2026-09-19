@@ -46,8 +46,6 @@ Claude Pro and Max subscriptions are separate from Anthropic API credits. If you
 
 | Path                    | Support level     | What you get                                         | Account / billing           | Setup                                                                            |
 | ----------------------- | ----------------- | ---------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
-| GitHub Copilot Chat     | Configured in Lynx | Copilot Chat models for Lynx AI features              | GitHub Copilot/Copilot Chat | [Use an Existing Subscription](./use-an-existing-subscription.md#github-copilot) |
-| Copilot edit prediction | Built into Lynx    | Edit prediction provider option                      | GitHub Copilot              | [Edit Prediction](./edit-prediction.md)                                          |
 | Copilot External Agent  | Hosted in Lynx     | Copilot in an External Agent thread, where available | Owned by Copilot            | [External Agents](./external-agents.md#copilot)                                  |
 | Copilot CLI             | Run in terminal   | Native CLI experience, where available               | Owned by Copilot            | [Terminal Threads](./terminal-threads.md)                                        |
 

@@ -121,10 +121,6 @@ impl BufferCodegen {
             .push(cx.subscribe(&codegen, |_, _, event, cx| cx.emit(*event)));
     }
 
-    pub fn active_completion(&self, cx: &App) -> Option<String> {
-        self.active_alternative().read(cx).current_completion()
-    }
-
     pub fn active_alternative(&self) -> &Entity<CodegenAlternative> {
         &self.alternatives[self.active_alternative]
     }
@@ -250,10 +246,6 @@ impl BufferCodegen {
 
     pub fn last_equal_ranges<'a>(&self, cx: &'a App) -> &'a [Range<Anchor>] {
         self.active_alternative().read(cx).last_equal_ranges()
-    }
-
-    pub fn selected_text<'a>(&self, cx: &'a App) -> Option<&'a str> {
-        self.active_alternative().read(cx).selected_text()
     }
 
     pub fn session_id(&self) -> Uuid {
@@ -929,10 +921,6 @@ impl CodegenAlternative {
         })
     }
 
-    pub fn current_completion(&self) -> Option<String> {
-        self.completion.clone()
-    }
-
     #[cfg(any(test, feature = "test-support"))]
     pub fn current_description(&self) -> Option<String> {
         self.description.clone()
@@ -941,10 +929,6 @@ impl CodegenAlternative {
     #[cfg(any(test, feature = "test-support"))]
     pub fn current_failure(&self) -> Option<String> {
         self.failure.clone()
-    }
-
-    pub fn selected_text(&self) -> Option<&str> {
-        self.selected_text.as_deref()
     }
 
     pub fn stop(&mut self, cx: &mut Context<Self>) {

@@ -1,3 +1,4 @@
+mod edit_prediction_api_key;
 mod edit_prediction_provider_setup;
 mod external_agents_page;
 mod feature_flags;

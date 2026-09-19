@@ -87,14 +87,9 @@ pub struct TitleBarSettingsContent {
     ///
     /// Default: false
     pub show_branch_status_icon: Option<bool>,
-    /// Whether to show onboarding banners in the title bar.
-    ///
-    /// Default: true
-    pub show_onboarding_banner: Option<bool>,
     /// Whether to show user avatar in the title bar.
     ///
     /// Default: true
-    pub show_user_picture: Option<bool>,
     /// Whether to show the branch name button in the titlebar.
     ///
     /// Default: true
