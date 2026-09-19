@@ -67,7 +67,7 @@ pub(crate) fn render_skills_setup_page(
                     v_flex()
                         .items_center()
                         .gap_2()
-                        .child(Label::new(message).color(Color::Muted))
+                        .child(Label::new(i18n::translate_in(cx, message)).color(Color::Muted))
                         .child(
                             Button::new(
                                 "open-skill-creator-empty",

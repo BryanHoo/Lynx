@@ -1,6 +1,8 @@
 mod components;
 mod page_data;
 pub mod pages;
+#[cfg(test)]
+mod translation_tests;
 
 use agent_skills::SkillIndex;
 use anyhow::{Context as _, Result};

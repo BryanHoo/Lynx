@@ -727,7 +727,7 @@ impl SkillCreatorPage {
                             .color(Color::Error),
                     )
                     .child(
-                        Label::new(error.clone())
+                        Label::new(i18n::translate_shared_in(cx, error.as_ref()))
                             .size(LabelSize::Small)
                             .color(Color::Error),
                     )
@@ -758,7 +758,11 @@ impl SkillCreatorPage {
                     .child(Label::new(i18n::translate_in(cx, "Skill Content")))
                     .child(self.render_body_field(window, cx))
                     .when_some(self.body_error, |this, error| {
-                        this.child(Label::new(error).size(LabelSize::Small).color(Color::Error))
+                        this.child(
+                            Label::new(i18n::translate_shared_in(cx, error))
+                                .size(LabelSize::Small)
+                                .color(Color::Error),
+                        )
                     }),
             )
     }
@@ -853,9 +857,11 @@ impl SkillCreatorPage {
             .border_color(cx.theme().colors().border_variant.opacity(0.4))
             .when(self.save_error.is_some(), |this| {
                 this.gap_2().child(
-                    Banner::new()
-                        .severity(Severity::Error)
-                        .children(self.save_error.clone().map(|err| Label::new(err))),
+                    Banner::new().severity(Severity::Error).children(
+                        self.save_error
+                            .clone()
+                            .map(|error| Label::new(i18n::translate_shared_in(cx, error.as_ref()))),
+                    ),
                 )
             })
             .child(

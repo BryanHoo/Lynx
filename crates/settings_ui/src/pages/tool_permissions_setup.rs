@@ -746,7 +746,7 @@ fn render_matched_patterns(patterns: &[MatchedPattern], cx: &App) -> AnyElement 
                         .color(Color::Custom(cx.theme().colors().icon_muted.opacity(0.4))),
                 )
                 .child(
-                    Label::new(type_label)
+                    Label::new(i18n::translate_in(cx, type_label))
                         .size(LabelSize::XSmall)
                         .color(type_color)
                         .when(pattern.is_overridden, |this| {

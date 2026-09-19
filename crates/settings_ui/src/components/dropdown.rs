@@ -91,25 +91,29 @@ impl EnumVariantDropdown {
 
 impl RenderOnce for EnumVariantDropdown {
     fn render(self, window: &mut ui::Window, cx: &mut ui::App) -> impl gpui::IntoElement {
-        // 枚举值与设置标题共用词典，语言切换后无需重建设置数据。
+        // Strum 通常提供 `open-files` 之类的配置值。先转换为界面文案再翻译，
+        // 才能命中以 `Open Files` 为键的词条，同时保持配置序列化值不变。
         let labels = self
             .labels
             .iter()
-            .map(|label| i18n::translate_in(cx, label))
+            .map(|label| {
+                let display_label = if self.should_do_title_case {
+                    label.to_title_case()
+                } else {
+                    label.to_string()
+                };
+                i18n::translate_shared_in(cx, &display_label)
+            })
             .collect::<Vec<_>>();
-        let current_value_label = labels[self.selected_index];
+        let current_value_label = labels[self.selected_index].clone();
 
-        let context_menu = window.use_keyed_state(current_value_label, cx, |window, cx| {
+        let context_menu = window.use_keyed_state(current_value_label.clone(), cx, |window, cx| {
             let labels = labels.clone();
             ContextMenu::new(window, cx, move |mut menu, _, _| {
-                for (index, &label) in labels.iter().enumerate() {
+                for (index, label) in labels.iter().enumerate() {
                     let on_change = self.on_change.clone();
                     menu = menu.toggleable_entry(
-                        if self.should_do_title_case {
-                            label.to_title_case()
-                        } else {
-                            label.to_string()
-                        },
+                        label.clone(),
                         index == self.selected_index,
                         IconPosition::End,
                         None,
@@ -122,27 +126,19 @@ impl RenderOnce for EnumVariantDropdown {
             })
         });
 
-        DropdownMenu::new(
-            self.id,
-            if self.should_do_title_case {
-                current_value_label.to_title_case()
-            } else {
-                current_value_label.to_string()
-            },
-            context_menu,
-        )
-        .when_some(self.aria_label, |this, label| this.aria_label(label))
-        .when_some(self.aria_description, |this, description| {
-            this.aria_description(description)
-        })
-        .disabled(self.disabled)
-        .when_some(self.tab_index, |elem, tab_index| elem.tab_index(tab_index))
-        .trigger_size(ButtonSize::Medium)
-        .style(DropdownStyle::Outlined)
-        .offset(gpui::Point {
-            x: px(0.0),
-            y: px(2.0),
-        })
-        .into_any_element()
+        DropdownMenu::new(self.id, current_value_label, context_menu)
+            .when_some(self.aria_label, |this, label| this.aria_label(label))
+            .when_some(self.aria_description, |this, description| {
+                this.aria_description(description)
+            })
+            .disabled(self.disabled)
+            .when_some(self.tab_index, |elem, tab_index| elem.tab_index(tab_index))
+            .trigger_size(ButtonSize::Medium)
+            .style(DropdownStyle::Outlined)
+            .offset(gpui::Point {
+                x: px(0.0),
+                y: px(2.0),
+            })
+            .into_any_element()
     }
 }

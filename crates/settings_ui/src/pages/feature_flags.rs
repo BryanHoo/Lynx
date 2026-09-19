@@ -109,7 +109,7 @@ fn render_flag_variants(
             let checkbox_id = SharedString::from(format!("{}-{}", name, key));
             let disabled = forced_on;
             let mut checkbox = Checkbox::new(ElementId::from(checkbox_id), state)
-                .label(label)
+                .label(i18n::translate_in(cx, label))
                 .disabled(disabled);
             if !disabled {
                 checkbox =

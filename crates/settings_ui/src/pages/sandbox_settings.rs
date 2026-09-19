@@ -81,7 +81,10 @@ pub(crate) fn render_sandbox_settings_page(
             this.child(
                 Banner::new()
                     .severity(Severity::Warning)
-                    .child(Label::new(error).size(LabelSize::Small))
+                    .child(
+                        Label::new(i18n::translate_shared_in(cx, error.as_ref()))
+                            .size(LabelSize::Small),
+                    )
                     .action_slot(
                         Button::new(
                             "dismiss-sandbox-host-error",

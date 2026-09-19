@@ -1,3 +1,5 @@
+#[path = "zh_cn_options.rs"]
+mod zh_cn_options;
 #[path = "zh_cn_settings_1.rs"]
 mod zh_cn_settings_1;
 #[path = "zh_cn_settings_2.rs"]
@@ -15,6 +17,7 @@ mod zh_cn_settings_7;
 
 pub(super) fn translate(message: &str) -> Option<&'static str> {
     translate_core(message)
+        .or_else(|| zh_cn_options::translate(message))
         .or_else(|| zh_cn_settings_1::translate(message))
         .or_else(|| zh_cn_settings_2::translate(message))
         .or_else(|| zh_cn_settings_3::translate(message))

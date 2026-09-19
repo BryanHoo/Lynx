@@ -449,7 +449,7 @@ fn new_input(
     window: &mut Window,
     cx: &mut Context<SettingsWindow>,
 ) -> Entity<Editor> {
-    let placeholder = placeholder.to_string();
+    let placeholder = i18n::translate_shared_in(cx, placeholder).to_string();
     let initial = initial.map(|text| text.to_string());
     cx.new(|cx| {
         let mut editor = Editor::single_line(window, cx);
@@ -557,7 +557,9 @@ fn render_custom_agent_form_page(
             .into_any_element(),
         )
         .child(render_env_section(settings_window, &form.env, cx))
-        .when_some(error, |this, error| this.child(render_form_error(error)))
+        .when_some(error, |this, error| {
+            this.child(render_form_error(error, cx))
+        })
         .child(render_form_actions(form, window, cx));
 
     v_flex()
@@ -664,7 +666,7 @@ fn render_env_section(
     .into_any_element()
 }
 
-fn render_form_error(error: SharedString) -> impl IntoElement {
+fn render_form_error(error: SharedString, cx: &App) -> impl IntoElement {
     h_flex()
         .w_full()
         .gap_2()
@@ -674,7 +676,11 @@ fn render_form_error(error: SharedString) -> impl IntoElement {
                 .size(IconSize::Small)
                 .color(Color::Error),
         )
-        .child(Label::new(error).size(LabelSize::Small).color(Color::Error))
+        .child(
+            Label::new(i18n::translate_shared_in(cx, error.as_ref()))
+                .size(LabelSize::Small)
+                .color(Color::Error),
+        )
 }
 
 fn render_form_actions(

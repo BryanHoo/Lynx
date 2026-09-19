@@ -455,7 +455,7 @@ fn render_inline_description(
                     .label_size(LabelSize::Small),
             )
             .into_any_element(),
-        InlineDescription::Text(text) => Label::new(text)
+        InlineDescription::Text(text) => Label::new(i18n::translate_shared_in(cx, text.as_ref()))
             .size(LabelSize::Small)
             .color(Color::Muted)
             .into_any_element(),
@@ -643,7 +643,7 @@ fn new_input(
     window: &mut Window,
     cx: &mut Context<SettingsWindow>,
 ) -> Entity<Editor> {
-    let placeholder = placeholder.to_string();
+    let placeholder = i18n::translate_shared_in(cx, placeholder).to_string();
     let initial = initial.map(str::to_string);
     cx.new(|cx| {
         let mut editor = Editor::single_line(window, cx);
@@ -695,14 +695,17 @@ fn render_llm_provider_form_page(
                 .pb_16()
                 .gap_4()
                 .overflow_y_scroll()
-                .child(Label::new(match form.kind {
-                    CompatibleProviderKind::OpenAi => {
-                        "This provider will use an OpenAI-compatible API."
-                    }
-                    CompatibleProviderKind::Anthropic => {
-                        "This provider will use an Anthropic Messages-compatible API."
-                    }
-                }))
+                .child(Label::new(i18n::translate_in(
+                    cx,
+                    match form.kind {
+                        CompatibleProviderKind::OpenAi => {
+                            "This provider will use an OpenAI-compatible API."
+                        }
+                        CompatibleProviderKind::Anthropic => {
+                            "This provider will use an Anthropic Messages-compatible API."
+                        }
+                    },
+                )))
                 .child(Divider::horizontal().flex_shrink_0())
                 .child(render_form_field(
                     "Provider Name",
@@ -732,7 +735,7 @@ fn render_llm_provider_form_page(
                 .border_t_1()
                 .border_color(cx.theme().colors().border_variant)
                 .when_some(form.error.clone(), |this, error| {
-                    this.child(render_form_error(error))
+                    this.child(render_form_error(error, cx))
                 })
                 .child(render_form_actions(cx)),
         )
@@ -754,15 +757,18 @@ fn render_form_field(
             v_flex()
                 .gap_0p5()
                 .child(
-                    h_flex().gap_0p5().child(Label::new(title)).child(
-                        Label::new("*")
-                            .size(LabelSize::Small)
-                            .color(Color::Error)
-                            .mb_2(),
-                    ),
+                    h_flex()
+                        .gap_0p5()
+                        .child(Label::new(i18n::translate_in(cx, title)))
+                        .child(
+                            Label::new("*")
+                                .size(LabelSize::Small)
+                                .color(Color::Error)
+                                .mb_2(),
+                        ),
                 )
                 .child(
-                    Label::new(description)
+                    Label::new(i18n::translate_in(cx, description))
                         .size(LabelSize::Small)
                         .color(Color::Muted),
                 ),
@@ -986,7 +992,7 @@ fn render_capability_checkbox(
     cx: &mut Context<SettingsWindow>,
 ) -> impl IntoElement {
     Checkbox::new((id, index), state)
-        .label(label)
+        .label(i18n::translate_in(cx, label))
         .on_click(cx.listener(move |this, checked, _window, cx| {
             if let Some(form) = this.llm_provider_form.as_mut()
                 && let Some(model) = form.models.get_mut(index)
@@ -1004,12 +1010,12 @@ fn render_reasoning_effort_selector(
     cx: &mut Context<SettingsWindow>,
 ) -> impl IntoElement {
     let settings_window = cx.weak_entity();
-    let menu = ContextMenu::build(window, cx, move |mut menu, _window, _cx| {
+    let menu = ContextMenu::build(window, cx, move |mut menu, _window, cx| {
         for effort in OpenAiReasoningEffort::OPENAI_COMPATIBLE_SELECTABLE {
             let is_selected = effort == selected;
             let settings_window = settings_window.clone();
             menu.push_item(
-                ui::ContextMenuEntry::new(effort.label())
+                ui::ContextMenuEntry::new(i18n::translate_in(cx, effort.label()))
                     .toggleable(IconPosition::End, is_selected)
                     .handler(move |_window, cx| {
                         settings_window
@@ -1036,7 +1042,7 @@ fn render_reasoning_effort_selector(
         .child(
             DropdownMenu::new(
                 ElementId::Name(format!("reasoning-effort-selector-{index}").into()),
-                selected.label(),
+                i18n::translate_in(cx, selected.label()),
                 menu,
             )
             .style(DropdownStyle::Outlined)
@@ -1046,7 +1052,7 @@ fn render_reasoning_effort_selector(
         )
 }
 
-fn render_form_error(error: SharedString) -> impl IntoElement {
+fn render_form_error(error: SharedString, cx: &App) -> impl IntoElement {
     h_flex()
         .w_full()
         .gap_2()
@@ -1055,7 +1061,11 @@ fn render_form_error(error: SharedString) -> impl IntoElement {
                 .size(IconSize::Small)
                 .color(Color::Error),
         )
-        .child(Label::new(error).size(LabelSize::Small).color(Color::Error))
+        .child(
+            Label::new(i18n::translate_shared_in(cx, error.as_ref()))
+                .size(LabelSize::Small)
+                .color(Color::Error),
+        )
 }
 
 fn render_form_actions(cx: &mut Context<SettingsWindow>) -> impl IntoElement {

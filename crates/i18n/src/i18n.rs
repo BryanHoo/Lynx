@@ -58,6 +58,11 @@ pub fn translate_in(cx: &App, message: &'static str) -> &'static str {
     translate(locale(cx), message)
 }
 
+/// 供界面覆盖测试检查词条是否存在，避免英文回退掩盖漏译。
+pub fn has_simplified_chinese_translation(message: &str) -> bool {
+    zh_cn::translate(message).is_some()
+}
+
 /// 动态设置标题无法保留 `'static` 生命周期；命中词典时仍复用静态字符串。
 pub fn translate_shared_in(cx: &App, message: &str) -> SharedString {
     match locale(cx) {
