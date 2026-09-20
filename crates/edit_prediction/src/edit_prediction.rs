@@ -1,5 +1,5 @@
 use anyhow::{Context as _, Result};
-use client::{Client, EditPredictionUsage, UserStore};
+use client::Client;
 use cloud_llm_client::{EditPredictionRejectReason, PredictEditsRequestTrigger};
 use collections::{HashMap, HashSet};
 use credentials_provider::CredentialsProvider;
@@ -85,7 +85,6 @@ impl Global for EditPredictionStoreGlobal {}
 
 pub struct EditPredictionStore {
     client: Arc<Client>,
-    user_store: Entity<UserStore>,
     projects: HashMap<EntityId, ProjectState>,
     edit_prediction_model: EditPredictionModel,
     pub mercury: Mercury,
@@ -729,27 +728,22 @@ impl EditPredictionStore {
             .map(|global| global.0.clone())
     }
 
-    pub fn global(
-        client: &Arc<Client>,
-        user_store: &Entity<UserStore>,
-        cx: &mut App,
-    ) -> Entity<Self> {
+    pub fn global(client: &Arc<Client>, cx: &mut App) -> Entity<Self> {
         cx.try_global::<EditPredictionStoreGlobal>()
             .map(|global| global.0.clone())
             .unwrap_or_else(|| {
-                let ep_store = cx.new(|cx| Self::new(client.clone(), user_store.clone(), cx));
+                let ep_store = cx.new(|cx| Self::new(client.clone(), cx));
                 cx.set_global(EditPredictionStoreGlobal(ep_store.clone()));
                 ep_store
             })
     }
 
-    pub fn new(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut Context<Self>) -> Self {
+    pub fn new(client: Arc<Client>, cx: &mut Context<Self>) -> Self {
         let credentials_provider = zed_credentials_provider::global(cx);
 
         let this = Self {
             projects: HashMap::default(),
             client,
-            user_store,
             edit_prediction_model: EditPredictionModel::Zeta,
             mercury: Mercury::new(cx),
             credentials_provider,
@@ -857,14 +851,6 @@ impl EditPredictionStore {
                 })
             })
             .unwrap_or_default()
-    }
-
-    pub fn usage(&self, cx: &App) -> Option<EditPredictionUsage> {
-        if matches!(self.edit_prediction_model, EditPredictionModel::Zeta) {
-            self.user_store.read(cx).edit_prediction_usage()
-        } else {
-            None
-        }
     }
 
     pub fn register_project(&mut self, project: &Entity<Project>, cx: &mut Context<Self>) {

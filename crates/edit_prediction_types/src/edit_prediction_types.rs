@@ -1,6 +1,5 @@
 use std::{ops::Range, sync::Arc, time::Duration};
 
-use client::EditPredictionUsage;
 use gpui::{App, Context, Entity, SharedString};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -182,10 +181,6 @@ pub trait EditPredictionDelegate: 'static + Sized {
         DataCollectionState::Unsupported
     }
 
-    fn usage(&self, _cx: &App) -> Option<EditPredictionUsage> {
-        None
-    }
-
     fn can_toggle_data_collection(&self, _cx: &App) -> bool {
         true
     }
@@ -231,7 +226,6 @@ pub trait EditPredictionDelegateHandle {
     fn supports_jump_to_edit(&self) -> bool;
     fn icons(&self, cx: &App) -> EditPredictionIconSet;
     fn data_collection_state(&self, cx: &App) -> DataCollectionState;
-    fn usage(&self, cx: &App) -> Option<EditPredictionUsage>;
     fn can_toggle_data_collection(&self, cx: &App) -> bool;
     fn toggle_data_collection(&self, cx: &mut App);
     fn is_refreshing(&self, cx: &App) -> bool;
@@ -284,10 +278,6 @@ where
 
     fn data_collection_state(&self, cx: &App) -> DataCollectionState {
         self.read(cx).data_collection_state(cx)
-    }
-
-    fn usage(&self, cx: &App) -> Option<EditPredictionUsage> {
-        self.read(cx).usage(cx)
     }
 
     fn can_toggle_data_collection(&self, cx: &App) -> bool {

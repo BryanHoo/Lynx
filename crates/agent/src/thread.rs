@@ -23,7 +23,6 @@ use agent_settings::{
 };
 use anyhow::{Context as _, Result, anyhow};
 use chrono::{DateTime, Local, Utc};
-use cloud_api_types::Plan;
 use collections::{HashMap, HashSet, IndexMap};
 use fs::Fs;
 use futures::{
@@ -3128,7 +3127,7 @@ impl Thread {
         cx: &mut AsyncApp,
     ) -> Result<ControlFlow<()>> {
         let retry = this.update(cx, |this, cx| {
-            this.handle_completion_error(error, attempt, None, cx)
+            this.handle_completion_error(error, attempt, cx)
         })??;
         let timer = cx.background_executor().timer(retry.duration);
         event_stream.send_retry(retry);
@@ -3335,7 +3334,6 @@ impl Thread {
         &mut self,
         error: LanguageModelCompletionError,
         attempt: u8,
-        plan: Option<Plan>,
         cx: &mut Context<Self>,
     ) -> Result<acp_thread::RetryStatus> {
         if let LanguageModelCompletionError::ProviderRejection {
@@ -3350,13 +3348,7 @@ impl Thread {
             return Err(anyhow!(error));
         };
 
-        let auto_retry = if model.provider_id() == ZED_CLOUD_PROVIDER_ID {
-            plan.is_some()
-        } else {
-            true
-        };
-
-        if !auto_retry {
+        if model.provider_id() == ZED_CLOUD_PROVIDER_ID {
             return Err(anyhow!(error));
         }
 

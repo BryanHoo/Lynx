@@ -1,6 +1,6 @@
 use std::{cmp, sync::Arc, time::Duration};
 
-use client::{Client, UserStore};
+use client::Client;
 use cloud_llm_client::EditPredictionRejectReason;
 use edit_prediction_types::{
     DataCollectionState, EditPredictionDelegate, EditPredictionDiscardReason,
@@ -18,13 +18,8 @@ pub struct ZedEditPredictionDelegate {
 }
 
 impl ZedEditPredictionDelegate {
-    pub fn new(
-        project: Entity<Project>,
-        client: &Arc<Client>,
-        user_store: &Entity<UserStore>,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        let store = EditPredictionStore::global(client, user_store, cx);
+    pub fn new(project: Entity<Project>, client: &Arc<Client>, cx: &mut Context<Self>) -> Self {
+        let store = EditPredictionStore::global(client, cx);
         store.update(cx, |store, cx| {
             store.register_project(&project, cx);
         });
@@ -63,10 +58,6 @@ impl EditPredictionDelegate for ZedEditPredictionDelegate {
         DataCollectionState::Disabled {
             is_project_open_source: false,
         }
-    }
-
-    fn usage(&self, cx: &App) -> Option<client::EditPredictionUsage> {
-        self.store.read(cx).usage(cx)
     }
 
     fn is_enabled(

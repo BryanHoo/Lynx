@@ -112,9 +112,10 @@
 - [x] 删除账号、试用、付费升级及 Zed 营销跳转入口。
 - [x] 删除 Agent、设置页和本地编辑预测对组织套餐状态的运行时依赖。
 - [x] 删除托管编辑预测请求、实验拉取、反馈上传及 LLM token 生命周期。
-- [ ] 拆分远程 RPC 与 `CloudApiClient`，移除组织和托管模型令牌状态。
+- [x] 移除组织、套餐、用量和托管预测协议状态。
+- [x] 拆分远程 RPC 与认证 HTTP，并删除 `cloud_api_client`。
 
-- [ ] **Task Status:** pending
+- [x] **Task Status:** completed
 
 ### Task 6: 收敛 Feature Flags
 

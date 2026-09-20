@@ -1,18 +1,16 @@
-use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use anyhow::{Context as _, Result, anyhow};
-use cloud_api_client::{
-    AuthenticatedUser, GetAuthenticatedUserResponse, KnownOrUnknown, Plan, PlanInfo,
-};
-use cloud_llm_client::{CurrentUsage, UsageData, UsageLimit};
 use futures::{StreamExt, stream::BoxStream};
 use gpui::{AppContext as _, TestAppContext};
 use http_client::{AsyncBody, Method, Request, http};
 use parking_lot::Mutex;
 use rpc::{ConnectionId, Peer, Receipt, TypedEnvelope, proto};
 
-use crate::{Client, Connection, Credentials, EstablishConnectionError};
+use crate::{
+    AuthenticatedUser, Client, Connection, Credentials, EstablishConnectionError,
+    GetAuthenticatedUserResponse,
+};
 
 pub struct FakeServer {
     peer: Arc<Peer>,
@@ -240,34 +238,12 @@ pub fn make_get_authenticated_user_response(
 ) -> GetAuthenticatedUserResponse {
     GetAuthenticatedUserResponse {
         user: AuthenticatedUser {
-            id_v2: format!("user_{user_id}"),
-            legacy_user_id: user_id,
             metrics_id: format!("metrics-id-{user_id}"),
-            username: username.clone(),
+            username,
             avatar_url: "".to_string(),
-            github_login: username,
             name: None,
             is_staff: false,
-            accepted_tos_at: None,
-            has_connected_to_collab_once: false,
         },
         feature_flags: vec![],
-        organizations: vec![],
-        default_organization_id: None,
-        plans_by_organization: BTreeMap::new(),
-        configuration_by_organization: BTreeMap::new(),
-        plan: PlanInfo {
-            plan: KnownOrUnknown::Known(Plan::ZedPro),
-            subscription_period: None,
-            usage: CurrentUsage {
-                edit_predictions: UsageData {
-                    used: 250,
-                    limit: UsageLimit::Unlimited,
-                },
-            },
-            trial_started_at: None,
-            is_account_too_young: false,
-            has_overdue_invoices: false,
-        },
     }
 }

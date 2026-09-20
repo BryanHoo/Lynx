@@ -1,8 +1,8 @@
-use client::{Client, UserStore};
+use client::Client;
 use collections::HashMap;
 use edit_prediction::{EditPredictionModel, ZedEditPredictionDelegate, fim};
 use editor::{EditPredictionRequestTrigger, Editor};
-use gpui::{AnyWindowHandle, App, AppContext as _, Context, Entity, WeakEntity};
+use gpui::{AnyWindowHandle, App, AppContext as _, Context, WeakEntity};
 use language::language_settings::{
     EditPredictionPromptFormat, EditPredictionProvider, all_language_settings,
 };
@@ -11,14 +11,13 @@ use settings::SettingsStore;
 use std::{cell::RefCell, rc::Rc, sync::Arc};
 use ui::Window;
 
-pub fn init(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut App) {
-    edit_prediction::EditPredictionStore::global(&client, &user_store, cx);
+pub fn init(client: Arc<Client>, cx: &mut App) {
+    edit_prediction::EditPredictionStore::global(&client, cx);
 
     let editors: Rc<RefCell<HashMap<WeakEntity<Editor>, AnyWindowHandle>>> = Rc::default();
     cx.observe_new({
         let editors = editors.clone();
         let client = client.clone();
-        let user_store = user_store.clone();
         move |editor: &mut Editor, window, cx: &mut Context<Editor>| {
             if !editor.mode().is_full() {
                 return;
@@ -47,7 +46,6 @@ pub fn init(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut App) {
                 provider_config,
                 EditPredictionRequestTrigger::EditorCreated,
                 &client,
-                user_store.clone(),
                 window,
                 cx,
             );
@@ -75,7 +73,6 @@ pub fn init(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut App) {
                     new_provider_config,
                     EditPredictionRequestTrigger::ProviderChanged,
                     &client,
-                    user_store.clone(),
                     cx,
                 );
             }
@@ -150,7 +147,6 @@ fn assign_edit_prediction_providers(
     provider_config: Option<EditPredictionProviderConfig>,
     trigger: EditPredictionRequestTrigger,
     client: &Arc<Client>,
-    user_store: Entity<UserStore>,
     cx: &mut App,
 ) {
     for (editor, window) in editors.borrow().iter() {
@@ -161,7 +157,6 @@ fn assign_edit_prediction_providers(
                     provider_config,
                     trigger,
                     client,
-                    user_store.clone(),
                     window,
                     cx,
                 );
@@ -175,7 +170,6 @@ fn assign_edit_prediction_provider(
     provider_config: Option<EditPredictionProviderConfig>,
     trigger: EditPredictionRequestTrigger,
     client: &Arc<Client>,
-    user_store: Entity<UserStore>,
     window: &mut Window,
     cx: &mut Context<Editor>,
 ) {
@@ -189,7 +183,7 @@ fn assign_edit_prediction_provider(
             );
         }
         Some(EditPredictionProviderConfig::Zed(model)) => {
-            let ep_store = edit_prediction::EditPredictionStore::global(client, &user_store, cx);
+            let ep_store = edit_prediction::EditPredictionStore::global(client, cx);
 
             if let Some(project) = editor.project() {
                 ep_store.update(cx, |ep_store, cx| {
@@ -199,9 +193,8 @@ fn assign_edit_prediction_provider(
                     }
                 });
 
-                let provider = cx.new(|cx| {
-                    ZedEditPredictionDelegate::new(project.clone(), &client, &user_store, cx)
-                });
+                let provider =
+                    cx.new(|cx| ZedEditPredictionDelegate::new(project.clone(), &client, cx));
                 editor.set_edit_prediction_provider(Some(provider), trigger, window, cx);
             }
         }

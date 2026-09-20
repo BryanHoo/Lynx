@@ -14,7 +14,6 @@ test = false
 doctest = false
 
 [dependencies]
-client.workspace = true
 gpui.workspace = true
 icons.workspace = true
 language.workspace = true
