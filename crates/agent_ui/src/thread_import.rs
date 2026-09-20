@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use crate::RemoteConnectionOptions;
 use acp_thread::AgentSessionListRequest;
 use agent::ThreadStore;
 use agent_client_protocol::schema::v1 as acp;
@@ -18,7 +19,6 @@ use itertools::Itertools as _;
 use notifications::status_toast::StatusToast;
 use project::{AgentId, AgentRegistryStore, AgentServerStore};
 use release_channel::ReleaseChannel;
-use remote::RemoteConnectionOptions;
 use ui::{
     Checkbox, CommonAnimationExt, KeyBinding, ListItem, ListItemSpacing, Modal, ModalFooter,
     ModalHeader, Section, Tooltip, prelude::*,
@@ -695,11 +695,7 @@ fn fetch_sessions_for_agent(
     let mut wait_for_connection_tasks = Vec::new();
 
     for store in stores {
-        let remote_connection = store
-            .read(cx)
-            .project()
-            .read(cx)
-            .remote_connection_options(cx);
+        let remote_connection = None;
         let agent = Agent::from(agent_id.clone());
         let server = agent.server(<dyn Fs>::global(cx), ThreadStore::global(cx));
         let entry = store.update(cx, |store, cx| store.request_connection(agent, server, cx));

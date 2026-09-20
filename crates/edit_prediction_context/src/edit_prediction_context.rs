@@ -241,9 +241,8 @@ impl RelatedExcerptStore {
         if let Some(file) = &file {
             log::debug!("retrieving_context buffer:{}", file.path().as_unix_str());
         }
-        let (lsp_store, is_via_ssh) = project.read_with(cx, |project, _| {
-            (project.lsp_store(), project.is_via_remote_server())
-        });
+        let lsp_store = project.read_with(cx, |project, _| project.lsp_store());
+        let is_via_ssh = false;
         let lsp_names = lsp_store.update(cx, |lsp_store, cx| {
             buffer.update(cx, |buffer, cx| {
                 lsp_store

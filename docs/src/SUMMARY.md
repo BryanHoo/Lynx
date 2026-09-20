@@ -27,9 +27,8 @@
 - [Git](./git.md)
 - [Modelines](./modelines.md)
 
-# Remote Development
+# Environment
 
-- [Overview](./remote-development.md)
 - [Environment Variables](./environment.md)
 
 # AI

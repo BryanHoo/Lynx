@@ -10084,7 +10084,7 @@ impl Editor {
                 let (telemetry, is_via_ssh) = {
                     let project = project.read(cx);
                     let telemetry = project.client().telemetry().clone();
-                    let is_via_ssh = project.is_via_remote_server();
+                    let is_via_ssh = false;
                     (telemetry, is_via_ssh)
                 };
                 telemetry.log_edit_event("editor", is_via_ssh);
@@ -10790,7 +10790,7 @@ impl Editor {
                 vim_mode,
                 copilot_enabled_for_language,
                 edit_predictions_provider,
-                is_via_ssh = project.is_via_remote_server(),
+                is_via_ssh = false,
             );
         } else {
             telemetry::event!(
@@ -10799,7 +10799,7 @@ impl Editor {
                 vim_mode,
                 copilot_enabled_for_language,
                 edit_predictions_provider,
-                is_via_ssh = project.is_via_remote_server(),
+                is_via_ssh = false,
             );
         };
     }

@@ -68,6 +68,15 @@ use std::path::{Path, PathBuf};
 use workspace::{OpenOptions, Workspace};
 
 use crate::agent_configuration::ManageProfilesModal;
+
+pub(crate) type RemoteConnectionOptions = serde_json::Value;
+
+pub(crate) fn same_remote_connection_identity(
+    left: Option<&RemoteConnectionOptions>,
+    right: Option<&RemoteConnectionOptions>,
+) -> bool {
+    left == right
+}
 pub use crate::agent_connection_store::{ActiveAcpConnection, AgentConnectionStore};
 pub use crate::agent_panel::{
     AgentPanel, AgentPanelEvent, AgentPanelTerminalInfo, MaxIdleRetainedThreads, TerminalId,

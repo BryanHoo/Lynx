@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
 };
 
+use crate::{RemoteConnectionOptions, same_remote_connection_identity};
 use agent::{ThreadStore, ZED_AGENT_ID};
 use agent_client_protocol::schema::v1 as acp;
 use anyhow::Context as _;
@@ -23,7 +24,6 @@ use futures::{FutureExt, future::Shared};
 use gpui::{AppContext as _, Entity, Global, Subscription, Task, TaskExt};
 pub use project::WorktreePaths;
 use project::{AgentId, linked_worktree_short_name};
-use remote::{RemoteConnectionOptions, same_remote_connection_identity};
 use ui::{App, Context, SharedString, ThreadItemWorktreeInfo, WorktreeKind};
 use util::ResultExt as _;
 use workspace::{PathList, SerializedWorkspaceLocation, WorkspaceDb};
@@ -190,13 +190,9 @@ fn migrate_thread_metadata(cx: &mut App) -> Task<anyhow::Result<()>> {
 }
 
 fn migrate_thread_remote_connections(cx: &mut App, migration_task: Task<anyhow::Result<()>>) {
-    let store = ThreadMetadataStore::global(cx);
-    let db = store.read(cx).db.clone();
     let kvp = KeyValueStore::global(cx);
-    let workspace_db = WorkspaceDb::global(cx);
-    let fs = <dyn Fs>::global(cx);
 
-    cx.spawn(async move |cx| -> anyhow::Result<()> {
+    cx.spawn(async move |_cx| -> anyhow::Result<()> {
         migration_task.await?;
 
         if kvp
@@ -206,66 +202,11 @@ fn migrate_thread_remote_connections(cx: &mut App, migration_task: Task<anyhow::
             return Ok(());
         }
 
-        let recent_workspaces = workspace_db
-            .recent_project_workspaces_ungrouped(fs.as_ref())
-            .await?;
-
-        let mut local_path_lists = HashSet::<PathList>::default();
-        let mut remote_path_lists = HashMap::<PathList, RemoteConnectionOptions>::default();
-
-        recent_workspaces
-            .iter()
-            .filter(|workspace| {
-                !workspace.paths.is_empty()
-                    && matches!(workspace.location, SerializedWorkspaceLocation::Local)
-            })
-            .for_each(|workspace| {
-                local_path_lists.insert(workspace.paths.clone());
-            });
-
-        for workspace in recent_workspaces {
-            match workspace.location {
-                SerializedWorkspaceLocation::Remote(remote_connection)
-                    if !local_path_lists.contains(&workspace.paths) =>
-                {
-                    remote_path_lists
-                        .entry(workspace.paths)
-                        .or_insert(remote_connection);
-                }
-                _ => {}
-            }
-        }
-
-        let mut reloaded = false;
-        for metadata in db.list()? {
-            if metadata.remote_connection.is_some() {
-                continue;
-            }
-
-            if let Some(remote_connection) = remote_path_lists
-                .get(metadata.folder_paths())
-                .or_else(|| remote_path_lists.get(metadata.main_worktree_paths()))
-            {
-                db.save(ThreadMetadata {
-                    remote_connection: Some(remote_connection.clone()),
-                    ..metadata
-                })
-                .await?;
-                reloaded = true;
-            }
-        }
-
-        let reloaded_task = reloaded
-            .then_some(store.update(cx, |store, cx| store.reload(cx)))
-            .unwrap_or(Task::ready(()).shared());
-
         kvp.write_kvp(
             THREAD_REMOTE_CONNECTION_MIGRATION_KEY.to_string(),
             "1".to_string(),
         )
         .await?;
-        reloaded_task.await;
-
         Ok(())
     })
     .detach_and_log_err(cx);
@@ -1317,7 +1258,7 @@ impl ThreadMetadataStore {
             } else {
                 let project = thread_ref.project().read(cx);
                 let worktree_paths = project.worktree_paths(cx);
-                let remote_connection = project.remote_connection_options(cx);
+                let remote_connection = None;
 
                 (worktree_paths, remote_connection)
             };

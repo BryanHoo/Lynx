@@ -30,8 +30,8 @@ packages = ["wasmtime-c-api-impl"]
 # Plan-time probe: the git SHA is read here (outside the sandbox) and frozen
 # into the keyed value. zed/build.rs prefers $ZED_COMMIT_SHA over running git,
 # which the sandbox blocks. Release-only; dev builds embed no SHA (the source
-# reads it via option_env!). cli/remote_server build.rs run git directly rather
-# than reading this var, so they are not listed here.
+# reads it via option_env!). cli/build.rs runs git directly rather than reading
+# this var, so it is not listed here.
 [env.ZED_COMMIT_SHA]
 command = "git rev-parse HEAD"
 packages = ["zed"]
@@ -72,7 +72,6 @@ eval_cli = ["../zed/Cargo.toml"]
 prompt_store = ["../git_ui/src/commit_message_prompt.txt"]
 release_channel = ["../zed/RELEASE_CHANNEL"]
 cli = ["../../script/uninstall.sh"]
-remote_server = ["../zed/Cargo.toml"]
 # `../zed/Cargo.toml`: build.rs reads it for ZED_PKG_VERSION. `../grammars/src`
 # and `src/prompts` are embedded in release builds; dev builds read them at
 # runtime via fs_embed.

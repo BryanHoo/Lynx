@@ -4,6 +4,7 @@ use std::{
     time::SystemTime,
 };
 
+use crate::{RemoteConnectionOptions, same_remote_connection_identity};
 use anyhow::{Context as _, Result, anyhow};
 use gpui::{App, AsyncApp, Entity, Task};
 use project::{
@@ -11,7 +12,6 @@ use project::{
     git_store::{Repository, resolve_git_worktree_to_main_repo, worktrees_directory_for_repo},
     project_settings::ProjectSettings,
 };
-use remote::{RemoteConnectionOptions, same_remote_connection_identity};
 use settings::Settings;
 use util::{ResultExt, paths::PathStyle};
 use workspace::{AppState, MultiWorkspace, Workspace};
@@ -117,12 +117,8 @@ pub fn build_root_plan(
 ) -> Option<RootPlan> {
     let path = path.to_path_buf();
 
-    let matches_target_connection = |project: &Entity<Project>, cx: &App| {
-        same_remote_connection_identity(
-            project.read(cx).remote_connection_options(cx).as_ref(),
-            remote_connection,
-        )
-    };
+    let matches_target_connection =
+        |_project: &Entity<Project>, _cx: &App| remote_connection.is_none();
 
     let affected_projects = workspaces
         .iter()
@@ -186,8 +182,7 @@ pub fn build_root_plan(
     // created under the same directory layout. The recorded creation time
     // is re-verified against the filesystem in [`remove_root`] before
     // anything is deleted.
-    let recorded_created_at =
-        git_ui_core::created_worktrees::recorded_created_at(&path, remote_connection, cx)?;
+    let recorded_created_at = git_ui_core::created_worktrees::recorded_created_at(&path, cx)?;
 
     let branch_name = linked_snapshot
         .branch
@@ -239,15 +234,9 @@ pub async fn remove_root(root: RootPlan, cx: &mut AsyncApp) -> Result<()> {
     // user later creates a new worktree at the same path outside Zed, a
     // leftover record would only be saved by the creation time check, so
     // remove it eagerly.
-    cx.update(|cx| {
-        git_ui_core::created_worktrees::forget_created_worktree(
-            &root.root_path,
-            root.remote_connection.as_ref(),
-            cx,
-        )
-    })
-    .await
-    .log_err();
+    cx.update(|cx| git_ui_core::created_worktrees::forget_created_worktree(&root.root_path, cx))
+        .await
+        .log_err();
 
     Ok(())
 }
@@ -285,11 +274,7 @@ async fn verify_created_by_zed(root: &RootPlan, cx: &mut AsyncApp) -> Result<()>
         Some(created_at) if created_at == root.recorded_created_at => Ok(()),
         Some(_) => {
             cx.update(|cx| {
-                git_ui_core::created_worktrees::forget_created_worktree(
-                    &root.root_path,
-                    root.remote_connection.as_ref(),
-                    cx,
-                )
+                git_ui_core::created_worktrees::forget_created_worktree(&root.root_path, cx)
             })
             .await
             .log_err();
@@ -359,7 +344,7 @@ async fn find_or_create_repository(
     cx: &mut AsyncApp,
 ) -> Result<(Entity<Repository>, Entity<Project>)> {
     let repo_path_owned = repo_path.to_path_buf();
-    let remote_connection_owned = remote_connection.cloned();
+    let _ = remote_connection;
 
     // First, try to find a live repository in any open workspace whose
     // remote connection matches (so a local `/project` and a remote
@@ -369,13 +354,6 @@ async fn find_or_create_repository(
             .into_iter()
             .filter_map(|workspace| {
                 let project = workspace.read(cx).project().clone();
-                let project_connection = project.read(cx).remote_connection_options(cx);
-                if !same_remote_connection_identity(
-                    project_connection.as_ref(),
-                    remote_connection_owned.as_ref(),
-                ) {
-                    return None;
-                }
                 Some((
                     project
                         .read(cx)
@@ -399,47 +377,18 @@ async fn find_or_create_repository(
     let app_state =
         current_app_state(cx).context("no app state available for temporary project")?;
 
-    // For remote paths, create a fresh RemoteClient through the connection
-    // pool (reusing the existing SSH transport) and build a temporary
-    // remote project. Each RemoteClient gets its own server-side headless
-    // project, so there are no RPC routing conflicts with other projects.
-    let temp_project = if let Some(connection) = remote_connection_owned {
-        let remote_client = cx
-            .update(|cx| {
-                if !remote::has_active_connection(&connection, cx) {
-                    anyhow::bail!("cannot open repository on disconnected remote machine");
-                }
-                Ok(remote_connection::connect_reusing_pool(connection, cx))
-            })?
-            .await?
-            .context("remote connection was canceled")?;
-
-        cx.update(|cx| {
-            Project::remote(
-                remote_client,
-                app_state.client.clone(),
-                app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
-                app_state.languages.clone(),
-                app_state.fs.clone(),
-                false,
-                cx,
-            )
-        })
-    } else {
-        cx.update(|cx| {
-            Project::local(
-                app_state.client.clone(),
-                app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
-                app_state.languages.clone(),
-                app_state.fs.clone(),
-                None,
-                LocalProjectFlags::default(),
-                cx,
-            )
-        })
-    };
+    let temp_project = cx.update(|cx| {
+        Project::local(
+            app_state.client.clone(),
+            app_state.node_runtime.clone(),
+            app_state.user_store.clone(),
+            app_state.languages.clone(),
+            app_state.fs.clone(),
+            None,
+            LocalProjectFlags::default(),
+            cx,
+        )
+    });
 
     let repo_path_for_worktree = repo_path.to_path_buf();
     let create_worktree = temp_project.update(cx, |project, cx| {
@@ -795,7 +744,6 @@ pub async fn restore_worktree_via_git(
         git_ui_core::created_worktrees::record_created_worktree_for_repo(
             &wt_repo,
             worktree_path,
-            remote_connection,
             cx,
         )
         .await;

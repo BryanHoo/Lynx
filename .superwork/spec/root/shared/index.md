@@ -14,6 +14,7 @@ Use this guide for root configuration, CI, scripts, assets, and changes spanning
 
 ## Product Boundaries
 
+- Keep project creation, restoration, persistence, terminals, and editor workflows local-only; do not add SSH, WSL, or remote-server development entry points, builds, packages, or release artifacts.
 - Do not add Zed account, billing, organization, hosted-model, collaboration, or telemetry-upload services to Lynx.
 - Route AI requests through user-configured provider APIs, gateways, local models, or external agents.
 - Do not publish Zed company policies or point Lynx package metadata at Zed-operated support and release services.

@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use crate::{RemoteConnectionOptions, same_remote_connection_identity};
 use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use collections::{HashMap, HashSet};
@@ -12,7 +13,6 @@ use db::{
 };
 use futures::{FutureExt, future::Shared};
 use gpui::{AppContext as _, Entity, Global, Task};
-use remote::{RemoteConnectionOptions, same_remote_connection_identity};
 use ui::{App, Context, SharedString};
 use util::ResultExt as _;
 use workspace::PathList;

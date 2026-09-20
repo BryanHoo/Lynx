@@ -1569,12 +1569,7 @@ impl PickerDelegate for ProjectPickerDelegate {
                     .collect();
 
                 let highlighted_match = HighlightedMatchWithPaths {
-                    prefix: match location {
-                        SerializedWorkspaceLocation::Remote(options) => {
-                            Some(SharedString::from(options.display_name()))
-                        }
-                        _ => None,
-                    },
+                    prefix: None,
                     match_label: HighlightedMatch::join(match_labels.into_iter().flatten(), ", "),
                     paths: Vec::new(),
                     active: false,

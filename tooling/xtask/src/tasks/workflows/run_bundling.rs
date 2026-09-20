@@ -86,10 +86,6 @@ pub(crate) fn bundle_mac(
         Arch::X86_64 => assets::MAC_X86_64,
         Arch::AARCH64 => assets::MAC_AARCH64,
     };
-    let remote_server_artifact_name = match arch {
-        Arch::X86_64 => assets::REMOTE_SERVER_MAC_X86_64,
-        Arch::AARCH64 => assets::REMOTE_SERVER_MAC_AARCH64,
-    };
     NamedJob {
         name: format!("bundle_mac_{arch}"),
         job: bundle_job(deps)
@@ -107,9 +103,6 @@ pub(crate) fn bundle_mac(
             .add_step(bundle_mac(arch))
             .add_step(upload_artifact(&format!(
                 "target/{target}/release/{artifact_name}"
-            )))
-            .add_step(upload_artifact(&format!(
-                "target/{remote_server_artifact_name}"
             ))),
     }
 }
@@ -173,10 +166,6 @@ pub(crate) fn bundle_linux(
         Arch::X86_64 => assets::LINUX_X86_64,
         Arch::AARCH64 => assets::LINUX_AARCH64,
     };
-    let remote_server_artifact_name = match arch {
-        Arch::X86_64 => assets::REMOTE_SERVER_LINUX_X86_64,
-        Arch::AARCH64 => assets::REMOTE_SERVER_LINUX_AARCH64,
-    };
     NamedJob {
         name: format!("bundle_linux_{arch}"),
         job: bundle_job(deps)
@@ -192,10 +181,7 @@ pub(crate) fn bundle_linux(
             .add_step(steps::setup_sentry())
             .map(steps::install_linux_dependencies)
             .add_step(steps::script("./script/bundle-linux"))
-            .add_step(upload_artifact(&format!("target/release/{artifact_name}")))
-            .add_step(upload_artifact(&format!(
-                "target/{remote_server_artifact_name}"
-            ))),
+            .add_step(upload_artifact(&format!("target/release/{artifact_name}"))),
     }
 }
 
@@ -216,10 +202,6 @@ pub(crate) fn bundle_windows(
         Arch::X86_64 => assets::WINDOWS_X86_64,
         Arch::AARCH64 => assets::WINDOWS_AARCH64,
     };
-    let remote_server_artifact_name = match arch {
-        Arch::X86_64 => assets::REMOTE_SERVER_WINDOWS_X86_64,
-        Arch::AARCH64 => assets::REMOTE_SERVER_WINDOWS_AARCH64,
-    };
     NamedJob {
         name: format!("bundle_windows_{arch}"),
         job: bundle_job(deps)
@@ -232,10 +214,7 @@ pub(crate) fn bundle_windows(
             .add_step(steps::setup_sentry())
             .add_step(steps::clear_target_dir_if_large(platform))
             .add_step(bundle_windows(arch))
-            .add_step(upload_artifact(&format!("target/{artifact_name}")))
-            .add_step(upload_artifact(&format!(
-                "target/{remote_server_artifact_name}"
-            ))),
+            .add_step(upload_artifact(&format!("target/{artifact_name}"))),
     }
 }
 

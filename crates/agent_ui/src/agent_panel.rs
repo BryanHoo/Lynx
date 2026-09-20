@@ -1616,8 +1616,7 @@ impl AgentPanel {
         };
 
         // Local settings do not list remote agents, and the remote list may not have loaded yet.
-        self.project.read(cx).is_via_remote_server()
-            || AllAgentServersSettings::get_global(cx).contains_key(id.0.as_ref())
+        false || AllAgentServersSettings::get_global(cx).contains_key(id.0.as_ref())
     }
 
     fn restorable_agent_selection(&self, cx: &App) -> Agent {
@@ -2372,7 +2371,7 @@ impl AgentPanel {
             custom_title: terminal.custom_title(cx),
             created_at: terminal.created_at,
             worktree_paths: project.worktree_paths(cx),
-            remote_connection: project.remote_connection_options(cx),
+            remote_connection: None,
             working_directory: terminal.working_directory.clone(),
         })
     }

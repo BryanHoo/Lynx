@@ -223,7 +223,6 @@ impl VsCodeSettings {
                 "off" => Some(ReduceMotionMode::Off),
                 _ => None,
             }),
-            remote: RemoteSettingsContent::default(),
             server_url: None,
             session: None,
             status_bar: self.status_bar_settings_content(),
@@ -741,7 +740,6 @@ impl VsCodeSettings {
                     k.clone().into(),
                     ContextServerSettingsContent::Stdio {
                         enabled: true,
-                        remote: false,
                         command: serde_json::from_value::<VsCodeContextServerCommand>(v.clone())
                             .ok()
                             .map(|cmd| ContextServerCommand {

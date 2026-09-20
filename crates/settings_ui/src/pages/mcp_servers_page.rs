@@ -389,7 +389,6 @@ fn render_toggle_switch(
                         .entry(context_server_id.0.clone())
                         .or_insert_with(|| ContextServerSettingsContent::Extension {
                             enabled: is_enabled,
-                            remote: false,
                             settings: serde_json::json!({}),
                         })
                         .set_enabled(is_enabled);
@@ -1311,7 +1310,6 @@ fn build_settings_from_values(
             let env = collect_kv(&values.env, "environment variable")?;
             ContextServerSettingsContent::Stdio {
                 enabled: true,
-                remote: false,
                 command: ContextServerCommand {
                     path: command.into(),
                     args,
@@ -1541,7 +1539,6 @@ mod tests {
             content,
             ContextServerSettingsContent::Stdio {
                 enabled: true,
-                remote: false,
                 command: ContextServerCommand {
                     path: "/usr/bin/server".into(),
                     args: vec!["--flag".into(), "value".into()],

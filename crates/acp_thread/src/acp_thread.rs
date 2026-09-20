@@ -4785,13 +4785,7 @@ impl AcpThread {
             let terminal_id = terminal_id.clone();
             async move |_this, cx| {
                 let env = env.await;
-                let shell = project
-                    .update(cx, |project, cx| {
-                        project
-                            .remote_client()
-                            .and_then(|r| r.read(cx).default_system_shell())
-                    })
-                    .unwrap_or_else(|| get_default_system_shell_preferring_bash());
+                let shell = get_default_system_shell_preferring_bash();
 
                 // The sandbox owns the network proxy (for restricted-network
                 // policies) and injects the child's proxy env vars, returning

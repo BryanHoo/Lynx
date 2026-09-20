@@ -394,7 +394,6 @@ impl WelcomePage {
 
         let (icon, title) = match location {
             SerializedWorkspaceLocation::Local => (IconName::Folder, name),
-            SerializedWorkspaceLocation::Remote(_) => (IconName::Server, name),
         };
 
         SectionButton::new(

@@ -4679,14 +4679,8 @@ fn open_user_settings_in_workspace(
     let project = workspace.project().clone();
 
     cx.spawn_in(window, async move |workspace, cx| {
-        let (config_dir, settings_file) = project.update(cx, |project, cx| {
-            (
-                project.try_windows_path_to_wsl(paths::config_dir().as_path(), cx),
-                project.try_windows_path_to_wsl(paths::settings_file().as_path(), cx),
-            )
-        });
-        let config_dir = config_dir.await?;
-        let settings_file = settings_file.await?;
+        let config_dir = paths::config_dir().to_path_buf();
+        let settings_file = paths::settings_file().to_path_buf();
         project
             .update(cx, |project, cx| {
                 project.find_or_create_worktree(&config_dir, false, cx)

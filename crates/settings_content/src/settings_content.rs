@@ -98,7 +98,6 @@ macro_rules! settings_overrides {
         }
     }
 }
-use std::collections::BTreeSet;
 use std::hash::Hash;
 use std::sync::Arc;
 pub use util::serde::default_true;
@@ -213,9 +212,6 @@ pub struct SettingsContent {
 
     #[serde(flatten)]
     pub editor: EditorSettingsContent,
-
-    #[serde(flatten)]
-    pub remote: RemoteSettingsContent,
 
     /// Settings related to the command palette.
     pub command_palette: Option<CommandPaletteSettingsContent>,
@@ -348,7 +344,7 @@ impl SettingsContent {
 }
 
 fallible_options::flattened_deserialize!(SettingsContent {
-    sections: { project, theme, extension, workspace, editor, remote },
+    sections: { project, theme, extension, workspace, editor },
     options: {
         call_hierarchy, command_palette, file_finder, git_panel, tabs, tab_bar, status_bar, preview_tabs, agent,
         agent_servers, base_keymap, ui_locale, debugger, diagnostics,
@@ -1229,64 +1225,6 @@ pub enum ImageFileSizeUnit {
     Binary,
     /// Displays file size in decimal units (e.g., KB, MB).
     Decimal,
-}
-
-#[with_fallible_options]
-#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, MergeFrom, PartialEq)]
-pub struct RemoteSettingsContent {
-    pub ssh_connections: Option<Vec<SshConnection>>,
-    pub wsl_connections: Option<Vec<WslConnection>>,
-    pub read_ssh_config: Option<bool>,
-    pub use_podman: Option<bool>,
-}
-
-#[with_fallible_options]
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom)]
-pub struct SshConnection {
-    pub host: String,
-    pub username: Option<String>,
-    pub port: Option<u16>,
-    #[serde(default)]
-    pub args: Vec<String>,
-    #[serde(default)]
-    pub projects: collections::BTreeSet<RemoteProject>,
-    /// Name to use for this server in UI.
-    pub nickname: Option<String>,
-    // By default Zed will download the binary to the host directly.
-    // If this is set to true, Zed will download the binary to your local machine,
-    // and then upload it over the SSH connection. Useful if your SSH server has
-    // limited outbound internet access.
-    pub upload_binary_over_ssh: Option<bool>,
-
-    pub port_forwards: Option<Vec<SshPortForwardOption>>,
-    /// Timeout in seconds for SSH connection and downloading the remote server binary.
-    /// Defaults to 10 seconds if not specified.
-    pub connection_timeout: Option<u16>,
-}
-
-#[derive(Clone, Default, Serialize, Deserialize, PartialEq, JsonSchema, MergeFrom, Debug)]
-pub struct WslConnection {
-    pub distro_name: String,
-    pub user: Option<String>,
-    #[serde(default)]
-    pub projects: BTreeSet<RemoteProject>,
-}
-
-#[with_fallible_options]
-#[derive(
-    Clone, Debug, Default, Serialize, PartialEq, Eq, PartialOrd, Ord, Deserialize, JsonSchema,
-)]
-pub struct RemoteProject {
-    pub paths: Vec<String>,
-}
-
-#[with_fallible_options]
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize, JsonSchema, MergeFrom)]
-pub struct SshPortForwardOption {
-    pub local_host: Option<String>,
-    pub local_port: u16,
-    pub remote_host: Option<String>,
-    pub remote_port: u16,
 }
 
 /// Settings for configuring the which-key popup behaviour.
