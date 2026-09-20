@@ -2,7 +2,6 @@ use super::{Client, Status, TypedEnvelope, proto};
 use crate::GetAuthenticatedUserResponse;
 use anyhow::{Context as _, Result};
 use collections::{HashMap, HashSet, hash_map::Entry};
-use feature_flags::FeatureFlagAppExt;
 use futures::{Future, StreamExt, channel::mpsc};
 use gpui::{
     App, AsyncApp, Context, Entity, EventEmitter, SharedString, SharedUri, Task, TaskExt,
@@ -214,9 +213,9 @@ impl UserStore {
 
                                 cx.update(|cx| {
                                     if let Some((user, response)) = current_user_and_response {
-                                        this.update(cx, |this, cx| {
+                                        this.update(cx, |this, _cx| {
                                             this.users.insert(user_id, user);
-                                            this.update_authenticated_user(response, cx)
+                                            this.update_authenticated_user(response)
                                         })
                                     } else {
                                         anyhow::Ok(())
@@ -641,17 +640,11 @@ impl UserStore {
         self.current_user.borrow().clone()
     }
 
-    fn update_authenticated_user(
-        &mut self,
-        response: GetAuthenticatedUserResponse,
-        cx: &mut Context<Self>,
-    ) {
-        let staff = response.user.is_staff && !*feature_flags::ZED_DISABLE_STAFF;
-        cx.update_flags(staff, response.feature_flags);
+    fn update_authenticated_user(&mut self, response: GetAuthenticatedUserResponse) {
         if let Some(client) = self.client.upgrade() {
             client
                 .telemetry
-                .set_authenticated_user_info(Some(response.user.metrics_id), staff);
+                .set_authenticated_user_info(Some(response.user.metrics_id), false);
         }
     }
 

@@ -16,14 +16,13 @@ use async_tungstenite::tungstenite::{
 use auth_api::AccountClient;
 use clock::SystemClock;
 use credentials_provider::CredentialsProvider;
-use feature_flags::FeatureFlagAppExt as _;
 use futures::{
     AsyncReadExt, FutureExt, SinkExt, Stream, StreamExt, TryFutureExt as _, TryStreamExt,
     channel::{mpsc, oneshot},
     future::BoxFuture,
     stream::BoxStream,
 };
-use gpui::{App, AsyncApp, Entity, Global, Task, TaskExt, WeakEntity};
+use gpui::{App, AsyncApp, Entity, Global, Task, WeakEntity};
 use http_client::{HttpClient, HttpClientWithUrl, http, read_proxy_from_env};
 use parking_lot::{Mutex, RwLock};
 use postage::watch;
@@ -899,56 +898,6 @@ impl Client {
                 Err(err.context("failed to validate credentials"))
             }
         }
-    }
-
-    /// Performs a sign-in and also (optionally) connects to Collab.
-    ///
-    /// Only Zed staff automatically connect to Collab.
-    pub async fn sign_in_with_optional_connect(
-        self: &Arc<Self>,
-        try_provider: bool,
-        cx: &AsyncApp,
-    ) -> Result<()> {
-        // Don't try to sign in again if we're already connected to Collab, as it will temporarily disconnect us.
-        if self.status().borrow().is_connected() {
-            return Ok(());
-        }
-
-        let (is_staff_tx, is_staff_rx) = oneshot::channel::<bool>();
-        let mut is_staff_tx = Some(is_staff_tx);
-        cx.update(|cx| {
-            cx.on_flags_ready(move |state, _cx| {
-                if let Some(is_staff_tx) = is_staff_tx.take() {
-                    is_staff_tx.send(state.is_staff).log_err();
-                }
-            })
-            .detach();
-        });
-
-        let credentials = self.sign_in(try_provider, cx).await?;
-
-        cx.update(move |cx| {
-            cx.spawn({
-                let client = self.clone();
-                async move |cx| {
-                    let is_staff = is_staff_rx.await?;
-                    if is_staff {
-                        match client.connect_with_credentials(credentials, cx).await {
-                            ConnectionResult::Timeout => Err(anyhow!("connection timed out")),
-                            ConnectionResult::ConnectionReset => Err(anyhow!("connection reset")),
-                            ConnectionResult::Result(result) => {
-                                result.context("client auth and connect")
-                            }
-                        }
-                    } else {
-                        Ok(())
-                    }
-                }
-            })
-            .detach_and_log_err(cx);
-        });
-
-        Ok(())
     }
 
     pub async fn connect(

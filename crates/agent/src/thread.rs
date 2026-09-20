@@ -2207,9 +2207,7 @@ impl Thread {
 
         // Sibling-thread tools are exposed at every depth: a subagent should
         // still be able to kick off independent sibling work on behalf of the
-        // user, even when it can no longer nest further subagents. Visibility
-        // to the model is gated by `CreateThreadToolFeatureFlag` in
-        // `Thread::enabled_tools`.
+        // user, even when it can no longer nest further subagents.
         self.add_tool(CreateThreadTool::new(environment.clone()));
         self.add_tool(ListAgentsAndModelsTool::new(environment));
     }
@@ -4206,7 +4204,6 @@ impl Thread {
                     None
                 }
             })
-            .filter(|(tool_name, _)| crate::tools::tool_feature_flag_enabled(tool_name, cx))
             .collect::<BTreeMap<_, _>>();
 
         let mut context_server_tools = Vec::new();

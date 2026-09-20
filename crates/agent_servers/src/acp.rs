@@ -13,7 +13,6 @@ use agent_client_protocol::{
 use anyhow::anyhow;
 use async_channel;
 use collections::{HashMap, HashSet};
-use feature_flags::{AcpBetaFeatureFlag, FeatureFlagAppExt as _};
 use futures::channel::mpsc;
 use futures::future::Shared;
 use futures::io::BufReader;
@@ -976,14 +975,10 @@ impl AcpConnection {
             }
         });
 
-        let beta_features_enabled = cx.update(|cx| cx.has_flag::<AcpBetaFeatureFlag>());
         let initialize_response = connection
             .send_request(
                 acp::InitializeRequest::new(ProtocolVersion::V1)
-                    .client_capabilities(client_capabilities_for_agent(
-                        &agent_id,
-                        beta_features_enabled,
-                    ))
+                    .client_capabilities(client_capabilities_for_agent(&agent_id, true))
                     .client_info(
                         acp::Implementation::new("zed", version)
                             .title(release_channel.map(ToOwned::to_owned)),
@@ -2651,15 +2646,12 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     use super::*;
-    use feature_flags::{AcpBetaFeatureFlag, FeatureFlag as _};
     use settings::Settings as _;
 
-    fn init_feature_flags_test(cx: &mut gpui::TestAppContext) {
+    fn init_settings_test(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {
-            let mut settings_store = SettingsStore::test(cx);
-            settings_store.register_setting::<feature_flags::FeatureFlagsSettings>();
+            let settings_store = SettingsStore::test(cx);
             cx.set_global(settings_store);
-            cx.update_flags(false, vec![]);
         });
     }
 
@@ -2667,7 +2659,7 @@ mod tests {
     async fn client_capabilities_include_elicitation_without_acp_beta(
         cx: &mut gpui::TestAppContext,
     ) {
-        init_feature_flags_test(cx);
+        init_settings_test(cx);
         let capabilities = client_capabilities_for_agent(&AgentId::new("codex-acp"), false);
         let elicitation = capabilities
             .elicitation
@@ -2681,10 +2673,7 @@ mod tests {
     async fn request_scoped_elicitation_during_auth_uses_connection_store(
         cx: &mut gpui::TestAppContext,
     ) {
-        init_feature_flags_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(false, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
+        init_settings_test(cx);
 
         let fs = fs::FakeFs::new(cx.executor());
         fs.insert_tree("/", serde_json::json!({ "a": {} })).await;
@@ -2761,10 +2750,7 @@ mod tests {
     async fn request_scoped_url_elicitation_completion_before_consent_is_ignored(
         cx: &mut gpui::TestAppContext,
     ) {
-        init_feature_flags_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(false, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
+        init_settings_test(cx);
 
         let fs = fs::FakeFs::new(cx.executor());
         fs.insert_tree("/", serde_json::json!({ "a": {} })).await;
@@ -2853,10 +2839,7 @@ mod tests {
 
     #[gpui::test]
     async fn request_scoped_elicitation_ignores_open_sessions(cx: &mut gpui::TestAppContext) {
-        init_feature_flags_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(false, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
+        init_settings_test(cx);
 
         let fs = fs::FakeFs::new(cx.executor());
         fs.insert_tree("/", serde_json::json!({ "a": {} })).await;
@@ -3015,7 +2998,7 @@ mod tests {
 
     #[gpui::test]
     async fn connection_routes_terminal_auth_without_acp_beta(cx: &mut gpui::TestAppContext) {
-        init_feature_flags_test(cx);
+        init_settings_test(cx);
 
         let fs = fs::FakeFs::new(cx.executor());
         fs.insert_tree("/", serde_json::json!({ "project": {} }))
@@ -3040,20 +3023,7 @@ mod tests {
             .auth_methods = vec![method];
 
         let terminal_task = cx
-            .update(|cx| {
-                cx.update_flags(true, Vec::new());
-                feature_flags::FeatureFlagsSettings::override_global(
-                    feature_flags::FeatureFlagsSettings {
-                        overrides: HashMap::from_iter([(
-                            AcpBetaFeatureFlag::NAME.into(),
-                            "off".into(),
-                        )]),
-                    },
-                    cx,
-                );
-                assert!(!cx.has_flag::<AcpBetaFeatureFlag>());
-                harness.connection.terminal_auth_task(&method_id, cx)
-            })
+            .update(|cx| harness.connection.terminal_auth_task(&method_id, cx))
             .expect("first-class terminal auth should be routed without ACP beta");
         terminal_task
             .await

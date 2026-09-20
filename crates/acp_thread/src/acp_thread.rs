@@ -10,7 +10,6 @@ use anyhow::{Context as _, Result, anyhow};
 use collections::HashSet;
 pub use connection::*;
 pub use diff::*;
-use feature_flags::{AcpBetaFeatureFlag, FeatureFlagAppExt as _};
 use futures::{FutureExt, channel::oneshot, future::BoxFuture};
 use gpui::{
     ActivityGuard, AppContext, AsyncApp, Context, Entity, EventEmitter, SharedString, Subscription,
@@ -4189,9 +4188,7 @@ impl AcpThread {
                             }
                         }
 
-                        if cx.has_flag::<AcpBetaFeatureFlag>()
-                            && let Some(response_usage) = &r.usage
-                        {
+                        if let Some(response_usage) = &r.usage {
                             let usage = this.token_usage.get_or_insert_with(Default::default);
                             usage.input_tokens = response_usage.input_tokens;
                             usage.output_tokens = response_usage.output_tokens;
@@ -5128,7 +5125,6 @@ fn markdown_for_raw_output(
 mod tests {
     use super::*;
     use anyhow::anyhow;
-    use feature_flags::FeatureFlag as _;
     use futures::stream::StreamExt as _;
     use futures::{channel::mpsc, future::LocalBoxFuture, select};
     use gpui::UpdateGlobal as _;
@@ -5189,28 +5185,8 @@ mod tests {
     fn init_test(cx: &mut TestAppContext) {
         env_logger::try_init().ok();
         cx.update(|cx| {
-            let mut settings_store = SettingsStore::test(cx);
-            settings_store.register_setting::<feature_flags::FeatureFlagsSettings>();
+            let settings_store = SettingsStore::test(cx);
             cx.set_global(settings_store);
-        });
-    }
-
-    fn enable_acp_beta(cx: &mut TestAppContext) {
-        cx.update(|cx| {
-            cx.update_flags(false, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
-    }
-
-    fn set_acp_beta_override(value: &str, cx: &mut TestAppContext) {
-        cx.update(|cx| {
-            SettingsStore::update_global(cx, |store, cx| {
-                store.update_user_settings(cx, |content| {
-                    content
-                        .feature_flags
-                        .get_or_insert_default()
-                        .insert(AcpBetaFeatureFlag::NAME.to_string(), value.to_string());
-                });
-            });
         });
     }
 
@@ -8525,10 +8501,6 @@ mod tests {
     #[gpui::test]
     async fn test_elicitation_is_available_without_acp_beta_flag(cx: &mut TestAppContext) {
         init_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(false, vec![]);
-        });
-        set_acp_beta_override("off", cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
 
@@ -8557,7 +8529,6 @@ mod tests {
     #[gpui::test]
     async fn test_form_elicitation_accepts_response(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
         let tool_call_id = acp::ToolCallId::new("tool-1");
@@ -8619,7 +8590,6 @@ mod tests {
     #[gpui::test]
     async fn test_url_elicitation_can_be_completed(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
         let url_elicitation_id = acp::ElicitationId::new("url-1");
@@ -8684,7 +8654,6 @@ mod tests {
     #[gpui::test]
     async fn test_idle_cancel_cancels_accepted_url_elicitation(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
         let url_elicitation_id = acp::ElicitationId::new("url-1");
@@ -8748,7 +8717,6 @@ mod tests {
     #[gpui::test]
     async fn test_cancel_accepted_url_elicitation_marks_canceled(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
         let url_elicitation_id = acp::ElicitationId::new("url-1");
@@ -8820,7 +8788,6 @@ mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        enable_acp_beta(cx);
         let fs = FakeFs::new(cx.executor());
         let project = Project::test(fs, [], cx).await;
         let prompt_count = Rc::new(RefCell::new(0usize));
@@ -8919,7 +8886,6 @@ mod tests {
     #[gpui::test]
     async fn test_request_scoped_elicitation_store_accepts_response(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
 
         let response_task = store.update(cx, |store, cx| {
@@ -8971,7 +8937,6 @@ mod tests {
     #[gpui::test]
     async fn test_request_elicitation_store_ignores_duplicate_response(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
 
         let response_task = store.update(cx, |store, cx| {
@@ -9026,7 +8991,6 @@ mod tests {
     #[gpui::test]
     async fn test_cancel_session_elicitation_by_id_resolves_cancel(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
 
@@ -9061,7 +9025,6 @@ mod tests {
     #[gpui::test]
     async fn test_cancel_pending_session_elicitation_resolves_cancel(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
 
@@ -9122,7 +9085,6 @@ mod tests {
     #[gpui::test]
     async fn test_prompt_error_cancels_pending_session_elicitation(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let fs = FakeFs::new(cx.executor());
         let project = Project::test(fs, [], cx).await;
         let elicitation_action = Rc::new(RefCell::new(None));
@@ -9177,7 +9139,6 @@ mod tests {
     #[gpui::test]
     async fn test_max_tokens_cancels_pending_session_elicitation(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let fs = FakeFs::new(cx.executor());
         let project = Project::test(fs, [], cx).await;
         let elicitation_action = Rc::new(RefCell::new(None));
@@ -9232,7 +9193,6 @@ mod tests {
     #[gpui::test]
     async fn test_cancel_request_scoped_elicitation_resolves_cancel(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
 
         let (elicitation_id, response_task) = store.update(cx, |store, cx| {
@@ -9266,7 +9226,6 @@ mod tests {
     #[gpui::test]
     async fn test_request_elicitation_store_cancel_all_resolves_cancel(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
 
         let response_task = store.update(cx, |store, cx| {
@@ -9296,7 +9255,6 @@ mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
 
         let first_response_task = store.update(cx, |store, cx| {
@@ -9360,7 +9318,6 @@ mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
         let url_elicitation_id = acp::ElicitationId::new("url-1");
 
@@ -9472,7 +9429,6 @@ mod tests {
     #[gpui::test]
     async fn test_request_url_elicitation_store_can_be_completed(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
         let url_elicitation_id = acp::ElicitationId::new("url-1");
 
@@ -9543,7 +9499,6 @@ mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        enable_acp_beta(cx);
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
         let url_elicitation_id = acp::ElicitationId::new("url-1");
 
@@ -9612,7 +9567,6 @@ mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
 
@@ -9657,7 +9611,6 @@ mod tests {
     #[gpui::test]
     async fn test_session_elicitation_ignores_duplicate_response(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
 
@@ -9708,7 +9661,6 @@ mod tests {
     #[gpui::test]
     async fn test_url_elicitation_rejects_non_browser_urls(cx: &mut TestAppContext) {
         init_test(cx);
-        enable_acp_beta(cx);
         let thread = new_test_thread(cx).await;
         let session_id = thread.read_with(cx, |thread, _| thread.session_id().clone());
 

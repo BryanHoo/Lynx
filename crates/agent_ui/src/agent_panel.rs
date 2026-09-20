@@ -54,7 +54,6 @@ use chrono::{DateTime, Utc};
 use collections::HashMap;
 use editor::{Editor, MultiBuffer};
 use extension_host::ExtensionStore;
-use feature_flags::{CreateThreadToolFeatureFlag, FeatureFlagAppExt as _};
 
 use fs::Fs;
 use futures::FutureExt as _;
@@ -4602,9 +4601,6 @@ impl AgentPanel {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if !cx.has_flag::<CreateThreadToolFeatureFlag>() {
-            return;
-        }
         let Some(native_connection) = conversation_view.read(cx).as_native_connection(cx) else {
             return;
         };
@@ -6690,7 +6686,6 @@ mod tests {
     use acp_thread::{AgentConnection, StubAgentConnection, ThreadStatus};
     use action_log::ActionLog;
     use anyhow::{Result, anyhow};
-    use feature_flags::FeatureFlagAppExt;
     use fs::FakeFs;
     use gpui::{App, Modifiers, TestAppContext, UpdateGlobal, VisualTestContext, px, size};
     use parking_lot::Mutex;
@@ -9010,10 +9005,6 @@ mod tests {
                 "empty workspaces should not create agent panel terminals"
             );
         });
-
-        cx.update(|_, cx| {
-            cx.update_flags(true, vec!["agent-panel-terminal".to_string()]);
-        });
         panel.update_in(cx, |panel, window, cx| {
             panel.new_terminal(None, AgentThreadSource::AgentPanel, window, cx);
         });
@@ -9270,9 +9261,6 @@ mod tests {
     #[gpui::test]
     async fn test_terminal_external_image_drop_writes_path(cx: &mut TestAppContext) {
         let (panel, mut cx) = setup_panel(cx).await;
-        cx.update(|_, cx| {
-            cx.update_flags(true, vec!["agent-panel-terminal".to_string()]);
-        });
 
         let terminal_id = panel
             .update_in(&mut cx, |panel, window, cx| {
@@ -9312,9 +9300,6 @@ mod tests {
     #[gpui::test]
     async fn test_terminal_external_paths_drop_handler_writes_image_path(cx: &mut TestAppContext) {
         let (panel, mut cx) = setup_panel(cx).await;
-        cx.update(|_, cx| {
-            cx.update_flags(true, vec!["agent-panel-terminal".to_string()]);
-        });
 
         let terminal_id = panel
             .update_in(&mut cx, |panel, window, cx| {
@@ -9359,7 +9344,6 @@ mod tests {
         cx.update(|cx| {
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
-            cx.update_flags(true, vec!["agent-panel-terminal".to_string()]);
         });
 
         let fs = FakeFs::new(cx.executor());
@@ -10680,7 +10664,6 @@ mod tests {
         cx.update(|cx| {
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
-            cx.update_flags(true, vec!["agent-panel-terminal".to_string()]);
             AgentSettings::override_global(
                 AgentSettings {
                     notify_when_agent_waiting: NotifyWhenAgentWaiting::PrimaryScreen,
@@ -12564,7 +12547,6 @@ mod tests {
         init_test(cx);
         let fs = FakeFs::new(cx.executor());
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn fs::Fs>::set_global(fs.clone(), cx);
@@ -12626,7 +12608,6 @@ mod tests {
         init_test(cx);
         let fs = FakeFs::new(cx.executor());
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn fs::Fs>::set_global(fs.clone(), cx);
@@ -12728,7 +12709,6 @@ mod tests {
         init_test(cx);
         let fs = FakeFs::new(cx.executor());
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn fs::Fs>::set_global(fs.clone(), cx);
@@ -12792,7 +12772,6 @@ mod tests {
         init_test(cx);
         let fs = FakeFs::new(cx.executor());
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn fs::Fs>::set_global(fs.clone(), cx);

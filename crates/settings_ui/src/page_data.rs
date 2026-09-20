@@ -68,34 +68,7 @@ pub(crate) fn settings_data(cx: &App) -> Vec<SettingsPage> {
         version_control_page(),
         ai_page(cx),
         network_page(),
-        developer_page(cx),
     ]
-}
-
-fn developer_page(cx: &App) -> SettingsPage {
-    use feature_flags::FeatureFlagAppExt as _;
-
-    let mut items: Vec<SettingsPageItem> = Vec::new();
-
-    // Feature flag overrides are a staff-only affordance, so only surface the section when the overrides are enabled.
-    if cx.feature_flag_overrides_enabled() {
-        items.push(SettingsPageItem::SectionHeader("Feature Flags"));
-        items.push(SettingsPageItem::SubPageLink(SubPageLink {
-            title: "Feature Flags".into(),
-            r#type: Default::default(),
-            description: None,
-            search_aliases: &[],
-            json_path: Some("feature_flags"),
-            in_json: true,
-            files: USER,
-            render: crate::pages::render_feature_flags_page,
-        }));
-    }
-
-    SettingsPage {
-        title: "Developer",
-        items: items.into_boxed_slice(),
-    }
 }
 
 fn general_page(cx: &App) -> SettingsPage {

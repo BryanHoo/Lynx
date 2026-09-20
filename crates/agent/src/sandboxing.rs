@@ -26,7 +26,6 @@
 //! Other agent operations (e.g. file edits) are gated separately.
 
 use agent_settings::{AgentSettings, SandboxPermissions};
-use feature_flags::{FeatureFlagAppExt as _, SandboxingFeatureFlag};
 use gpui::App;
 use http_proxy::HostPattern;
 use project::Project;
@@ -209,8 +208,8 @@ pub(crate) fn sandboxing_enabled_for_project(project: &Project, cx: &App) -> boo
 
 /// Whether agent-run terminal commands should be wrapped in an OS-level
 /// sandbox for this process. See module docs for the policy.
-pub(crate) fn sandboxing_enabled(cx: &App) -> bool {
-    cx.has_flag::<SandboxingFeatureFlag>()
+pub(crate) fn sandboxing_enabled(_cx: &App) -> bool {
+    true
 }
 
 /// Whether sandboxing is *applicable* for this project at all — the feature is

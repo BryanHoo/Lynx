@@ -15,7 +15,6 @@ const SYSTEM_ID_HEADER_NAME: &str = "x-zed-system-id";
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetAuthenticatedUserResponse {
     pub user: AuthenticatedUser,
-    pub feature_flags: Vec<String>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -24,7 +23,6 @@ pub struct AuthenticatedUser {
     pub username: String,
     pub avatar_url: String,
     pub name: Option<String>,
-    pub is_staff: bool,
 }
 
 struct Credentials {

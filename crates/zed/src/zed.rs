@@ -24,7 +24,6 @@ use breadcrumbs::Breadcrumbs;
 use collections::VecDeque;
 use editor::{Editor, MultiBuffer};
 use extension_host::ExtensionStore;
-use feature_flags::{FeatureFlagAppExt as _, PanicFeatureFlag};
 use fs::Fs;
 use futures::FutureExt as _;
 use futures::{StreamExt, channel::mpsc, select_biased};
@@ -133,10 +132,6 @@ actions!(
         ToggleFullScreen,
         /// Zooms the window.
         Zoom,
-        /// Triggers a test panic for debugging.
-        TestPanic,
-        /// Triggers a hard crash for debugging.
-        TestCrash,
     ]
 );
 
@@ -184,26 +179,6 @@ pub fn init(cx: &mut App) {
     #[cfg(target_os = "macos")]
     cx.on_action(|_: &ShowAll, cx| cx.unhide_other_apps());
     cx.on_action(quit);
-
-    cx.observe_flag::<PanicFeatureFlag, _>({
-        let mut added = false;
-        move |flag, cx| {
-            if added || !*flag {
-                return;
-            }
-            added = true;
-            cx.on_action(|_: &TestPanic, _| panic!("Ran the TestPanic action"))
-                .on_action(|_: &TestCrash, _| {
-                    unsafe extern "C" {
-                        fn puts(s: *const i8);
-                    }
-                    unsafe {
-                        puts(0xabad1d3a as *const i8);
-                    }
-                });
-        }
-    })
-    .detach();
 
     // When Zed logs to stdout rather than the log file, avoid registering
     // handlers for both `OpenLog` and `RevealLogInFileManager`, as the log file

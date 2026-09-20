@@ -96,7 +96,6 @@ dependencies = [
  "chrono",
  "collections",
  "env_logger 0.11.8",
- "feature_flags",
  "file_icons",
  "futures 0.3.34",
  "gpui",
@@ -264,7 +263,6 @@ dependencies = [
  "editor",
  "env_logger 0.11.8",
  "eval_utils",
- "feature_flags",
  "fs",
  "futures 0.3.34",
  "git",
@@ -385,7 +383,6 @@ dependencies = [
  "client",
  "collections",
  "env_logger 0.11.8",
- "feature_flags",
  "fs",
  "futures 0.3.34",
  "google_ai",
@@ -480,7 +477,6 @@ dependencies = [
  "eval_utils",
  "extension",
  "extension_host",
- "feature_flags",
  "file_icons",
  "fs",
  "futures 0.3.34",
@@ -2229,7 +2225,6 @@ dependencies = [
  "clock",
  "collections",
  "credentials_provider",
- "feature_flags",
  "fs",
  "futures 0.3.34",
  "gpui",
@@ -3968,7 +3963,6 @@ dependencies = [
  "db",
  "edit_prediction_types",
  "emojis",
- "feature_flags",
  "file_icons",
  "fs",
  "futures 0.3.34",
@@ -4587,29 +4581,6 @@ name = "fearless_simd"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b97b65636e5b9ef369943878ac74335ba1c55c1cb6adbf1e2c293c624248d693"
-
-[[package]]
-name = "feature_flags"
-version = "0.1.0"
-dependencies = [
- "collections",
- "feature_flags_macros",
- "fs",
- "gpui",
- "inventory",
- "schemars 1.0.4",
- "serde_json",
- "settings",
-]
-
-[[package]]
-name = "feature_flags_macros"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
 
 [[package]]
 name = "file_finder"
@@ -7279,7 +7250,6 @@ dependencies = [
  "collections",
  "dap",
  "extension",
- "feature_flags",
  "fs",
  "gpui",
  "language",
@@ -7645,7 +7615,6 @@ dependencies = [
  "db",
  "extension",
  "extension_host",
- "feature_flags",
  "fs",
  "futures 0.3.34",
  "gpui",
@@ -13523,7 +13492,6 @@ dependencies = [
  "editor",
  "extension",
  "extension_host",
- "feature_flags",
  "fs",
  "futures 0.3.34",
  "fuzzy",
@@ -13665,7 +13633,6 @@ dependencies = [
  "db",
  "editor",
  "extension",
- "feature_flags",
  "fs",
  "git",
  "git_ui_core",
@@ -19049,7 +19016,6 @@ dependencies = [
  "etw_tracing",
  "extension",
  "extension_host",
- "feature_flags",
  "file_finder",
  "fs",
  "futures 0.3.34",

@@ -24,9 +24,6 @@ use agent_ui::{
 use agent_ui::{MessageEditorEvent, StateChange, thread_worktree_archive};
 use chrono::{DateTime, Utc};
 use editor::Editor;
-use feature_flags::{
-    AgentThreadWorktreeLabel, AgentThreadWorktreeLabelFlag, FeatureFlag, FeatureFlagAppExt as _,
-};
 use gpui::{
     Action as _, AnyElement, App, ClickEvent, Context, Decorations, DismissEvent, Entity, EntityId,
     FocusHandle, Focusable, KeyContext, ListState, Modifiers, Pixels, Render, SharedString, Task,
@@ -693,30 +690,6 @@ fn workspace_menu_worktree_labels(
         .collect()
 }
 
-fn apply_worktree_label_mode(
-    mut worktrees: Vec<ThreadItemWorktreeInfo>,
-    mode: AgentThreadWorktreeLabel,
-) -> Vec<ThreadItemWorktreeInfo> {
-    match mode {
-        AgentThreadWorktreeLabel::Both => {}
-        AgentThreadWorktreeLabel::Worktree => {
-            for wt in &mut worktrees {
-                wt.branch_name = None;
-            }
-        }
-        AgentThreadWorktreeLabel::Branch => {
-            for wt in &mut worktrees {
-                // Fall back to showing the worktree name when no branch is
-                // known; an empty chip would be worse than a mismatched icon.
-                if wt.branch_name.is_some() {
-                    wt.worktree_name = None;
-                }
-            }
-        }
-    }
-    worktrees
-}
-
 /// Shows a [`RemoteConnectionModal`] on the given workspace and establishes
 /// an SSH connection. Suitable for passing to
 /// [`MultiWorkspace::find_or_create_workspace`] as the `connect_remote`
@@ -837,8 +810,6 @@ impl Sidebar {
         let focus_handle = cx.focus_handle();
         cx.on_focus_in(&focus_handle, window, Self::focus_in)
             .detach();
-
-        AgentThreadWorktreeLabelFlag::watch(cx);
 
         cx.observe_global::<SettingsStore>(|this, cx| {
             let width = AgentSettings::get_global(cx).threads_sidebar_default_width;
@@ -6259,10 +6230,7 @@ impl Sidebar {
 
         let is_remote = thread.workspace.is_remote(cx);
 
-        let worktrees = apply_worktree_label_mode(
-            thread.worktrees.clone(),
-            cx.flag_value::<AgentThreadWorktreeLabelFlag>(),
-        );
+        let worktrees = thread.worktrees.clone();
 
         let (icon, icon_svg) = if is_draft {
             (IconName::Circle, None)
@@ -6576,10 +6544,7 @@ impl Sidebar {
         let metadata = terminal.metadata.clone();
         let workspace = terminal.workspace.clone();
         let focus_handle = self.focus_handle.clone();
-        let worktrees = apply_worktree_label_mode(
-            terminal.worktrees.clone(),
-            cx.flag_value::<AgentThreadWorktreeLabelFlag>(),
-        );
+        let worktrees = terminal.worktrees.clone();
         let is_remote = terminal.workspace.is_remote(cx);
         let is_renaming =
             self.rename_target == Some(RenameTarget::Terminal(terminal.metadata.terminal_id));

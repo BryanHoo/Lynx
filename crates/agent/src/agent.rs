@@ -3875,12 +3875,9 @@ mod internal_tests {
     #[cfg(target_os = "macos")]
     #[gpui::test]
     async fn test_native_terminal_tool_releases_pty_resources(cx: &mut TestAppContext) {
-        use feature_flags::FeatureFlagAppExt as _;
-
         init_test(cx);
         cx.executor().allow_parking();
         cx.update(|cx| {
-            cx.update_flags(true, vec!["sandboxing".to_string()]);
             let mut settings = agent_settings::AgentSettings::get_global(cx).clone();
             settings.tool_permissions.default = settings::ToolPermissionMode::Confirm;
             settings.tool_permissions.tools.remove(TerminalTool::NAME);
@@ -4075,10 +4072,6 @@ mod internal_tests {
 
     #[gpui::test]
     async fn test_compact_prompt_routes_to_manual_compaction(cx: &mut TestAppContext) {
-        use feature_flags::{
-            AcpBetaFeatureFlag, FeatureFlag as _, FeatureFlagAppExt as _, FeatureFlagsSettings,
-        };
-
         init_test(cx);
         let (connection, agent, project, acp_thread) = setup_native_agent_session(cx).await;
         let session_id = cx.update(|cx| acp_thread.read(cx).session_id().clone());
@@ -4087,16 +4080,6 @@ mod internal_tests {
         let old_message_id = ClientUserMessageId::new();
 
         cx.update(|cx| {
-            cx.update_flags(true, Vec::new());
-            FeatureFlagsSettings::override_global(
-                FeatureFlagsSettings {
-                    overrides: HashMap::from_iter([(
-                        AcpBetaFeatureFlag::NAME.into(),
-                        "off".into(),
-                    )]),
-                },
-                cx,
-            );
             let path_style = project.read(cx).path_style(cx);
             thread.update(cx, |thread, cx| {
                 thread.set_model(model.clone(), cx);
@@ -4112,7 +4095,6 @@ mod internal_tests {
 
         let compact_message_id = ClientUserMessageId::new();
         let prompt_task = cx.update(|cx| {
-            assert!(!cx.has_flag::<AcpBetaFeatureFlag>());
             acp_thread::AgentSessionClientUserMessageIds::prompt(
                 connection.as_ref(),
                 compact_message_id,

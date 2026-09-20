@@ -129,21 +129,9 @@ pub fn migration_done() -> bool {
 }
 
 /// Process-lifetime guard ensuring the migration task is spawned at most
-/// once per process. The KVP-backed [`migration_done`] flag handles the
-/// across-launch idempotency, but it isn't enough on its own: this
-/// function is wired to `cx.on_flags_ready`, which is implemented via
-/// `observe_global::<FeatureFlagStore>` and therefore fires every time
-/// the flag store mutates. At startup that can happen several times in
-/// rapid succession (window construction, settings observers touching
-/// globals, etc.). Without this guard, each of those firings would see
-/// `migration_done() == false` (because the first in-flight spawn hasn't
-/// written the KVP yet), spawn its own task, and the tasks would race —
-/// each one calling `pick_available_skill_dir` and dutifully picking the
-/// next free `-N` suffix because its sibling task already created the
-/// previous one. The visible result is N duplicate `<rule>-2`,
-/// `<rule>-3`, … directories per rule, where N is the number of times
-/// the callback fired before the first spawn finished writing
-/// `MIGRATION_DONE_KEY`.
+/// once per process. The KVP-backed [`migration_done`] flag handles
+/// across-launch idempotency, while this guard prevents concurrent callers
+/// from spawning duplicate migrations before the KVP is written.
 static MIGRATION_TASK_SPAWNED: AtomicBool = AtomicBool::new(false);
 
 /// Migrate non-Default user rules to global Skills, if not already done.

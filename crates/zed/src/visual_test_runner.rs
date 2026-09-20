@@ -100,7 +100,6 @@ use {
     anyhow::{Context as _, Result},
     assets::Assets,
     editor::display_map::DisplayRow,
-    feature_flags::FeatureFlagAppExt as _,
     git_ui::project_diff::ProjectDiff,
     gpui::{
         App, AppContext as _, Bounds, Entity, KeyBinding, Modifiers, VisualTestAppContext,
@@ -1555,11 +1554,7 @@ import { AiPaneTabContext } from 'context';
         cx.run_until_parked();
     }
 
-    // Test 1: Diff view with feature flag enabled
-    // Enable the feature flag
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["diff-review".to_string()]);
-    });
+    // Test 1: Diff review button in a diff view.
 
     let workspace_window: WindowHandle<Workspace> = cx
         .update(|cx| {
@@ -1609,35 +1604,7 @@ import { AiPaneTabContext } from 'context';
         update_baseline,
     )?;
 
-    // Test 2: Diff view with feature flag disabled
-    // Disable the feature flag
-    cx.update(|cx| {
-        cx.update_flags(false, vec![]);
-    });
-
-    // Refresh window
-    cx.update_window(workspace_window.into(), |_, window, _cx| {
-        window.refresh();
-    })?;
-
-    for _ in 0..3 {
-        cx.advance_clock(Duration::from_millis(100));
-        cx.run_until_parked();
-    }
-
-    // Capture Test 2: Diff with flag disabled
-    let test2_result = run_visual_test(
-        "diff_review_button_disabled",
-        workspace_window.into(),
-        cx,
-        update_baseline,
-    )?;
-
-    // Test 3: Regular editor with flag enabled (should NOT show button)
-    // Re-enable the feature flag
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["diff-review".to_string()]);
-    });
+    // Test 2: Regular editor should not show the diff review button.
 
     // Create a new window with just a regular editor
     let regular_window: WindowHandle<Workspace> = cx
@@ -1696,7 +1663,7 @@ import { AiPaneTabContext } from 'context';
 
     cx.run_until_parked();
 
-    // Capture Test 3: Regular editor with flag enabled (no button)
+    // Capture Test 2: regular editor with no button.
     let test3_result = run_visual_test(
         "diff_review_button_regular_editor",
         regular_window.into(),
@@ -1933,7 +1900,6 @@ import { AiPaneTabContext } from 'context';
     // Return combined result
     let all_results = [
         &test1_result,
-        &test2_result,
         &test3_result,
         &test4_result,
         &test5_result,
@@ -3504,10 +3470,6 @@ fn run_sidebar_duplicate_project_names_visual_tests(
     std::fs::create_dir_all(&foo_zed)?;
     std::fs::create_dir_all(&bar_zed)?;
     std::fs::create_dir_all(&baz_zed)?;
-
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["agent-v2".to_string()]);
-    });
 
     let mut has_baseline_update = None;
 

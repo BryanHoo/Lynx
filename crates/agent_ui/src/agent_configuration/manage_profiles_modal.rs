@@ -375,13 +375,9 @@ impl ManageProfilesModal {
             .iter()
             .copied()
             .filter(|name| {
-                let supported_by_provider = provider.as_ref().map_or(true, |provider| {
+                provider.as_ref().map_or(true, |provider| {
                     agent::tool_supports_provider(name, provider)
-                });
-                // Don't offer tools the agent can't actually use: tools gated
-                // behind an inactive feature flag are silently dropped before
-                // they reach the model (#56778).
-                supported_by_provider && agent::tool_feature_flag_enabled(name, cx)
+                })
             })
             .map(Arc::from)
             .collect();

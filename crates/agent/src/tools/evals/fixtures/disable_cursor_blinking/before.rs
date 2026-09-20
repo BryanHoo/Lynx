@@ -71,7 +71,6 @@ use element::{AcceptEditPredictionBinding, LineWithInvisibles, PositionMap, layo
 pub use element::{
     CursorLayout, EditorElement, HighlightedRange, HighlightedRangeLine, PointForPosition,
 };
-use feature_flags::{DebuggerFeatureFlag, FeatureFlagAppExt};
 use futures::{
     FutureExt,
     future::{self, Shared, join},
@@ -5197,40 +5196,32 @@ impl Editor {
                                 .as_ref()
                                 .map_or(true, |actions| actions.is_empty());
                         let debug_scenarios = editor.update(cx, |editor, cx| {
-                            if cx.has_flag::<DebuggerFeatureFlag>() {
-                                maybe!({
-                                    let project = editor.project.as_ref()?;
-                                    let dap_store = project.read(cx).dap_store();
-                                    let mut scenarios = vec![];
-                                    let resolved_tasks = resolved_tasks.as_ref()?;
-                                    let debug_adapter: SharedString = buffer
-                                        .read(cx)
-                                        .language()?
-                                        .context_provider()?
-                                        .debug_adapter()?
-                                        .into();
-                                    dap_store.update(cx, |this, cx| {
-                                        for (_, task) in &resolved_tasks.templates {
-                                            if let Some(scenario) = this
-                                                .debug_scenario_for_build_task(
-                                                    task.resolved.clone(),
-                                                    SharedString::from(
-                                                        task.original_task().label.clone(),
-                                                    ),
-                                                    debug_adapter.clone(),
-                                                    cx,
-                                                )
-                                            {
-                                                scenarios.push(scenario);
-                                            }
+                            maybe!({
+                                let project = editor.project.as_ref()?;
+                                let dap_store = project.read(cx).dap_store();
+                                let mut scenarios = vec![];
+                                let resolved_tasks = resolved_tasks.as_ref()?;
+                                let debug_adapter: SharedString = buffer
+                                    .read(cx)
+                                    .language()?
+                                    .context_provider()?
+                                    .debug_adapter()?
+                                    .into();
+                                dap_store.update(cx, |this, cx| {
+                                    for (_, task) in &resolved_tasks.templates {
+                                        if let Some(scenario) = this.debug_scenario_for_build_task(
+                                            task.resolved.clone(),
+                                            SharedString::from(task.original_task().label.clone()),
+                                            debug_adapter.clone(),
+                                            cx,
+                                        ) {
+                                            scenarios.push(scenario);
                                         }
-                                    });
-                                    Some(scenarios)
-                                })
-                                .unwrap_or_default()
-                            } else {
-                                vec![]
-                            }
+                                    }
+                                });
+                                Some(scenarios)
+                            })
+                            .unwrap_or_default()
                         })?;
                         if let Ok(task) = editor.update_in(cx, |editor, window, cx| {
                             *editor.context_menu.borrow_mut() =
@@ -9268,9 +9259,6 @@ impl Editor {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if !cx.has_flag::<DebuggerFeatureFlag>() {
-            return;
-        }
         let source = self
             .buffer
             .read(cx)

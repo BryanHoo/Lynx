@@ -3258,11 +3258,8 @@ mod tests {
     async fn test_legacy_allow_fs_write_uses_sandbox_permission_options(
         cx: &mut gpui::TestAppContext,
     ) {
-        use feature_flags::FeatureFlagAppExt as _;
-
         crate::tests::init_test(cx);
         cx.update(|cx| {
-            cx.update_flags(true, vec!["sandboxing".to_string()]);
             let mut settings = agent_settings::AgentSettings::get_global(cx).clone();
             settings.tool_permissions.default = settings::ToolPermissionMode::Allow;
             settings.tool_permissions.tools.remove(TerminalTool::NAME);
@@ -3350,11 +3347,8 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[gpui::test]
     async fn test_unsandboxed_uses_sandbox_permission_options(cx: &mut gpui::TestAppContext) {
-        use feature_flags::FeatureFlagAppExt as _;
-
         crate::tests::init_test(cx);
         cx.update(|cx| {
-            cx.update_flags(true, vec!["sandboxing".to_string()]);
             let mut settings = agent_settings::AgentSettings::get_global(cx).clone();
             settings.tool_permissions.default = settings::ToolPermissionMode::Allow;
             settings.tool_permissions.tools.remove(TerminalTool::NAME);
@@ -3452,15 +3446,12 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[gpui::test]
     async fn test_allow_always_grant_is_revocable_via_settings(cx: &mut gpui::TestAppContext) {
-        use feature_flags::FeatureFlagAppExt as _;
-
         crate::tests::init_test(cx);
         // Auto-allow the terminal tool itself so only the *sandbox* escalation
         // prompts, and start with no persisted sandbox grants (mirroring a
         // settings.json that doesn't grant the path — e.g. after the user
         // removed it).
         cx.update(|cx| {
-            cx.update_flags(true, vec!["sandboxing".to_string()]);
             let mut settings = agent_settings::AgentSettings::get_global(cx).clone();
             settings.tool_permissions.default = settings::ToolPermissionMode::Allow;
             settings.tool_permissions.tools.remove(TerminalTool::NAME);
@@ -3581,11 +3572,8 @@ mod tests {
         crate::ToolCallEventStreamReceiver,
         std::rc::Rc<crate::tests::FakeThreadEnvironment>,
     ) {
-        use feature_flags::FeatureFlagAppExt as _;
-
         crate::tests::init_test(cx);
         cx.update(|cx| {
-            cx.update_flags(true, vec!["sandboxing".to_string()]);
             let mut settings = agent_settings::AgentSettings::get_global(cx).clone();
             settings.tool_permissions.default = settings::ToolPermissionMode::Allow;
             settings.tool_permissions.tools.remove(TerminalTool::NAME);

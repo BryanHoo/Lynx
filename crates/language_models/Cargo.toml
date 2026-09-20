@@ -53,7 +53,6 @@ util.workspace = true
 client = { workspace = true, features = ["test-support"] }
 clock = { workspace = true, features = ["test-support"] }
 db = { workspace = true, features = ["test-support"] }
-feature_flags.workspace = true
 gpui = { workspace = true, features = ["test-support"] }
 http_client = { workspace = true, features = ["test-support"] }
 language_model = { workspace = true, features = ["test-support"] }

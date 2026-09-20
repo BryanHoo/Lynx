@@ -45,7 +45,6 @@ use agent_client_protocol::schema::v1 as acp;
 use agent_settings::{AgentProfileId, AgentSettings, WindowLayout};
 use command_palette_hooks::CommandPaletteFilter;
 use editor::{Editor, SelectionEffects, scroll::Autoscroll};
-use feature_flags::FeatureFlagAppExt as _;
 use fs::Fs;
 use gpui::{
     Action, App, Context, Entity, ImageSource, ReadGlobal as _, Resource, SharedString, SharedUri,
@@ -687,23 +686,7 @@ pub fn init(
     })
     .detach();
 
-    cx.on_flags_ready(|_, cx| {
-        update_command_palette_filter(cx);
-    })
-    .detach();
-
-    // Kick off the one-time migration of non-Default Rules to global
-    // Skills. Test builds keep the old feature-flag deferral because
-    // server flags are never received in `gpui::test` contexts, avoiding
-    // sqlite worker activity that can race with the deterministic scheduler.
-    #[cfg(any(test, feature = "test-support"))]
-    {
-        let fs = fs.clone();
-        cx.on_flags_ready(move |_, cx| {
-            rules_to_skills_migration::migrate_rules_to_skills_if_needed(fs.clone(), cx);
-        })
-        .detach();
-    }
+    // 测试环境不启动 SQLite 迁移任务，避免影响确定性调度。
     #[cfg(not(any(test, feature = "test-support")))]
     {
         rules_to_skills_migration::migrate_rules_to_skills_if_needed(fs.clone(), cx);
@@ -1155,7 +1138,6 @@ mod tests {
             cx.set_global(store);
             AgentSettings::register(cx);
             DisableAiSettings::register(cx);
-            cx.set_staff(true);
         });
 
         fs

@@ -3670,7 +3670,6 @@ pub(crate) mod tests {
     use agent_servers::FakeAcpAgentServer;
     use editor::MultiBufferOffset;
     use editor::actions::Paste;
-    use feature_flags::{AcpBetaFeatureFlag, FeatureFlag as _, FeatureFlagAppExt as _};
     use fs::FakeFs;
     use gpui::{ClipboardItem, EventEmitter, TestAppContext, VisualTestContext, point, size};
     use parking_lot::Mutex;
@@ -3793,9 +3792,6 @@ pub(crate) mod tests {
     #[gpui::test]
     async fn test_drop_preserves_shared_pending_request_elicitations(cx: &mut TestAppContext) {
         init_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(true, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
 
         let response = Arc::new(Mutex::new(None));
         let server = ReleaseRequestElicitationServer {
@@ -3845,9 +3841,6 @@ pub(crate) mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(true, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
 
         let response = Arc::new(Mutex::new(None));
         let server = ReleaseRequestElicitationServer {
@@ -3900,9 +3893,6 @@ pub(crate) mod tests {
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(true, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
 
         let store = cx.update(|cx| cx.new(|_| ElicitationStore::default()));
         let response = Arc::new(Mutex::new(None));
@@ -4364,9 +4354,6 @@ pub(crate) mod tests {
     #[gpui::test]
     async fn test_thread_view_seeds_existing_elicitation_form_state(cx: &mut TestAppContext) {
         init_test(cx);
-        cx.update(|cx| {
-            cx.update_flags(true, vec![AcpBetaFeatureFlag::NAME.to_string()]);
-        });
 
         let connection = PreloadedElicitationConnection::default();
         let elicitation_id = connection.elicitation_id.clone();
@@ -5051,7 +5038,6 @@ pub(crate) mod tests {
         let fs = FakeFs::new(cx.executor());
 
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn Fs>::set_global(fs.clone(), cx);
@@ -5155,7 +5141,6 @@ pub(crate) mod tests {
         let fs = FakeFs::new(cx.executor());
 
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn Fs>::set_global(fs.clone(), cx);
@@ -5241,7 +5226,6 @@ pub(crate) mod tests {
         let fs = FakeFs::new(cx.executor());
 
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn Fs>::set_global(fs.clone(), cx);
@@ -5314,7 +5298,6 @@ pub(crate) mod tests {
         let fs = FakeFs::new(cx.executor());
 
         cx.update(|cx| {
-            cx.update_flags(true, vec!["agent-v2".to_string()]);
             agent::ThreadStore::init_global(cx);
             language_model::LanguageModelRegistry::test(cx);
             <dyn Fs>::set_global(fs.clone(), cx);

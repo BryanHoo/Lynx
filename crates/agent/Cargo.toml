@@ -32,7 +32,6 @@ cloud_llm_client.workspace = true
 collections.workspace = true
 context_server.workspace = true
 db.workspace = true
-feature_flags.workspace = true
 fs.workspace = true
 futures.workspace = true
 git.workspace = true

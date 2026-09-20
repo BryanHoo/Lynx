@@ -242,8 +242,6 @@ pub fn make_get_authenticated_user_response(
             username,
             avatar_url: "".to_string(),
             name: None,
-            is_staff: false,
         },
-        feature_flags: vec![],
     }
 }

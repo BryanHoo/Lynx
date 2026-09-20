@@ -238,7 +238,6 @@ mod tests {
     use super::*;
     use anyhow::Result;
     use clock::FakeSystemClock;
-    use feature_flags::FeatureFlagAppExt as _;
     use gpui::{AppContext as _, AsyncApp, BorrowAppContext as _};
     use http_client::FakeHttpClient;
     use language_model::IconOrSvg;
@@ -284,8 +283,6 @@ mod tests {
         let app_version = AppVersion::global(cx);
         release_channel::init_test(app_version, release_channel::ReleaseChannel::Dev, cx);
         gpui_tokio::init(cx);
-        cx.update_flags(false, Vec::new());
-
         let client = Client::new(
             Arc::new(FakeSystemClock::new()),
             FakeHttpClient::with_404_response(),

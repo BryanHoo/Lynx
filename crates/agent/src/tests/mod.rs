@@ -9,7 +9,6 @@ use anyhow::Result;
 use client::{Client, UserStore};
 use collections::IndexMap;
 use context_server::{ContextServer, ContextServerCommand, ContextServerId};
-use feature_flags::FeatureFlagAppExt as _;
 use fs::{FakeFs, Fs};
 use futures::{
     FutureExt as _, StreamExt,
@@ -5518,9 +5517,6 @@ async fn test_subagent_tool_call_end_to_end(cx: &mut TestAppContext) {
     cx.update(|cx| {
         LanguageModelRegistry::test(cx);
     });
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
-    });
 
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(
@@ -5654,9 +5650,6 @@ async fn test_subagent_tool_output_does_not_include_thinking(cx: &mut TestAppCon
     init_test(cx);
     cx.update(|cx| {
         LanguageModelRegistry::test(cx);
-    });
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
     });
 
     let fs = FakeFs::new(cx.executor());
@@ -5805,9 +5798,6 @@ async fn test_subagent_tool_call_cancellation_during_task_prompt(cx: &mut TestAp
     cx.update(|cx| {
         LanguageModelRegistry::test(cx);
     });
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
-    });
 
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(
@@ -5936,9 +5926,6 @@ async fn test_subagent_tool_resume_session(cx: &mut TestAppContext) {
     init_test(cx);
     cx.update(|cx| {
         LanguageModelRegistry::test(cx);
-    });
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
     });
 
     let fs = FakeFs::new(cx.executor());
@@ -6119,10 +6106,6 @@ async fn test_subagent_tool_resume_session(cx: &mut TestAppContext) {
 async fn test_subagent_thread_inherits_parent_thread_properties(cx: &mut TestAppContext) {
     init_test(cx);
 
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
-    });
-
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(path!("/test"), json!({})).await;
     let project = Project::test(fs, [path!("/test").as_ref()], cx).await;
@@ -6251,10 +6234,6 @@ async fn test_subagent_thread_uses_configured_subagent_model(cx: &mut TestAppCon
 async fn test_max_subagent_depth_prevents_tool_registration(cx: &mut TestAppContext) {
     init_test(cx);
 
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
-    });
-
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(path!("/test"), json!({})).await;
     let project = Project::test(fs, [path!("/test").as_ref()], cx).await;
@@ -6298,7 +6277,7 @@ async fn test_max_subagent_depth_prevents_tool_registration(cx: &mut TestAppCont
 }
 
 #[gpui::test]
-async fn test_lsp_tools_gated_by_feature_flag(cx: &mut TestAppContext) {
+async fn test_lsp_tools_are_exposed(cx: &mut TestAppContext) {
     init_test(cx);
 
     let fs = FakeFs::new(cx.executor());
@@ -6364,8 +6343,8 @@ async fn test_lsp_tools_gated_by_feature_flag(cx: &mut TestAppContext) {
     let tool_names = tool_names_for_completion(&completion);
     for name in &lsp_tool_names {
         assert!(
-            !tool_names.iter().any(|t| t == name),
-            "expected LSP tool {name} to be hidden without the lsp-tool flag, \
+            tool_names.iter().any(|t| t == name),
+            "expected LSP tool {name} to be exposed, \
              but completion tools were: {tool_names:?}"
         );
     }
@@ -6384,10 +6363,6 @@ async fn test_lsp_tools_gated_by_feature_flag(cx: &mut TestAppContext) {
 
     // Enable the `lsp-tool` flag and send another message; the LSP tools
     // should now appear in the completion request.
-    cx.update(|cx| {
-        cx.update_flags(false, vec!["lsp-tool".to_string()]);
-    });
-
     thread
         .update(cx, |thread, cx| {
             thread.send(ClientUserMessageId::new(), ["hello again"], cx)
@@ -6412,34 +6387,8 @@ async fn test_lsp_tools_gated_by_feature_flag(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-async fn test_sibling_thread_tools_gated_by_feature_flag(cx: &mut TestAppContext) {
+async fn test_sibling_thread_tools_are_exposed(cx: &mut TestAppContext) {
     init_test(cx);
-
-    // `CreateThreadToolFeatureFlag::enabled_for_staff()` returns true, which
-    // means tests in debug builds resolve it to ON unless we explicitly
-    // override it via `FeatureFlagsSettings`. Register the settings type and
-    // install an (empty) `FeatureFlagStore` global so the `cx.has_flag` path
-    // actually consults overrides instead of falling back to the
-    // staff-debug-build default.
-    cx.update(|cx| {
-        SettingsStore::update_global(cx, |store, _| {
-            store.register_setting::<feature_flags::FeatureFlagsSettings>();
-        });
-        cx.update_flags(false, vec![]);
-    });
-
-    fn set_flag_override(value: &str, cx: &mut TestAppContext) {
-        cx.update(|cx| {
-            SettingsStore::update_global(cx, |store, cx| {
-                store.update_user_settings(cx, |content| {
-                    content
-                        .feature_flags
-                        .get_or_insert_default()
-                        .insert("create-thread-tool".to_string(), value.to_string());
-                });
-            });
-        });
-    }
 
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(path!("/test"), json!({})).await;
@@ -6481,7 +6430,6 @@ async fn test_sibling_thread_tools_gated_by_feature_flag(cx: &mut TestAppContext
     });
 
     // Flag explicitly off: a completion request must omit the tools.
-    set_flag_override("off", cx);
     thread
         .update(cx, |thread, cx| {
             thread.send(ClientUserMessageId::new(), ["hello"], cx)
@@ -6493,8 +6441,8 @@ async fn test_sibling_thread_tools_gated_by_feature_flag(cx: &mut TestAppContext
     let tool_names = tool_names_for_completion(&completion);
     for name in &sibling_tool_names {
         assert!(
-            !tool_names.iter().any(|t| t == name),
-            "expected {name} to be hidden when create-thread-tool flag is off, \
+            tool_names.iter().any(|t| t == name),
+            "expected {name} to be exposed, \
              but completion tools were: {tool_names:?}"
         );
     }
@@ -6507,7 +6455,6 @@ async fn test_sibling_thread_tools_gated_by_feature_flag(cx: &mut TestAppContext
     cx.run_until_parked();
 
     // Flag explicitly on: the next completion request must include both tools.
-    set_flag_override("on", cx);
     thread
         .update(cx, |thread, cx| {
             thread.send(ClientUserMessageId::new(), ["hello again"], cx)
@@ -6529,10 +6476,6 @@ async fn test_sibling_thread_tools_gated_by_feature_flag(cx: &mut TestAppContext
 #[gpui::test]
 async fn test_parent_cancel_stops_subagent(cx: &mut TestAppContext) {
     init_test(cx);
-
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
-    });
 
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(path!("/test"), json!({})).await;
@@ -6949,9 +6892,6 @@ async fn test_subagent_error_propagation(cx: &mut TestAppContext) {
         let mut settings = AgentSettings::get_global(cx).clone();
         settings.auto_compact.enabled = false;
         AgentSettings::override_global(settings, cx);
-    });
-    cx.update(|cx| {
-        cx.update_flags(true, vec!["subagents".to_string()]);
     });
 
     let fs = FakeFs::new(cx.executor());
