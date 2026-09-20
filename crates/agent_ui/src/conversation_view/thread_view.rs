@@ -1675,12 +1675,6 @@ impl ThreadView {
     fn emit_thread_error_telemetry(&self, error: &ThreadError, cx: &mut Context<Self>) {
         let (error_kind, acp_error_code, message): (&str, Option<SharedString>, SharedString) =
             match error {
-                ThreadError::ZedPaymentRequired => (
-                    "payment_required",
-                    None,
-                    "You reached your free usage limit. Upgrade to Lynx Pro for more prompts."
-                        .into(),
-                ),
                 ThreadError::Refusal => {
                     let model_or_agent_name = self.current_model_name(cx);
                     let message = format!(
@@ -10766,7 +10760,6 @@ impl ThreadView {
             ThreadError::AuthenticationRequired(error) => {
                 self.render_authentication_required_error(error.clone(), cx)
             }
-            ThreadError::ZedPaymentRequired => self.render_zed_payment_required_error(cx),
             ThreadError::RateLimitExceeded { provider } => self.render_error_callout(
                 "Rate Limit Reached",
                 format!(
@@ -10895,24 +10888,6 @@ impl ThreadView {
                     .gap_0p5()
                     .child(self.authenticate_button(cx))
                     .child(self.create_copy_button(error)),
-            )
-            .dismiss_action(self.dismiss_error_button(cx))
-    }
-
-    fn render_zed_payment_required_error(&self, cx: &mut Context<Self>) -> Callout {
-        const ERROR_MESSAGE: &str =
-            "You reached your free usage limit. Upgrade to Lynx Pro for more prompts.";
-
-        Callout::new()
-            .severity(Severity::Error)
-            .icon(IconName::XCircle)
-            .title("Free Usage Exceeded")
-            .description(ERROR_MESSAGE)
-            .actions_slot(
-                h_flex()
-                    .gap_0p5()
-                    .child(self.upgrade_button(cx))
-                    .child(self.create_copy_button(ERROR_MESSAGE)),
             )
             .dismiss_action(self.dismiss_error_button(cx))
     }
@@ -11075,18 +11050,6 @@ impl ThreadView {
             .on_click(cx.listener(|this, _, window, cx| {
                 this.clear_thread_error(cx);
                 window.dispatch_action(NewThread.boxed_clone(), cx);
-            }))
-    }
-
-    fn upgrade_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        Button::new("upgrade", "Upgrade")
-            .label_size(LabelSize::Small)
-            .style(ButtonStyle::Tinted(ui::TintColor::Accent))
-            .on_click(cx.listener({
-                move |this, _, _, cx| {
-                    this.clear_thread_error(cx);
-                    cx.open_url(&zed_urls::upgrade_to_zed_pro_url(cx));
-                }
             }))
     }
 

@@ -23,7 +23,6 @@ use agent_settings::{
 };
 use anyhow::{Context as _, Result, anyhow};
 use chrono::{DateTime, Local, Utc};
-use client::UserStore;
 use cloud_api_types::Plan;
 use collections::{HashMap, HashSet, IndexMap};
 use fs::Fs;
@@ -1273,7 +1272,6 @@ pub struct Thread {
     pending_summary_generation: Option<Shared<Task<Option<SharedString>>>>,
     summary: Option<SharedString>,
     messages: Vec<Arc<Message>>,
-    user_store: Entity<UserStore>,
     /// Holds the task that handles agent interaction until the end of the turn.
     /// Survives across multiple requests as the model performs tool calls and
     /// we run tools, report their results.
@@ -1423,7 +1421,6 @@ impl Thread {
             pending_summary_generation: None,
             summary: None,
             messages: Vec::new(),
-            user_store: project.read(cx).user_store(),
             running_turn: None,
             end_turn_at_next_boundary: false,
             pending_message: None,
@@ -1807,7 +1804,6 @@ impl Thread {
             pending_summary_generation: None,
             summary: db_thread.detailed_summary,
             messages: db_thread.messages,
-            user_store: project.read(cx).user_store(),
             running_turn: None,
             end_turn_at_next_boundary: false,
             pending_message: None,
@@ -3132,8 +3128,7 @@ impl Thread {
         cx: &mut AsyncApp,
     ) -> Result<ControlFlow<()>> {
         let retry = this.update(cx, |this, cx| {
-            let user_store = this.user_store.read(cx);
-            this.handle_completion_error(error, attempt, user_store.plan(), cx)
+            this.handle_completion_error(error, attempt, None, cx)
         })??;
         let timer = cx.background_executor().timer(retry.duration);
         event_stream.send_retry(retry);

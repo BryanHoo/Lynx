@@ -57,28 +57,6 @@ pub fn init(client: Arc<Client>, user_store: Entity<UserStore>, cx: &mut App) {
 
     cx.on_action(clear_edit_prediction_store_edit_history);
 
-    cx.subscribe(&user_store, {
-        let editors = editors.clone();
-        let client = client.clone();
-
-        move |user_store, event, cx| match event {
-            client::user::Event::PrivateUserInfoUpdated
-            | client::user::Event::OrganizationChanged => {
-                let provider_config = edit_prediction_provider_config_for_settings(cx);
-                assign_edit_prediction_providers(
-                    &editors,
-                    provider_config,
-                    EditPredictionRequestTrigger::UserInfoChanged,
-                    &client,
-                    user_store,
-                    cx,
-                );
-            }
-            _ => {}
-        }
-    })
-    .detach();
-
     cx.observe_global::<SettingsStore>({
         let mut previous_config = edit_prediction_provider_config_for_settings(cx);
         move |cx| {
@@ -233,9 +211,7 @@ fn assign_edit_prediction_provider(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use editor::MultiBuffer;
     use gpui::{BorrowAppContext, TestAppContext};
-    use project::Project;
     use settings::{EditPredictionPromptFormatContent, EditPredictionProvider, SettingsStore};
     use workspace::AppState;
 
@@ -329,110 +305,5 @@ mod tests {
         assert_eq!(provider_name, Some("FIM"));
 
         drop(app_state);
-    }
-
-    #[gpui::test]
-    async fn test_subscribe_uses_stale_provider_config_after_settings_change(
-        cx: &mut TestAppContext,
-    ) {
-        let app_state = cx.update(|cx| {
-            let app_state = AppState::test(cx);
-            language_model::init(cx);
-            client::RefreshLlmTokenListener::register(
-                app_state.client.clone(),
-                app_state.user_store.clone(),
-                cx,
-            );
-            editor::init(cx);
-            app_state
-        });
-
-        // Override the default provider to None so the subscribe closure
-        // captures None at init time. (The test default is Zed/Zeta1, which
-        // is a no-op on project-less editors and would mask the bug.)
-        cx.update(|cx| {
-            cx.update_global::<SettingsStore, _>(|store: &mut SettingsStore, cx| {
-                store.update_user_settings(cx, |settings| {
-                    settings.project.all_languages.edit_predictions =
-                        Some(settings::EditPredictionSettingsContent {
-                            provider: Some(EditPredictionProvider::None),
-                            ..Default::default()
-                        });
-                });
-            });
-        });
-
-        cx.update(|cx| {
-            init(app_state.client.clone(), app_state.user_store.clone(), cx);
-        });
-
-        // Ollama 使用项目级预测存储，测试编辑器需要关联项目。
-        let project = Project::test(app_state.fs.clone(), [], cx).await;
-        let editor = cx.add_window(|window, cx| {
-            let buffer = cx.new(|_cx| MultiBuffer::new(language::Capability::ReadWrite));
-            Editor::new(
-                editor::EditorMode::full(),
-                buffer,
-                Some(project.clone()),
-                window,
-                cx,
-            )
-        });
-
-        editor
-            .update(cx, |editor, _window, _cx| {
-                assert!(
-                    editor.edit_prediction_provider().is_none(),
-                    "editor should start with no provider when settings = None"
-                );
-            })
-            .unwrap();
-
-        // Change settings to a local Ollama provider.
-        cx.update(|cx| {
-            cx.update_global::<SettingsStore, _>(|store: &mut SettingsStore, cx| {
-                store.update_user_settings(cx, |settings| {
-                    settings.project.all_languages.edit_predictions =
-                        Some(settings::EditPredictionSettingsContent {
-                            provider: Some(EditPredictionProvider::Ollama),
-                            ollama: Some(settings::OllamaEditPredictionSettingsContent {
-                                api_url: Some("http://localhost:11434".to_string()),
-                                model: Some("qwen2.5-coder:3b".to_string().into()),
-                                prompt_format: Some(EditPredictionPromptFormatContent::Infer),
-                                ..Default::default()
-                            }),
-                            ..Default::default()
-                        });
-                });
-            });
-        });
-
-        editor
-            .update(cx, |editor, _window, _cx| {
-                assert!(
-                    editor.edit_prediction_provider().is_some(),
-                    "editor should have a provider after enabling Ollama"
-                );
-            })
-            .unwrap();
-
-        // Emit PrivateUserInfoUpdated. The subscribe closure should use the
-        // CURRENT provider config (Ollama), but due to the bug it uses the
-        // stale init-time value (None) and clears the provider.
-        cx.update(|cx| {
-            app_state.user_store.update(cx, |_, cx| {
-                cx.emit(client::user::Event::PrivateUserInfoUpdated);
-            });
-        });
-        cx.run_until_parked();
-
-        editor
-            .update(cx, |editor, _window, _cx| {
-                assert!(
-                    editor.edit_prediction_provider().is_some(),
-                    "BUG: subscribe closure used stale provider_config (None) instead of current (Ollama)"
-                );
-            })
-            .unwrap();
     }
 }

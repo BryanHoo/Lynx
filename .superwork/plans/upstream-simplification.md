@@ -108,6 +108,11 @@
 
 - 扩展下载、Agent、本地模型或 Web Search 缺少明确的数据类型归属。
 
+- [x] 删除生产启动中的登录、退出和重连动作注册。
+- [x] 删除账号、试用、付费升级及 Zed 营销跳转入口。
+- [x] 删除 Agent、设置页和本地编辑预测对组织套餐状态的运行时依赖。
+- [ ] 拆分远程 RPC 与 `CloudApiClient`，移除组织和托管模型令牌状态。
+
 - [ ] **Task Status:** pending
 
 ### Task 6: 收敛 Feature Flags

@@ -165,7 +165,6 @@ fn ollama_settings() -> Box<[SettingsPageItem]> {
             title: "API URL",
             description: "The base URL of your Ollama server.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -199,7 +198,6 @@ fn ollama_settings() -> Box<[SettingsPageItem]> {
             title: "Model",
             description: "The Ollama model to use for edit predictions.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -233,7 +231,6 @@ fn ollama_settings() -> Box<[SettingsPageItem]> {
             title: "Prompt Format",
             description: "The prompt format to use when requesting predictions. Set to Infer to have the format inferred based on the model name.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -264,7 +261,6 @@ fn ollama_settings() -> Box<[SettingsPageItem]> {
             title: "Max Output Tokens",
             description: "The maximum number of tokens to generate.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -295,7 +291,6 @@ fn ollama_settings() -> Box<[SettingsPageItem]> {
             title: "Prediction Debounce",
             description: "Delay in milliseconds before automatically requesting a prediction after typing stops. Set to 0 to request predictions immediately.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -331,7 +326,6 @@ fn open_ai_compatible_settings() -> Box<[SettingsPageItem]> {
             title: "API URL",
             description: "The URL of your OpenAI-compatible server's completions API.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -365,7 +359,6 @@ fn open_ai_compatible_settings() -> Box<[SettingsPageItem]> {
             title: "Model",
             description: "The model string to pass to the OpenAI-compatible server.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -399,7 +392,6 @@ fn open_ai_compatible_settings() -> Box<[SettingsPageItem]> {
             title: "Prompt Format",
             description: "The prompt format to use when requesting predictions. Set to Infer to have the format inferred based on the model name.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -430,7 +422,6 @@ fn open_ai_compatible_settings() -> Box<[SettingsPageItem]> {
             title: "Max Output Tokens",
             description: "The maximum number of tokens to generate.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
@@ -461,7 +452,6 @@ fn open_ai_compatible_settings() -> Box<[SettingsPageItem]> {
             title: "Prediction Debounce",
             description: "Delay in milliseconds before automatically requesting a prediction after typing stops. Set to 0 to request predictions immediately.",
             field: Box::new(SettingField {
-                organization_override: None,
                 pick: |settings| {
                     settings
                         .project
