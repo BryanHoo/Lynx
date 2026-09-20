@@ -34,7 +34,7 @@ You'll find the Lynx log in the respective location on each operating system:
 > **Note:** In some cases, it might be useful to monitor the log live, such as when [developing a Lynx extension](https://zed.dev/docs/extensions/developing-extensions).
 > Example: `tail -f ~/Library/Logs/Zed/Zed.log`
 
-The log may contain enough context to help you debug the issue yourself, or you may find specific errors that are useful when filing a [GitHub issue](https://github.com/zed-industries/zed/issues/new/choose) or when talking to Lynx staff in our [Discord server](https://zed.dev/community-links#forums-and-discussions).
+The log may contain enough context to debug the issue or provide useful details when filing a [Lynx issue](https://github.com/BryanHoo/Lynx/issues).
 
 ## Performance Issues (Profiling)
 

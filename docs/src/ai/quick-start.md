@@ -29,10 +29,10 @@ Start in the [Agent Panel](./agent-panel.md) to prompt the agent, add context, r
 
 Use this path for Claude, Codex, OpenCode, Copilot, Cursor, Pi Coding Agent, Gemini CLI, or another coding agent.
 
-| If the agent...                 | Use                                       |
-| ------------------------------- | ----------------------------------------- |
+| If the agent...                  | Use                                       |
+| -------------------------------- | ----------------------------------------- |
 | Integrates with Lynx through ACP | [External Agents](./external-agents.md)   |
-| Runs as a CLI or TUI            | [Terminal Threads](./terminal-threads.md) |
+| Runs as a CLI or TUI             | [Terminal Threads](./terminal-threads.md) |
 
 External Agents and Terminal Threads usually own their own auth, model configuration, subscriptions, tools, instructions, and MCP configuration.
 
@@ -42,7 +42,6 @@ The Lynx Agent and other model-backed Lynx AI features use models configured thr
 
 | If you want to...                                                             | Use                                                               |
 | ----------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Use models billed through Lynx                                                 | [Lynx-Hosted Models](../account/zed-hosted-models.md)              |
 | Bring your own provider API key, credits, top-ups, or usage billing           | [Use API Access](./use-api-access.md)                             |
 | Use a subscription you already pay for                                        | [Use an Existing Subscription](./use-an-existing-subscription.md) |
 | Use OpenRouter, Vercel AI Gateway, Amazon Bedrock, or another gateway         | [Use a Gateway](./use-a-gateway.md)                               |
@@ -72,10 +71,7 @@ For general settings mechanics, see [Configuring Lynx](../configuring-zed.md).
 
 ## Learn More {#learn-more}
 
-| If you want to...                    | Use                                                                                                                                            |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Understand privacy and data controls | [AI Privacy](./privacy-and-security.md)                                                                                               |
-| Understand plans, usage, and billing | [Plans & Pricing](../account/plans-and-pricing.md), [Lynx-Hosted Models](../account/zed-hosted-models.md), and [Billing](../account/billing.md) |
+See [AI Privacy](./privacy-and-security.md) for data boundaries and controls.
 
 ## Turn AI Off {#turn-ai-off}
 

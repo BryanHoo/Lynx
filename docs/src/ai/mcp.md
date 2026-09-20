@@ -18,11 +18,11 @@ Lynx also handles the `notifications/tools/list_changed` notification from MCP s
 
 ## Agent Path Support {#agent-path-support}
 
-| Agent path                                | MCP behavior                                                                            |
-| ----------------------------------------- | --------------------------------------------------------------------------------------- |
-| [Lynx Agent](./zed-agent.md)               | Uses Lynx-configured MCP servers directly                                                |
+| Agent path                                | MCP behavior                                                                             |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [Lynx Agent](./zed-agent.md)              | Uses Lynx-configured MCP servers directly                                                |
 | [External Agents](./external-agents.md)   | Lynx can forward configured MCP servers over ACP; agents may also read native MCP config |
-| [Terminal Threads](./terminal-threads.md) | Native CLIs/TUIs read their own MCP configuration                                       |
+| [Terminal Threads](./terminal-threads.md) | Native CLIs/TUIs read their own MCP configuration                                        |
 
 ## Installing MCP Servers
 

@@ -1,84 +1,41 @@
 ---
 title: AI Privacy - Lynx
-description: Understand how Lynx handles AI prompts, code context, hosted model requests, provider data boundaries, and privacy controls.
+description: Understand where Lynx sends AI requests and how to control access to project data.
 ---
 
 # AI Privacy
 
-This page explains the privacy and trust boundaries for AI features in Lynx,
-including [Lynx Agent](./zed-agent.md), [Edit Prediction](./edit-prediction.md),
-[Inline Assistant](./inline-assistant.md), and
-[Git commit generation](../git.md#ai-support-in-git).
-
-Lynx does not retain your prompts or code context by default. For
-[Lynx-hosted models](../account/zed-hosted-models.md), Lynx has no-training
-commitments from model providers, and provider agreements require zero data
-retention for inference requests except for
-[provider-designated models with safety retention](#provider-safety-retention),
-such as Anthropic's Covered Models.
+Lynx does not provide a hosted model service. AI requests go directly to the
+provider, gateway, local server, or external agent that you configure.
 
 ## AI Request Paths {#ai-request-paths}
 
-| Path                                                         | Who handles model requests                        | What to know                                                                                                                                                                                                                   | Details                                                                                           |
-| ------------------------------------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| [Lynx-hosted models](../account/zed-hosted-models.md)         | Lynx routes requests to hosted model providers     | Provider agreements prohibit training on your prompts or code context and require zero data retention for inference requests, except for provider-designated models with safety retention, such as Anthropic's Covered Models. | [Lynx-hosted model commitments](#data-retention-and-training)                                      |
-| [Provider API keys](./use-api-access.md)                     | The configured provider                           | The provider handles requests under its own terms. Provider keys saved through Lynx are stored in the system keychain, not in `settings.json`.                                                                                  | [Use API Access](./use-api-access.md)                                                             |
-| [Existing subscriptions](./use-an-existing-subscription.md)  | The subscription provider                         | The provider handles requests under the subscription terms.                                                                                                                                                                    | [Use an Existing Subscription](./use-an-existing-subscription.md)                                 |
-| [Gateways](./use-a-gateway.md)                               | The configured gateway and upstream providers     | The gateway and upstream providers handle requests under their own terms.                                                                                                                                                      | [Use a Gateway](./use-a-gateway.md)                                                               |
-| [Local models](./use-a-local-model.md)                       | The local server or self-hosted endpoint          | The local server handles requests according to how you configured that server.                                                                                                                                                 | [Use a Local Model](./use-a-local-model.md)                                                       |
-| [External Agents](./external-agents.md)                      | The External Agent and its configured providers   | The External Agent handles model requests under its own terms. Tool and MCP behavior depends on agent and ACP configuration.                                                                                                   | [External Agents](./external-agents.md)                                                           |
-| [Terminal Threads](./terminal-threads.md)                    | The CLI or TUI running in the terminal            | The CLI or TUI owns its auth, model routing, tools, instructions, MCP configuration, and data handling.                                                                                                                        | [Terminal Threads](./terminal-threads.md)                                                         |
-| [Edit Prediction](./edit-prediction.md)                      | The configured local or self-hosted server         | Each keystroke can send local editing context to the server you configured.                                                                                                           | [Edit Prediction](./edit-prediction.md)                                                          |
-| [Agent tools](./tools.md), [MCP](./mcp.md), and integrations | Lynx, configured MCP servers, and external systems | Tools can read, edit, search, run commands, fetch URLs, or call external systems depending on profile, MCP server, and tool permission settings.                                                                               | [Agent Profiles](./agent-profiles.md), [Tool Permissions](./tool-permissions.md), [MCP](./mcp.md) |
-| Project trust and instructions                               | Lynx and the trusted worktree                      | Project-local instructions and skills are loaded from trusted worktrees. External Agents and Terminal Threads may read their own instruction files.                                                                            | [Worktree Trust](../worktree-trust.md), [Skills](./skills.md), [Instructions](./instructions.md)  |
+| Path                                                  | Who handles requests                     | What to review                                                                   |
+| ----------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------- |
+| [Provider API keys](./use-api-access.md)              | The configured provider                  | The provider's data retention, training, and account terms                       |
+| [Gateways](./use-a-gateway.md)                        | The gateway and its upstream providers   | Both the gateway and upstream provider policies                                  |
+| [Local models](./use-a-local-model.md)                | Your local or self-hosted server         | The server configuration and any network routes you expose                       |
+| [External Agents](./external-agents.md)               | The agent and its configured providers   | The agent's authentication, tools, instructions, and model provider policies     |
+| [Terminal Threads](./terminal-threads.md)             | The CLI or TUI running in the terminal   | The program's authentication, storage, tools, and model provider policies        |
+| [Edit Prediction](./edit-prediction.md)               | Your configured prediction endpoint      | Editing context can be sent while you type                                       |
+| [Agent tools](./tools.md) and [MCP servers](./mcp.md) | Lynx and the external systems you enable | Tools can read files, edit code, run commands, fetch URLs, and call integrations |
 
-## Lynx-Hosted Model Commitments {#data-retention-and-training}
+API keys saved through Lynx are stored in the system keychain rather than
+`settings.json`.
 
-For Lynx-hosted models, Lynx has commitments from model providers that prohibit
-training on your prompts or code context and require zero data retention for
-inference requests, except for
-[provider-designated models with safety retention](#provider-safety-retention),
-such as Anthropic's Covered Models. The public provider documents linked below describe provider programs or default
-API terms; Lynx-hosted model requests are governed by Lynx's provider agreements.
+## Project Access {#project-access}
 
-| Provider  | No training reference                                   | Zero-data-retention reference                                                                                                                                                                      |
-| --------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Anthropic | [Yes](https://www.anthropic.com/legal/commercial-terms) | [Yes](https://privacy.anthropic.com/en/articles/8956058-i-have-a-zero-data-retention-agreement-with-anthropic-what-products-does-it-apply-to), except [covered models](#provider-safety-retention) |
-| Google    | [Yes](https://cloud.google.com/terms/service-terms)     | [Yes](https://cloud.google.com/terms/service-terms), see Service Terms sections 18 and 20(h)                                                                                                       |
-| OpenAI    | [Yes](https://openai.com/enterprise-privacy/)           | [Yes](https://platform.openai.com/docs/guides/your-data)                                                                                                                                           |
+Agent tools can access files and commands allowed by the active
+[Agent Profile](./agent-profiles.md) and
+[Tool Permissions](./tool-permissions.md). Project instructions, skills, and MCP
+configuration can change agent behavior, so review them before trusting a
+worktree.
 
-### Provider Safety Retention for Designated Models {#provider-safety-retention}
+See [Worktree Trust](../worktree-trust.md), [Skills](./skills.md), and
+[Instructions](./instructions.md) for these boundaries.
 
-Some providers require limited data retention for specific models as a condition
-of offering them, on every platform where those models are available. Anthropic
-retains prompts and outputs for models it designates as Covered Models, including
-Claude Fable 5, for at least 30 days for trust and safety purposes. Lynx cannot
-opt out of this retention; it applies wherever these models are served. See
-[Anthropic's data retention practices for Covered Models](https://support.claude.com/en/articles/15425996-data-retention-practices-for-covered-models).
+## Disable AI {#disable-ai}
 
-For these models:
-
-- The no-training commitment still applies. Retained data is used for safety
-  review, not model training.
-- Lynx does not retain your prompts or outputs. Retention happens at the
-  provider, under the provider's documented access controls and deletion
-  timelines.
-- All other Lynx-hosted models keep zero-data-retention handling.
-
-If you don't want provider-side retention, use a model that the provider has
-not designated for safety retention. Switching to
-[your own API key](./use-api-access.md) or
-[subscription](./use-an-existing-subscription.md) does not avoid this retention
-for covered models, because providers apply it on every platform where those
-models are offered.
-
-## Controls and Related Privacy Docs {#controls-and-related-privacy-docs}
-
-- [Telemetry](../telemetry.md): What telemetry Lynx collects and how to control
-  it.
-- [Privacy for Business](../business/privacy.md): How Lynx Business enforces
-  privacy settings across an organization.
-- [AI Quick Start](./quick-start.md#turn-ai-off): How to turn AI off.
-- [Privacy Policy](https://zed.dev/privacy-policy): Lynx's privacy policy.
-- [Subprocessors](https://zed.dev/subprocessors): Lynx's subprocessors.
-- [Terms of Service](https://zed.dev/terms): Lynx's terms.
+Open the Settings Editor with {#action zed::OpenSettings}, search for
+`Disable AI`, and enable it. This disables the Threads Sidebar, Agent Panel,
+Edit Prediction, and Inline Assistant.

@@ -51,7 +51,7 @@ You can configure most settings in the Settings Editor ({#kb zed::OpenSettings})
 
 Settings WebStorm users typically configure first:
 
-| Lynx Setting             | What it does                                                                    |
+| Lynx Setting            | What it does                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------- |
 | `format_on_save`        | Auto-format when saving. Set to `"on"` to enable.                               |
 | `soft_wrap`             | Wrap long lines. Options: `"none"`, `"editor_width"`, `"preferred_line_length"` |
@@ -86,7 +86,7 @@ If you chose the JetBrains keymap during onboarding, most of your shortcuts shou
 
 ### Common Shared Keybindings
 
-| Action                        | Lynx Keybinding                                                                                        |
+| Action                        | Lynx Keybinding                                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Search Everywhere             | {#kb:jetbrains command_palette::Toggle}                                                               |
 | Find Action / Command Palette | {#kb:jetbrains command_palette::Toggle}                                                               |
@@ -111,7 +111,7 @@ If you chose the JetBrains keymap during onboarding, most of your shortcuts shou
 
 ### Different Keybindings (WebStorm → Lynx)
 
-| Action                 | WebStorm    | Lynx (JetBrains keymap)   |
+| Action                 | WebStorm    | Lynx (JetBrains keymap)  |
 | ---------------------- | ----------- | ------------------------ |
 | File Structure         | `Cmd + F12` | `Cmd + F12` (outline)    |
 | Navigate to Next Error | `F2`        | `F2`                     |
@@ -238,14 +238,14 @@ Lynx has none of this built-in. The TypeScript language server sees your code as
 
 WebStorm organizes auxiliary views into numbered tool windows. Lynx uses a similar concept called "docks":
 
-| WebStorm Tool Window | Lynx Equivalent | Lynx Keybinding                             |
-| -------------------- | -------------- | ------------------------------------------ |
-| Project              | Project Panel  | {#kb:jetbrains project_panel::ToggleFocus} |
-| Git                  | Git Panel      | {#kb:jetbrains git_panel::ToggleFocus}     |
-| Terminal             | Terminal Panel | {#kb:jetbrains terminal_panel::Toggle}     |
-| Structure            | Outline Panel  | {#kb:jetbrains outline_panel::ToggleFocus} |
-| Problems             | Diagnostics    | {#kb:jetbrains diagnostics::Deploy}        |
-| Debug                | Debug Panel    | {#kb:jetbrains debug_panel::ToggleFocus}   |
+| WebStorm Tool Window | Lynx Equivalent | Lynx Keybinding                            |
+| -------------------- | --------------- | ------------------------------------------ |
+| Project              | Project Panel   | {#kb:jetbrains project_panel::ToggleFocus} |
+| Git                  | Git Panel       | {#kb:jetbrains git_panel::ToggleFocus}     |
+| Terminal             | Terminal Panel  | {#kb:jetbrains terminal_panel::Toggle}     |
+| Structure            | Outline Panel   | {#kb:jetbrains outline_panel::ToggleFocus} |
+| Problems             | Diagnostics     | {#kb:jetbrains diagnostics::Deploy}        |
+| Debug                | Debug Panel     | {#kb:jetbrains debug_panel::ToggleFocus}   |
 
 Lynx has three dock positions: left, bottom, and right. Panels can be moved between docks by dragging or through settings.
 
@@ -373,7 +373,7 @@ Once signed in, just start typing. Lynx will offer suggestions inline for you to
 
 To use other AI models in Lynx, you have several options:
 
-- Use Lynx's hosted models, with higher rate limits. Requires [authentication](https://zed.dev/docs/authentication) and access through [Lynx Pro](https://zed.dev/docs/account/zed-hosted-models.html).
+- Configure a provider with your own [API key](../ai/use-api-access.md), gateway, or local model.
 - Bring your own [API keys](https://zed.dev/docs/ai/use-api-access.html), no authentication needed
 - Use [External Agents like Claude Agent](https://zed.dev/docs/ai/external-agents.html)
 

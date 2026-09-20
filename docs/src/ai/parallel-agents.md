@@ -59,7 +59,7 @@ The Threads Sidebar can hold different thread types:
 
 | Thread type                                   | Configuration                                                                   |
 | --------------------------------------------- | ------------------------------------------------------------------------------- |
-| [Lynx Agent thread](./zed-agent.md)            | Uses Lynx Agent settings, profiles, tools, Skills, Instructions, and MCP         |
+| [Lynx Agent thread](./zed-agent.md)           | Uses Lynx Agent settings, profiles, tools, Skills, Instructions, and MCP        |
 | [External Agent thread](./external-agents.md) | Uses the ACP integration and the agent's native configuration                   |
 | [Terminal Thread](./terminal-threads.md)      | Runs a CLI/TUI in a terminal-backed thread; the CLI owns auth and configuration |
 

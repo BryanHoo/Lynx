@@ -8,11 +8,11 @@ description: Configure OpenRouter, Vercel AI Gateway, Amazon Bedrock, and other 
 Use a gateway when you route model requests through a platform such as OpenRouter, Vercel AI Gateway, Amazon Bedrock, or another OpenAI-compatible service.
 
 | Gateway                   | Lynx AI features | External Agents | Terminal Threads | Notes                                        |
-| ------------------------- | --------------- | --------------- | ---------------- | -------------------------------------------- |
-| OpenRouter                | Yes             | Separate config | Separate config  | Uses OpenRouter API access                   |
-| Vercel AI Gateway         | Yes             | Separate config | Separate config  | Uses Vercel AI Gateway API access            |
-| Amazon Bedrock            | Yes             | Separate config | Separate config  | Uses AWS credentials or Bedrock bearer token |
-| OpenAI-compatible gateway | Yes             | Separate config | Separate config  | Configure base URL, model, and key           |
+| ------------------------- | ---------------- | --------------- | ---------------- | -------------------------------------------- |
+| OpenRouter                | Yes              | Separate config | Separate config  | Uses OpenRouter API access                   |
+| Vercel AI Gateway         | Yes              | Separate config | Separate config  | Uses Vercel AI Gateway API access            |
+| Amazon Bedrock            | Yes              | Separate config | Separate config  | Uses AWS credentials or Bedrock bearer token |
+| OpenAI-compatible gateway | Yes              | Separate config | Separate config  | Configure base URL, model, and key           |
 
 ## OpenRouter {#openrouter}
 

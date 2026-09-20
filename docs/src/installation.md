@@ -69,15 +69,15 @@ If this script is insufficient for your use case, you run into problems running 
 
 Lynx supports the following macOS releases:
 
-| Version       | Codename | Apple Status   | Lynx Status          |
-| ------------- | -------- | -------------- | ------------------- |
-| macOS 26.x    | Tahoe    | Supported      | Supported           |
-| macOS 15.x    | Sequoia  | Supported      | Supported           |
-| macOS 14.x    | Sonoma   | Supported      | Supported           |
-| macOS 13.x    | Ventura  | Supported      | Supported           |
-| macOS 12.x    | Monterey | EOL 2024-09-16 | Supported           |
-| macOS 11.x    | Big Sur  | EOL 2023-09-26 | Supported           |
-| macOS 10.15.x | Catalina | EOL 2022-09-12 | Supported           |
+| Version       | Codename | Apple Status   | Lynx Status |
+| ------------- | -------- | -------------- | ----------- |
+| macOS 26.x    | Tahoe    | Supported      | Supported   |
+| macOS 15.x    | Sequoia  | Supported      | Supported   |
+| macOS 14.x    | Sonoma   | Supported      | Supported   |
+| macOS 13.x    | Ventura  | Supported      | Supported   |
+| macOS 12.x    | Monterey | EOL 2024-09-16 | Supported   |
+| macOS 11.x    | Big Sur  | EOL 2023-09-26 | Supported   |
+| macOS 10.15.x | Catalina | EOL 2022-09-12 | Supported   |
 
 #### Mac Hardware
 
@@ -105,10 +105,11 @@ Lynx requires a Vulkan 1.3 driver and the following desktop portals:
 ### Windows
 
 Lynx supports the following Windows releases:
-| Version | Lynx Status |
-| ------------------------- | ------------------- |
-| Windows 11, version 22H2 and later | Supported |
-| Windows 10, version 1903 and later | Supported |
+
+| Version                            | Lynx Status |
+| ---------------------------------- | ----------- |
+| Windows 11, version 22H2 and later | Supported   |
+| Windows 10, version 1903 and later | Supported   |
 
 A 64-bit operating system is required to run Lynx.
 

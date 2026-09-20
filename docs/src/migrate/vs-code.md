@@ -33,7 +33,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Editor**
 
-| VS Code Setting                             | Lynx Setting                                    |
+| VS Code Setting                             | Lynx Setting                                   |
 | ------------------------------------------- | ---------------------------------------------- |
 | `editor.fontFamily`                         | `buffer_font_family`                           |
 | `editor.fontSize`                           | `buffer_font_size`                             |
@@ -82,7 +82,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Files & Workspace**
 
-| VS Code Setting             | Lynx Setting                    |
+| VS Code Setting             | Lynx Setting                   |
 | --------------------------- | ------------------------------ |
 | `files.autoSave`            | `autosave`                     |
 | `files.autoSaveDelay`       | `autosave.milliseconds`        |
@@ -96,7 +96,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Terminal**
 
-| VS Code Setting                       | Lynx Setting                         |
+| VS Code Setting                       | Lynx Setting                        |
 | ------------------------------------- | ----------------------------------- |
 | `terminal.integrated.fontFamily`      | `terminal.font_family`              |
 | `terminal.integrated.fontSize`        | `terminal.font_size`                |
@@ -111,7 +111,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Tabs & Panels**
 
-| VS Code Setting                                    | Lynx Setting                                        |
+| VS Code Setting                                    | Lynx Setting                                       |
 | -------------------------------------------------- | -------------------------------------------------- |
 | `workbench.editor.showTabs`                        | `tab_bar.show`                                     |
 | `workbench.editor.showIcons`                       | `tabs.file_icons`                                  |
@@ -128,7 +128,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Project Panel (File Explorer)**
 
-| VS Code Setting                | Lynx Setting                         |
+| VS Code Setting                | Lynx Setting                        |
 | ------------------------------ | ----------------------------------- |
 | `explorer.compactFolders`      | `project_panel.auto_fold_dirs`      |
 | `explorer.autoReveal`          | `project_panel.auto_reveal_entries` |
@@ -138,7 +138,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Git**
 
-| VS Code Setting                      | Lynx Setting                                    |
+| VS Code Setting                      | Lynx Setting                                   |
 | ------------------------------------ | ---------------------------------------------- |
 | `git.enabled`                        | `git_panel.button`                             |
 | `git.defaultBranchName`              | `git_panel.fallback_branch_name`               |
@@ -147,7 +147,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Window & Behavior**
 
-| VS Code Setting                                  | Lynx Setting                              |
+| VS Code Setting                                  | Lynx Setting                             |
 | ------------------------------------------------ | ---------------------------------------- |
 | `window.confirmBeforeClose`                      | `confirm_quit`                           |
 | `window.nativeTabs`                              | `use_system_window_tabs`                 |
@@ -156,7 +156,7 @@ The following VS Code settings are automatically imported when you use **Import 
 
 **Other**
 
-| VS Code Setting            | Lynx Setting                                                  |
+| VS Code Setting            | Lynx Setting                                                 |
 | -------------------------- | ------------------------------------------------------------ |
 | `http.proxy`               | `proxy`                                                      |
 | `npm.packageManager`       | `node.npm_path`                                              |
@@ -174,14 +174,15 @@ Lynx doesn’t import extensions or keybindings, but this import gets core edito
 You can configure most settings in the Settings Editor ({#kb zed::OpenSettings}). For advanced settings, run {#action zed::OpenSettingsFile} from the Command Palette to edit your settings file directly.
 
 Here’s how common VS Code settings translate:
-| VS Code | Lynx | Notes |
-| --- | --- | --- |
-| editor.fontFamily | buffer_font_family | Lynx uses Lynx Mono by default |
-| editor.fontSize | buffer_font_size | Set in pixels |
-| editor.tabSize | tab_size | Can override per language |
-| editor.insertSpaces | insert_spaces | Boolean |
-| editor.formatOnSave | format_on_save | Works with formatter enabled |
-| editor.wordWrap | soft_wrap | Supports optional wrap column |
+
+| VS Code             | Lynx               | Notes                          |
+| ------------------- | ------------------ | ------------------------------ |
+| editor.fontFamily   | buffer_font_family | Lynx uses Lynx Mono by default |
+| editor.fontSize     | buffer_font_size   | Set in pixels                  |
+| editor.tabSize      | tab_size           | Can override per language      |
+| editor.insertSpaces | insert_spaces      | Boolean                        |
+| editor.formatOnSave | format_on_save     | Works with formatter enabled   |
+| editor.wordWrap     | soft_wrap          | Supports optional wrap column  |
 
 Lynx also supports per-project settings. You can find these in the Settings Editor as well.
 
@@ -226,7 +227,7 @@ Here’s a quick reference for where keybindings match and where they differ.
 
 ### Different Keybindings (Lynx <> VS Code)
 
-| Action              | VS Code               | Lynx                    |
+| Action              | VS Code               | Lynx                   |
 | ------------------- | --------------------- | ---------------------- |
 | Open recent project | `Ctrl + R`            | `Cmd + Opt + O`        |
 | Move lines up/down  | `Opt + Up/Down`       | `Cmd + Ctrl + Up/Down` |
@@ -330,7 +331,7 @@ Once signed in, just start typing. Lynx will offer suggestions inline for you to
 
 To use other AI models in Lynx, you have several options:
 
-- Use Lynx’s hosted models, with higher rate limits. Requires [authentication](https://zed.dev/docs/authentication) and access through [Lynx Pro](https://zed.dev/docs/account/zed-hosted-models.html).
+- Configure a provider with your own [API key](../ai/use-api-access.md), gateway, or local model.
 - Bring your own [API keys](https://zed.dev/docs/ai/use-api-access.html), no authentication needed
 - Use [External Agents like Claude Agent](https://zed.dev/docs/ai/external-agents.html).
 

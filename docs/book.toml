@@ -20,7 +20,7 @@ command = "cargo run -p docs_preprocessor -- postprocess"
 smart-punctuation = true
 # Set here instead of above as we only use it replace the `#description#` we set in the template
 # when no front-matter is provided value
-default-description = "Learn how to use and customize Lynx, the fast, collaborative code editor. Official docs on features, configuration, AI tools, and workflows."
+default-description = "Learn how to use and customize Lynx, a local multi-project AI workbench and code editor."
 default-title = "Lynx Code Editor Documentation"
 no-section-label = true
 preferred-dark-theme = "dark"
@@ -36,9 +36,7 @@ enable = false
 # 1. Not start with `/docs`
 # 2. End in `.html`
 #
-# The destination URLs are interpreted relative to `https://zed.dev`.
-# - Redirects to other docs pages should end in `.html`
-# - You can link to pages on the Lynx site by omitting the `/docs` in front of it.
+# Redirect destinations use the deployed documentation root.
 [output.zed-html.redirect]
 # AI
 "/ai.html" = "/docs/ai/overview.html"
@@ -56,23 +54,15 @@ enable = false
 "/language-model-integration.html" = "/docs/assistant/assistant.html"
 "/model-improvement.html" = "/docs/ai/privacy-and-security.html"
 "/ai/temperature.html" = "/docs/ai/agent-settings.html#model-temperature"
-"/ai/subscription.html" = "/docs/account/zed-hosted-models.html"
-"/ai/models.html" = "/docs/account/zed-hosted-models.html"
-"/ai/plans-and-usage.html" = "/docs/account/plans-and-pricing.html"
-"/ai/billing.html" = "/docs/account/billing.html"
+"/ai/subscription.html" = "/docs/ai/use-an-existing-subscription.html"
+"/ai/models.html" = "/docs/ai/llm-providers.html"
+"/ai/plans-and-usage.html" = "/docs/ai/llm-providers.html"
+"/ai/billing.html" = "/docs/ai/llm-providers.html"
 "/ai/configuration.html" = "/docs/ai/quick-start.html"
 "/ai/set-up-ai.html" = "/docs/ai/quick-start.html"
 
 # Core
 "/configuring-zed.html" = "/docs/reference/all-settings.html"
-
-# Collaboration
-"/channels.html" = "/docs/collaboration/channels.html"
-"/collaboration.html" = "/docs/collaboration/overview.html"
-
-# Community
-"/community/feedback.html" = "/community-links"
-"/conversations.html" = "/community-links"
 
 # Debugger
 "/debuggers.html" = "/docs/debugger.html"

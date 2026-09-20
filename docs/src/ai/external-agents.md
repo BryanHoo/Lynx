@@ -11,7 +11,7 @@ Use [Terminal Threads](./terminal-threads.md) instead when you want to run a CLI
 
 External Agents run through their own process and provider relationship. Billing, legal terms, retention, and data handling are between you and the agent provider. Lynx does not charge for External Agents.
 
-For Lynx-hosted models and Lynx-managed AI features, see [AI Privacy](./privacy-and-security.md).
+For Lynx-managed AI features, see [AI Privacy](./privacy-and-security.md).
 
 ## Install from the ACP Registry {#registry}
 
@@ -124,15 +124,15 @@ You can also create keybindings for specific agents with {#action agent::NewExte
 
 External Agents run as separate processes that communicate with Lynx over ACP. This creates a boundary between Lynx configuration and agent-native configuration.
 
-| Capability                       | Behavior in External Agent threads                                                         |
-| -------------------------------- | ------------------------------------------------------------------------------------------ |
-| Model/provider config            | Usually owned by the External Agent                                                        |
-| Auth/API keys/subscriptions      | Usually owned by the External Agent                                                        |
-| Lynx Agent profiles               | Do not apply unless the integration says otherwise                                         |
-| Lynx Skills                       | Do not apply as Lynx Skills                                                                 |
-| Native agent skills/instructions | Depends on the agent                                                                       |
-| Lynx MCP servers                  | May be forwarded over ACP                                                                  |
-| Native MCP config                | May also be read by the agent                                                              |
+| Capability                       | Behavior in External Agent threads                                                          |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| Model/provider config            | Usually owned by the External Agent                                                         |
+| Auth/API keys/subscriptions      | Usually owned by the External Agent                                                         |
+| Lynx Agent profiles              | Do not apply unless the integration says otherwise                                          |
+| Lynx Skills                      | Do not apply as Lynx Skills                                                                 |
+| Native agent skills/instructions | Depends on the agent                                                                        |
+| Lynx MCP servers                 | May be forwarded over ACP                                                                   |
+| Native MCP config                | May also be read by the agent                                                               |
 | Tool permissions                 | Lynx ACP/tool forwarding permissions may apply; native tool permissions depend on the agent |
 
 For Lynx's native agent configuration, see [Lynx Agent](./zed-agent.md).

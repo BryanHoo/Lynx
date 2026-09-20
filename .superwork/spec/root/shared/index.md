@@ -7,10 +7,16 @@ Use this guide for root configuration, CI, scripts, assets, and changes spanning
 ## Repository Contracts
 
 - Treat `Cargo.toml` and `Cargo.lock` as the workspace dependency contract.
-- Keep generated GitHub workflows synchronized through `cargo xtask workflows`.
+- Keep GitHub workflows limited to automation that can run in the Lynx repository without Zed internal secrets or services.
 - Keep scripts repository-relative and preserve macOS, Linux, and Windows behavior where applicable.
 - Store runtime assets under `assets/`; load them through established asset APIs.
 - Follow repository-local `AGENTS.md` files for narrower directory rules.
+
+## Product Boundaries
+
+- Do not add Zed account, billing, organization, hosted-model, collaboration, or telemetry-upload services to Lynx.
+- Route AI requests through user-configured provider APIs, gateways, local models, or external agents.
+- Do not publish Zed company policies or point Lynx package metadata at Zed-operated support and release services.
 
 ## Verification
 
@@ -18,6 +24,7 @@ Use this guide for root configuration, CI, scripts, assets, and changes spanning
 - Run `./script/clippy` for workspace-wide Rust or dependency changes.
 - Run `cargo nextest run --workspace --no-fail-fast --no-tests=warn` for broad behavior changes.
 - Run the specific script or `cargo xtask` test when changing automation.
+- Search changed automation, documentation, and package metadata for Zed-only domains and secret names after upstream cleanup.
 
 ## Related Guides
 

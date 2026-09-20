@@ -60,27 +60,10 @@
 - [Edit Prediction](./ai/edit-prediction.md)
 - [AI Privacy](./ai/privacy-and-security.md)
 
-# Account & Billing
-
-- [Authenticate](./authentication.md)
-- [Plans & Pricing](./account/plans-and-pricing.md)
-- [Lynx-Hosted Models](./account/zed-hosted-models.md)
-- [Billing](./account/billing.md)
-
-# Lynx Business
-
-- [Overview](./business/overview.md)
-- [Organizations](./business/organizations.md)
-- [Roles & Permissions](./roles.md)
-- [Admin Controls](./business/admin-controls.md)
-- [Business Support](./business/business-support.md)
-
 # Privacy & Security
 
 - [Worktree Trust](./worktree-trust.md)
-- [Privacy for Business](./business/privacy.md)
-- [Telemetry](./telemetry.md)
-- [SOC2](./soc2.md)
+- [AI Privacy](./ai/privacy-and-security.md)
 
 # Platform Support
 

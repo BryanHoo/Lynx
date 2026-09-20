@@ -14,14 +14,12 @@ The Inline Assistant sends your current selection (or line) to a language model 
 ## Getting Started
 
 If you're using the Inline Assistant for the first time, you need to have at least one [LLM provider](./llm-providers.md) configured.
-You can do that by:
-
-1. [using Lynx-hosted models](../account/zed-hosted-models.md), so you have access to models billed through Lynx
-2. [using API access](./use-api-access.md), either from model providers like Anthropic or model gateways like OpenRouter.
+Configure [API access](./use-api-access.md), a [gateway](./use-a-gateway.md),
+or a [local model](./use-a-local-model.md).
 
 If you have already set up an LLM provider to interact with [the Agent Panel](./agent-panel.md#getting-started), then that will also work for the Inline Assistant.
 
-[External Agents](./external-agents.md) run in agent threads, but they are not available for Inline Assistant generations. The Inline Assistant uses Lynx-configured [LLM providers](./llm-providers.md), including Lynx-hosted models, provider API keys, gateways, local models, and supported subscriptions.
+[External Agents](./external-agents.md) run in agent threads, but they are not available for Inline Assistant generations. The Inline Assistant uses Lynx-configured [LLM providers](./llm-providers.md), including provider API keys, gateways, local models, and supported subscriptions.
 
 ## Adding Context
 

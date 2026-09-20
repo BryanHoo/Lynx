@@ -142,13 +142,13 @@ Some AI settings are not configured on the AI settings pages:
 
 | Task                                                         | Go to                                          |
 | ------------------------------------------------------------ | ---------------------------------------------- |
-| Choose which tools are available in a Lynx Agent thread       | [Agent Profiles](./agent-profiles.md)          |
+| Choose which tools are available in a Lynx Agent thread      | [Agent Profiles](./agent-profiles.md)          |
 | Control whether tool calls are allowed, denied, or confirmed | [Tool Permissions](./tool-permissions.md)      |
 | Configure reusable task instructions                         | [Skills](./skills.md)                          |
 | Configure always-on personal or project instructions         | [Instructions](./instructions.md)              |
 | Configure edit prediction providers                          | [Edit Prediction](./edit-prediction.md)        |
 | Turn AI off                                                  | [AI Quick Start](./quick-start.md#turn-ai-off) |
-| Edit raw settings JSON                                       | [Configuring Lynx](../configuring-zed.md)       |
+| Edit raw settings JSON                                       | [Configuring Lynx](../configuring-zed.md)      |
 
 ## Feature-Specific Models {#feature-specific-models}
 

@@ -1,55 +1,24 @@
 ---
-title: Use an Existing Subscription - Lynx
-description: Use ChatGPT, Claude, Copilot, OpenCode, Cursor, and other existing AI subscriptions in Lynx.
+title: Use an Existing AI Subscription - Lynx
+description: Use provider subscriptions through external agents and terminal tools that support them.
 ---
 
-# Use an Existing Subscription
+# Use an Existing AI Subscription
 
-Use this page when you already pay for an AI product and want to know how it fits into Lynx.
+Lynx does not convert consumer AI subscriptions into API access. A subscription
+works only when an External Agent or command-line tool supports that provider's
+login flow.
 
-Some subscriptions work as Lynx model providers. Others are used through an External Agent or terminal CLI.
+| Subscription       | Lynx path                                     | Authentication owner |
+| ------------------ | --------------------------------------------- | -------------------- |
+| ChatGPT Plus / Pro | Codex through ACP or a Terminal Thread        | Codex or OpenAI      |
+| Claude Pro / Max   | Claude Agent through ACP or Claude Code       | Anthropic            |
+| GitHub Copilot     | Copilot agent or CLI, where available         | GitHub               |
+| Cursor             | Cursor External Agent or CLI, where available | Cursor               |
 
-| Subscription                  | Lynx AI features                                      | External Agent via ACP                | Terminal Thread                | Notes                                                            |
-| ----------------------------- | ---------------------------------------------------- | ------------------------------------- | ------------------------------ | ---------------------------------------------------------------- |
-| Lynx Pro, Business, or Student | [Lynx-hosted models](../account/zed-hosted-models.md) | No                                    | No                             | Billed through Lynx                                               |
-| ChatGPT Plus / Pro            | ChatGPT Subscription                                 | Codex where supported                 | Codex CLI                      | Sign in with OpenAI in Lynx; separate from OpenAI API keys        |
-| Claude Pro / Max              | No direct Lynx LLM provider path                      | Claude Agent                          | Claude Code                    | Separate from Anthropic API keys                                 |
-| GitHub Copilot                | No direct Lynx LLM provider path                     | Copilot agent where available         | CLI where available            | Use the ACP agent or CLI                                         |
-| OpenCode Zen / Go             | OpenCode provider                                    | OpenCode agent where available        | `opencode` CLI                 | Requires OpenCode API key; subscription affects available models |
-| Cursor subscription           | No Lynx LLM provider path                             | Cursor External Agent where available | Cursor CLI/TUI where available | Use agent/CLI paths instead of Lynx LLM provider settings         |
+Use [External Agents](./external-agents.md) for ACP integrations or
+[Terminal Threads](./terminal-threads.md) for native CLI and TUI workflows.
+These tools own their authentication, model routing, usage limits, and billing.
 
-## ChatGPT Plus / Pro {#chatgpt}
-
-ChatGPT Plus and Pro can be used through Lynx's ChatGPT Subscription provider. Sign in with OpenAI in Lynx; no separate OpenAI API key is required.
-
-OpenAI API access is separate. If you have OpenAI API credits or API billing, use [Use API Access](./use-api-access.md#openai).
-
-## Claude Pro / Max {#claude}
-
-Claude Pro and Max subscriptions are separate from Anthropic API credits. Use Claude Agent or Claude Code where supported if you want subscription-backed Claude behavior.
-
-For Anthropic API access, use [Use API Access](./use-api-access.md#anthropic).
-
-See [What Anthropic's New Claude Billing Means for Lynx Users](https://zed.dev/blog/anthropic-subscription-changes) for more context.
-
-## GitHub Copilot {#github-copilot}
-
-Use Copilot through an ACP External Agent or its CLI. Authentication and model behavior are owned by Copilot. See [External Agents](./external-agents.md) and [Terminal Threads](./terminal-threads.md).
-
-## OpenCode Zen / Go {#opencode}
-
-OpenCode is a first-class language model provider in Lynx. If you think of Zen or Go as your OpenCode subscription, the Lynx setup path is still [Use API Access](./use-api-access.md#opencode): enter an OpenCode API key, then choose which OpenCode models to show. Lynx does not sign in to OpenCode with OAuth or detect your subscription directly.
-
-## Cursor {#cursor}
-
-Cursor subscriptions do not configure Lynx's LLM provider settings. Use a Cursor External Agent or Cursor CLI/TUI where available.
-
-## Subscriptions Used Through Agent Harnesses {#agent-harnesses}
-
-Some harnesses, CLIs, and External Agents can authenticate to ChatGPT, Claude, Copilot, or other subscriptions through their own flows. In those cases, Lynx hosts the External Agent or Terminal Thread, but the harness owns auth and model behavior.
-
-Pi Coding Agent is an example: Pi is a harness, not the subscription. Configure provider auth in Pi.
-
-## DeepSeek {#deepseek}
-
-DeepSeek paid usage, top-ups, and API billing are API access in Lynx, not subscription sign-in. Use [Use API Access](./use-api-access.md#deepseek).
+Provider API credits are separate from consumer subscriptions. When a provider
+gives you an API key, follow [Use API Access](./use-api-access.md).

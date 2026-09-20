@@ -7,11 +7,11 @@ description: Understand Lynx's AI features, agent paths, model providers, and se
 
 Lynx's AI docs are organized around three areas:
 
-| Area         | Use it to choose                    | Examples                                                             |
-| ------------ | ----------------------------------- | -------------------------------------------------------------------- |
-| Agents       | How agentic work runs in Lynx        | Lynx Agent, External Agents, Terminal Threads                         |
-| Model access | How Lynx connects to language models | Lynx-hosted models, API access, subscriptions, gateways, local models |
-| Features     | Which AI workflow you want to use   | Agentic editing, inline edits, edit prediction, Git assistance       |
+| Area         | Use it to choose                     | Examples                                                       |
+| ------------ | ------------------------------------ | -------------------------------------------------------------- |
+| Agents       | How agentic work runs in Lynx        | Lynx Agent, External Agents, Terminal Threads                  |
+| Model access | How Lynx connects to language models | API access, subscriptions, gateways, local models              |
+| Features     | Which AI workflow you want to use    | Agentic editing, inline edits, edit prediction, Git assistance |
 
 Start with [AI Quick Start](./quick-start.md) if you know what you want to do. Use [AI by Company](./by-company.md) if you know the company, subscription, model provider, agent, or CLI you want to use.
 
@@ -19,7 +19,7 @@ Start with [AI Quick Start](./quick-start.md) if you know what you want to do. U
 
 Agent paths decide how agentic work runs in Lynx.
 
-- [Lynx Agent](./zed-agent.md): Lynx's native agent. It can use models configured through [LLM Providers](./llm-providers.md), including Lynx-hosted models, provider API keys, supported subscriptions, gateways, and local models. It also uses built-in tools, profiles, skills, instructions, and MCP servers.
+- [Lynx Agent](./zed-agent.md): Lynx's native agent. It can use models configured through [LLM Providers](./llm-providers.md), including provider API keys, supported subscriptions, gateways, and local models. It also uses built-in tools, profiles, skills, instructions, and MCP servers.
 - [External Agents](./external-agents.md): ACP-integrated agents that run through their own process and configuration.
 - [Terminal Threads](./terminal-threads.md): terminal-backed threads for running an agent CLI or TUI directly in Lynx.
 
@@ -29,7 +29,7 @@ See [Agents](./agents.md) for a comparison.
 
 ## Model Access {#model-access}
 
-Model access controls which models power the Lynx Agent and other model-backed Lynx AI features. Lynx can use hosted models, provider API access, subscription sign-in, gateways, and local models.
+Model access controls which models power the Lynx Agent and other model-backed Lynx AI features. Lynx can use provider API access, supported subscription sign-in, gateways, and local models.
 
 See [LLM Providers](./llm-providers.md) to choose a model access path.
 

@@ -42,9 +42,9 @@ Project instructions override personal `AGENTS.md` when they conflict.
 ## Instruction File Support {#support}
 
 | File                              | Lynx Agent                                              | External Agents       | Terminal Threads                 |
-| --------------------------------- | ------------------------------------------------------ | --------------------- | -------------------------------- |
-| `~/.config/zed/AGENTS.md`         | Loaded as personal instructions                        | Not generally used    | Not used unless the CLI reads it |
-| Project `AGENTS.md`               | Loaded as project instructions                         | Depends on the agent  | Depends on the CLI               |
+| --------------------------------- | ------------------------------------------------------- | --------------------- | -------------------------------- |
+| `~/.config/zed/AGENTS.md`         | Loaded as personal instructions                         | Not generally used    | Not used unless the CLI reads it |
+| Project `AGENTS.md`               | Loaded as project instructions                          | Depends on the agent  | Depends on the CLI               |
 | `CLAUDE.md`                       | Loaded as compatible project instructions by Lynx Agent | Claude reads natively | Claude Code CLI reads natively   |
 | `.github/copilot-instructions.md` | Loaded as compatible project instructions by Lynx Agent | Depends on the agent  | Depends on the CLI               |
 
