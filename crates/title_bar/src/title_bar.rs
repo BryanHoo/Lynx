@@ -16,7 +16,6 @@ use crate::application_menu::{
     ActivateDirection, ActivateMenuLeft, ActivateMenuRight, OpenApplicationMenu,
 };
 
-use client::UserStore;
 use command_palette_hooks::CommandPaletteFilter;
 
 use gpui::{
@@ -31,11 +30,10 @@ use settings::{Settings as _, SettingsStore};
 
 use std::any::TypeId;
 use std::path::Path;
-use theme::ActiveTheme;
 use title_bar_settings::TitleBarSettings;
 use ui::{
-    ButtonLike, ContextMenu, ContextMenuEntry, IconWithIndicator, Indicator, PopoverMenu,
-    TintColor, Tooltip, prelude::*, utils::platform_title_bar_height,
+    ButtonLike, ContextMenu, ContextMenuEntry, PopoverMenu, TintColor, Tooltip, prelude::*,
+    utils::platform_title_bar_height,
 };
 use util::ResultExt;
 use workspace::{AccessibleMode, MultiWorkspace, ToggleWorktreeSecurity, Workspace};
@@ -176,7 +174,6 @@ fn set_window_layout(layout: WindowLayout, cx: &App) {
 pub struct TitleBar {
     platform_titlebar: Entity<PlatformTitleBar>,
     project: Entity<Project>,
-    user_store: Entity<UserStore>,
     workspace: WeakEntity<Workspace>,
     multi_workspace: Option<WeakEntity<MultiWorkspace>>,
     application_menu: Option<Entity<ApplicationMenu>>,
@@ -292,9 +289,11 @@ impl Render for TitleBar {
                         .when(render_project_items, |title_bar| {
                             title_bar
                                 .when(title_bar_settings.show_project_items, |title_bar| {
-                                    title_bar
-                                        .children(self.render_project_host(cx))
-                                        .child(self.render_project_name(project_name, window, cx))
+                                    title_bar.child(self.render_project_name(
+                                        project_name,
+                                        window,
+                                        cx,
+                                    ))
                                 })
                                 .when_some(
                                     repository.filter(|_| is_git_enabled),
@@ -371,7 +370,6 @@ impl TitleBar {
     ) -> Self {
         let project = workspace.project().clone();
         let git_store = project.read(cx).git_store().clone();
-        let user_store = workspace.app_state().user_store.clone();
         let platform_style = PlatformStyle::platform();
         let application_menu = match platform_style {
             PlatformStyle::Mac => {
@@ -402,7 +400,6 @@ impl TitleBar {
                 _ => {}
             }),
         );
-        subscriptions.push(cx.observe(&user_store, |_a, _, cx| cx.notify()));
         if let Some(workspace_entity) = workspace.weak_handle().upgrade() {
             subscriptions.push(cx.subscribe(
                 &workspace_entity,
@@ -434,7 +431,6 @@ impl TitleBar {
             workspace: workspace.weak_handle(),
             multi_workspace,
             project,
-            user_store,
             _subscriptions: subscriptions,
         }
     }
@@ -540,52 +536,6 @@ impl TitleBar {
         } else {
             Some(button.into_any_element())
         }
-    }
-
-    pub fn render_project_host(&self, cx: &mut Context<Self>) -> Option<AnyElement> {
-        if self.project.read(cx).is_disconnected(cx) {
-            return Some(
-                Button::new("disconnected", "Disconnected")
-                    .disabled(true)
-                    .color(Color::Disabled)
-                    .label_size(LabelSize::Small)
-                    .into_any_element(),
-            );
-        }
-
-        let host = self.project.read(cx).host()?;
-        let host_user = self.user_store.read(cx).get_cached_user(host.user_id)?;
-        let participant_index = self
-            .user_store
-            .read(cx)
-            .participant_indices()
-            .get(&host_user.legacy_id)?;
-
-        Some(
-            Button::new("project_owner_trigger", host_user.username.clone())
-                .color(Color::Player(participant_index.0))
-                .label_size(LabelSize::Small)
-                .tab_index(0isize)
-                .tooltip(move |_, cx| {
-                    let tooltip_title = format!(
-                        "{} is sharing this project. Click to follow.",
-                        host_user.username
-                    );
-
-                    Tooltip::with_meta(tooltip_title, None, "Click to Follow", cx)
-                })
-                .on_click({
-                    let host_peer_id = host.peer_id;
-                    cx.listener(move |this, _, window, cx| {
-                        this.workspace
-                            .update(cx, |workspace, cx| {
-                                workspace.follow(host_peer_id, window, cx);
-                            })
-                            .log_err();
-                    })
-                })
-                .into_any_element(),
-        )
     }
 
     fn render_project_name(

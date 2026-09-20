@@ -139,7 +139,6 @@ use ::git::{Blame, status::FileStatus};
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, BuildError};
 use anyhow::{Context as _, Result, anyhow, bail};
 use blink_manager::BlinkManager;
-use client::{Collaborator, ParticipantIndex, parse_zed_link};
 use clock::ReplicaId;
 use code_context_menus::{
     AvailableCodeAction, CodeActionContents, CodeActionsItem, CodeActionsMenu, CodeContextMenu,
@@ -231,7 +230,7 @@ use project::{
 };
 use rand::seq::SliceRandom;
 use regex::Regex;
-use rpc::{ErrorCode, ErrorExt, proto::PeerId};
+use rpc::{ErrorCode, ErrorExt};
 use scroll::{Autoscroll, ScrollAnchor, ScrollManager, SharedScrollAnchor};
 use selections_collection::{MutableSelectionsCollection, SelectionsCollection};
 use serde::{Deserialize, Serialize};
@@ -269,9 +268,9 @@ use ui::{
 use ui_input::ErasedEditor;
 use util::{RangeExt, ResultExt, TryFutureExt, maybe, post_inc};
 use workspace::{
-    CollaboratorId, Item as WorkspaceItem, ItemId, ItemNavHistory, NavigationEntry, OpenInTerminal,
-    OpenTerminal, Pane, RestoreOnStartupBehavior, SERIALIZATION_THROTTLE_TIME, SplitDirection,
-    TabBarSettings, Toast, ViewId, Workspace, WorkspaceId, WorkspaceSettings,
+    AgentNavigationTarget, Item as WorkspaceItem, ItemId, ItemNavHistory, NavigationEntry,
+    OpenInTerminal, OpenTerminal, Pane, RestoreOnStartupBehavior, SERIALIZATION_THROTTLE_TIME,
+    SplitDirection, TabBarSettings, Toast, Workspace, WorkspaceId, WorkspaceSettings,
     item::{ItemBufferKind, ItemHandle, PreviewTabsSettings, SaveOptions},
     notifications::{DetachAndPromptErr, NotificationId, NotifyResultExt, NotifyTaskExt},
     searchable::SearchEvent,
@@ -362,7 +361,7 @@ pub fn init(cx: &mut App) {
     cx.set_global(breadcrumbs::RenderBreadcrumbText(render_breadcrumb_text));
 
     workspace::register_project_item::<Editor>(cx);
-    workspace::FollowableViewRegistry::register::<Editor>(cx);
+    workspace::AgentNavigableItemRegistry::register::<Editor>(cx);
     workspace::register_serializable_item::<Editor>(cx);
 
     cx.observe_new(
@@ -1005,7 +1004,7 @@ pub struct Editor {
     project: Option<Entity<Project>>,
     semantics_provider: Option<Rc<dyn SemanticsProvider>>,
     completion_provider: Option<Rc<dyn CompletionProvider>>,
-    collaboration_hub: Option<Box<dyn CollaborationHub>>,
+    agent_navigation_enabled: bool,
     blink_manager: Entity<BlinkManager>,
     cursor_animations: CursorAnimationStates,
     show_cursor_names: bool,
@@ -1083,8 +1082,7 @@ pub struct Editor {
     expects_character_input: bool,
     use_modal_editing: bool,
     read_only: bool,
-    leader_id: Option<CollaboratorId>,
-    remote_id: Option<ViewId>,
+    agent_navigation_target: Option<AgentNavigationTarget>,
     pub hover_state: HoverState,
     pending_mouse_down: Option<Rc<RefCell<Option<MouseDownEvent>>>>,
     prev_pressure_stage: Option<PressureStage>,
@@ -1324,11 +1322,11 @@ struct CharacterDimensions {
 }
 
 #[derive(Debug)]
-pub struct RemoteSelection {
+pub struct AgentNavigationSelection {
     pub replica_id: ReplicaId,
     pub selection: Selection<Anchor>,
     pub cursor_shape: CursorShape,
-    pub collaborator_id: CollaboratorId,
+    pub navigation_target: AgentNavigationTarget,
     pub line_mode: bool,
     pub user_name: Option<SharedString>,
     pub color: PlayerColor,
@@ -2080,14 +2078,6 @@ impl Editor {
                 project,
                 window,
                 |editor, _, event, window, cx| match event {
-                    project::Event::RemoteIdChanged(Some(_))
-                    | project::Event::Reshared
-                    | project::Event::HostReshared => {
-                        // The per-change selection broadcast is skipped while the
-                        // project is unshared, so re-publish current selections
-                        // once it becomes (re)shared.
-                        editor.republish_active_selections(window, cx);
-                    }
                     project::Event::RefreshCodeLens { .. } => {
                         editor.refresh_code_lenses(None, window, cx);
                     }
@@ -2379,7 +2369,7 @@ impl Editor {
             semantics_provider: project
                 .as_ref()
                 .map(|project| Rc::new(project.downgrade()) as _),
-            collaboration_hub: project.clone().map(|project| Box::new(project) as _),
+            agent_navigation_enabled: project.is_some(),
             project,
             blink_manager: blink_manager.clone(),
             cursor_animations: CursorAnimationStates::default(),
@@ -2461,8 +2451,7 @@ impl Editor {
             use_selection_highlight: true,
             auto_replace_emoji_shortcode: false,
             jsx_tag_auto_close_enabled_in_any_buffer: false,
-            leader_id: None,
-            remote_id: None,
+            agent_navigation_target: None,
             hover_state: HoverState::default(),
             pending_mouse_down: None,
             prev_pressure_stage: None,
@@ -3067,8 +3056,8 @@ impl Editor {
         });
     }
 
-    pub fn leader_id(&self) -> Option<CollaboratorId> {
-        self.leader_id
+    pub fn agent_navigation_target(&self) -> Option<AgentNavigationTarget> {
+        self.agent_navigation_target
     }
 
     pub fn buffer(&self) -> &Entity<MultiBuffer> {
@@ -3183,12 +3172,8 @@ impl Editor {
         self.mode = mode;
     }
 
-    pub fn collaboration_hub(&self) -> Option<&dyn CollaborationHub> {
-        self.collaboration_hub.as_deref()
-    }
-
-    pub fn set_collaboration_hub(&mut self, hub: Box<dyn CollaborationHub>) {
-        self.collaboration_hub = Some(hub);
+    pub fn agent_navigation_enabled(&self) -> bool {
+        self.agent_navigation_enabled
     }
 
     pub fn set_in_project_search(&mut self, in_project_search: bool) {
@@ -10754,7 +10739,9 @@ impl Editor {
             return;
         }
 
-        let Some(project) = &self.project else { return };
+        if self.project.is_none() {
+            return;
+        }
 
         // If None, we are in a file without an extension
         let file = self
@@ -10779,7 +10766,6 @@ impl Editor {
             .language_settings(cx)
             .show_edit_predictions;
 
-        let project = project.read(cx);
         let event_type = reported_event.event_type();
 
         if let ReportEditorEvent::Saved { auto_saved } = reported_event {
@@ -10929,7 +10915,7 @@ impl Editor {
             self.show_cursor_names(window, cx);
             self.buffer.update(cx, |buffer, cx| {
                 buffer.finalize_last_transaction(cx);
-                if self.leader_id.is_none() {
+                if self.agent_navigation_target.is_none() {
                     buffer.set_active_selections(
                         &self.selections.disjoint_anchors_arc(),
                         self.selections.line_mode(),
@@ -11758,45 +11744,6 @@ struct CompletionEdit {
     snippet: Option<Snippet>,
 }
 
-pub trait CollaborationHub {
-    fn collaborators<'a>(&self, cx: &'a App) -> &'a HashMap<PeerId, Collaborator>;
-    fn user_participant_indices<'a>(&self, cx: &'a App) -> &'a HashMap<u64, ParticipantIndex>;
-    fn user_names(&self, cx: &App) -> HashMap<u64, SharedString>;
-
-    /// Whether local selection changes need to be broadcast to other
-    /// participants. Defaults to `true`; hubs that can be certain there is no
-    /// audience (e.g. an unshared local project) override this so the editor can
-    /// skip the per-keystroke `set_active_selections` work, which is
-    /// `O(selections)` and pure overhead when nobody is observing.
-    fn should_broadcast_selections(&self, _: &App) -> bool {
-        true
-    }
-}
-
-impl CollaborationHub for Entity<Project> {
-    fn collaborators<'a>(&self, cx: &'a App) -> &'a HashMap<PeerId, Collaborator> {
-        self.read(cx).collaborators()
-    }
-
-    fn should_broadcast_selections(&self, cx: &App) -> bool {
-        // `is_shared()` is true for a host that has shared the project and for a
-        // collab guest, and stays correct even before peer-join notifications
-        // have propagated locally (unlike a live collaborator count). A purely
-        // local project has no audience, so selections need not be broadcast.
-        self.read(cx).is_shared()
-    }
-
-    fn user_participant_indices<'a>(&self, cx: &'a App) -> &'a HashMap<u64, ParticipantIndex> {
-        self.read(cx).user_store().read(cx).participant_indices()
-    }
-
-    fn user_names(&self, cx: &App) -> HashMap<u64, SharedString> {
-        let this = self.read(cx);
-        let user_ids = this.collaborators().values().map(|c| c.user_id);
-        this.user_store().read(cx).participant_names(user_ids, cx)
-    }
-}
-
 pub trait SemanticsProvider {
     fn hover(
         &self,
@@ -12098,49 +12045,26 @@ fn ending_row(next_selection: &Selection<Point>, display_map: &DisplaySnapshot) 
 }
 
 impl EditorSnapshot {
-    pub fn remote_selections_in_range<'a>(
+    pub fn agent_navigation_selections_in_range<'a>(
         &'a self,
         range: &'a Range<Anchor>,
-        collaboration_hub: &dyn CollaborationHub,
         cx: &'a App,
-    ) -> impl 'a + Iterator<Item = RemoteSelection> {
-        let participant_names = collaboration_hub.user_names(cx);
-        let participant_indices = collaboration_hub.user_participant_indices(cx);
-        let collaborators_by_peer_id = collaboration_hub.collaborators(cx);
-        let collaborators_by_replica_id = collaborators_by_peer_id
-            .values()
-            .map(|collaborator| (collaborator.replica_id, collaborator))
-            .collect::<HashMap<_, _>>();
+    ) -> impl 'a + Iterator<Item = AgentNavigationSelection> {
         self.buffer_snapshot()
             .selections_in_range(range, false)
             .filter_map(move |(replica_id, line_mode, cursor_shape, selection)| {
                 if replica_id == ReplicaId::AGENT {
-                    Some(RemoteSelection {
+                    Some(AgentNavigationSelection {
                         replica_id,
                         selection,
                         cursor_shape,
                         line_mode,
-                        collaborator_id: CollaboratorId::Agent,
+                        navigation_target: AgentNavigationTarget::Agent,
                         user_name: Some("Agent".into()),
                         color: cx.theme().players().agent(),
                     })
                 } else {
-                    let collaborator = collaborators_by_replica_id.get(&replica_id)?;
-                    let participant_index = participant_indices.get(&collaborator.user_id).copied();
-                    let user_name = participant_names.get(&collaborator.user_id).cloned();
-                    Some(RemoteSelection {
-                        replica_id,
-                        selection,
-                        cursor_shape,
-                        line_mode,
-                        collaborator_id: CollaboratorId::PeerId(collaborator.peer_id),
-                        user_name,
-                        color: if let Some(index) = participant_index {
-                            cx.theme().players().color_for_participant(index.0)
-                        } else {
-                            cx.theme().players().absent()
-                        },
-                    })
+                    None
                 }
             })
     }

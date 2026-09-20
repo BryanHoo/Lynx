@@ -1147,9 +1147,9 @@ impl EditorElement {
         cx: &mut Context<Editor>,
     ) {
         let snapshot = &position_map.snapshot;
-        let Some(hub) = editor.collaboration_hub() else {
+        if !editor.agent_navigation_enabled() {
             return;
-        };
+        }
         let start = snapshot.display_snapshot.clip_point(
             DisplayPoint::new(point.row(), point.column().saturating_sub(1)),
             Bias::Left,
@@ -1169,7 +1169,10 @@ impl EditorElement {
                 .buffer_snapshot()
                 .anchor_after(end.to_point(&snapshot.display_snapshot));
 
-        let Some(selection) = snapshot.remote_selections_in_range(&range, hub, cx).next() else {
+        let Some(selection) = snapshot
+            .agent_navigation_selections_in_range(&range, cx)
+            .next()
+        else {
             return;
         };
         let key = HoveredCursor {

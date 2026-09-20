@@ -166,18 +166,6 @@ impl Component for StatusToast {
         let dismiss_button_example =
             StatusToast::new("Dismiss Button", cx, |this, _| this.dismiss_button(true));
 
-        let icon_example = StatusToast::new(
-            "Nathan Sobo accepted your contact request",
-            cx,
-            |this, _| {
-                this.icon(
-                    Icon::new(IconName::Check)
-                        .size(IconSize::Small)
-                        .color(Color::Muted),
-                )
-            },
-        );
-
         let success_example = StatusToast::new("Pushed 4 changes to `zed/main`", cx, |this, _| {
             this.icon(
                 Icon::new(IconName::Check)
@@ -229,7 +217,6 @@ impl Component for StatusToast {
                     vec![
                         single_example("Text", div().child(text_example).into_any_element()),
                         single_example("Action", div().child(action_example).into_any_element()),
-                        single_example("Icon", div().child(icon_example).into_any_element()),
                         single_example(
                             "Dismiss Button",
                             div().child(dismiss_button_example).into_any_element(),

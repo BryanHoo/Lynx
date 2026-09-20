@@ -78,7 +78,7 @@ use std::{
     cmp::{self, Ordering},
     fmt::{self, Write},
     iter, mem,
-    ops::{Deref, Range},
+    ops::Range,
     rc::Rc,
     sync::Arc,
     time::{Duration, Instant},
@@ -92,7 +92,7 @@ use ui::{ButtonLike, POPOVER_Y_PADDING, Tooltip, prelude::*, scrollbars::ShowScr
 use unicode_segmentation::UnicodeSegmentation;
 use util::{ResultExt, debug_panic};
 use workspace::{
-    CollaboratorId, ItemHandle, Workspace,
+    AgentNavigationTarget, ItemHandle, Workspace,
     item::{Item, ItemBufferKind},
 };
 
@@ -933,7 +933,7 @@ impl EditorElement {
                         editor.cursor_shape,
                         &snapshot.display_snapshot,
                         is_newest,
-                        editor.leader_id.is_none(),
+                        editor.agent_navigation_target.is_none(),
                         None,
                     );
                     if is_newest {
@@ -988,25 +988,10 @@ impl EditorElement {
                 }
             }
 
-            if let Some(collaboration_hub) = &editor.collaboration_hub {
-                // When following someone, render the local selections in their color.
-                if let Some(leader_id) = editor.leader_id {
-                    match leader_id {
-                        CollaboratorId::PeerId(peer_id) => {
-                            if let Some(collaborator) =
-                                collaboration_hub.collaborators(cx).get(&peer_id)
-                                && let Some(participant_index) = collaboration_hub
-                                    .user_participant_indices(cx)
-                                    .get(&collaborator.user_id)
-                                && let Some((local_selection_style, _)) = selections.first_mut()
-                            {
-                                *local_selection_style = cx
-                                    .theme()
-                                    .players()
-                                    .color_for_participant(participant_index.0);
-                            }
-                        }
-                        CollaboratorId::Agent => {
+            if editor.agent_navigation_enabled {
+                if let Some(agent_navigation_target) = editor.agent_navigation_target {
+                    match agent_navigation_target {
+                        AgentNavigationTarget::Agent => {
                             if let Some((local_selection_style, _)) = selections.first_mut() {
                                 *local_selection_style = cx.theme().players().agent();
                             }
@@ -1014,15 +999,13 @@ impl EditorElement {
                     }
                 }
 
-                let mut remote_selections = HashMap::default();
-                for selection in snapshot.remote_selections_in_range(
-                    &(start_anchor..end_anchor),
-                    collaboration_hub.as_ref(),
-                    cx,
-                ) {
+                let mut agent_selections = HashMap::default();
+                for selection in
+                    snapshot.agent_navigation_selections_in_range(&(start_anchor..end_anchor), cx)
+                {
                     // Don't re-render the leader's selections, since the local selections
                     // match theirs.
-                    if Some(selection.collaborator_id) == editor.leader_id {
+                    if Some(selection.navigation_target) == editor.agent_navigation_target {
                         continue;
                     }
                     let key = HoveredCursor {
@@ -1033,7 +1016,7 @@ impl EditorElement {
                     let is_shown =
                         editor.show_cursor_names || editor.hovered_cursors.contains_key(&key);
 
-                    remote_selections
+                    agent_selections
                         .entry(selection.replica_id)
                         .or_insert((selection.color, Vec::new()))
                         .1
@@ -1049,7 +1032,7 @@ impl EditorElement {
                         ));
                 }
 
-                selections.extend(remote_selections.into_values());
+                selections.extend(agent_selections.into_values());
             } else if !editor.is_focused(window) && editor.show_cursor_when_unfocused {
                 let cursor_offset_on_selection = editor.cursor_offset_on_selection;
 
@@ -1096,18 +1079,16 @@ impl EditorElement {
         let mut add_cursor = |anchor: Anchor, color| {
             cursors.push((anchor.to_display_point(&snapshot.display_snapshot), color));
         };
-        // Remote cursors
-        if let Some(collaboration_hub) = &editor.collaboration_hub {
-            for remote_selection in snapshot.remote_selections_in_range(
-                &(Anchor::Min..Anchor::Max),
-                collaboration_hub.deref(),
-                cx,
-            ) {
+        // Agent cursors
+        if editor.agent_navigation_enabled {
+            for agent_selection in
+                snapshot.agent_navigation_selections_in_range(&(Anchor::Min..Anchor::Max), cx)
+            {
                 add_cursor(
-                    remote_selection.selection.head(),
-                    remote_selection.color.cursor,
+                    agent_selection.selection.head(),
+                    agent_selection.color.cursor,
                 );
-                if Some(remote_selection.collaborator_id) == editor.leader_id {
+                if Some(agent_selection.navigation_target) == editor.agent_navigation_target {
                     skip_local = true;
                 }
             }
@@ -1172,7 +1153,7 @@ impl EditorElement {
             });
 
             if animation_enabled {
-                let newest_animation_selection_id = if editor.leader_id.is_none()
+                let newest_animation_selection_id = if editor.agent_navigation_target.is_none()
                     && cursor_shape_supports_cursor_animation(editor.cursor_shape)
                 {
                     Some(editor.selections.newest_anchor().id)

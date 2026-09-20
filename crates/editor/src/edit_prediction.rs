@@ -236,7 +236,7 @@ impl Editor {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Option<()> {
-        if self.leader_id.is_some() {
+        if self.agent_navigation_target.is_some() {
             self.discard_edit_prediction(EditPredictionDiscardReason::Ignored, cx);
             return None;
         }
@@ -1609,7 +1609,7 @@ impl Editor {
         cx: &App,
     ) -> bool {
         maybe!({
-            if self.read_only(cx) || self.leader_id.is_some() {
+            if self.read_only(cx) || self.agent_navigation_target.is_some() {
                 return Some(false);
             }
             let provider = self.edit_prediction_provider()?;

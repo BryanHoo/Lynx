@@ -468,7 +468,7 @@ impl Editor {
         cx.notify();
     }
 
-    pub(crate) fn request_autoscroll_remotely(
+    pub(crate) fn request_agent_navigation_autoscroll(
         &mut self,
         autoscroll: Autoscroll,
         cx: &mut Context<Self>,

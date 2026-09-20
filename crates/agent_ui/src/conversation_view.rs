@@ -71,7 +71,8 @@ use util::{
     time::duration_alt_display,
 };
 use workspace::{
-    CollaboratorId, MultiWorkspace, NewTerminal, PathList, Workspace, path_link::sanitize_path_text,
+    AgentNavigationTarget, MultiWorkspace, NewTerminal, PathList, Workspace,
+    path_link::sanitize_path_text,
 };
 use zed_actions::agent::{Chat, ToggleModelSelector};
 
@@ -93,13 +94,13 @@ use crate::ui::{AgentNotification, AgentNotificationEvent};
 use crate::{
     Agent, AgentDiffPane, AgentInitialContent, AgentPanel, AgentPanelEvent, AllowAlways, AllowOnce,
     AuthorizeToolCall, ClearMessageQueue, CycleFavoriteModels, CycleModeSelector,
-    CycleThinkingEffort, EditFirstQueuedMessage, ExpandMessageEditor, Follow, KeepAll, NewThread,
+    CycleThinkingEffort, EditFirstQueuedMessage, ExpandMessageEditor, KeepAll, NewThread,
     OpenAddContextMenu, OpenAgentDiff, RejectAll, RejectOnce, RemoveFirstQueuedMessage,
     ScrollOutputLineDown, ScrollOutputLineUp, ScrollOutputPageDown, ScrollOutputPageUp,
     ScrollOutputToBottom, ScrollOutputToNextMessage, ScrollOutputToPreviousMessage,
     ScrollOutputToTop, SendImmediately, SendNextQueuedMessage, ToggleFastMode,
     ToggleProfileSelector, ToggleSteerFirstQueuedMessage, ToggleThinkingEffortMenu,
-    ToggleThinkingMode, UndoLastReject,
+    ToggleThinkingMode, TrackAgent, UndoLastReject,
 };
 
 const STOPWATCH_THRESHOLD: Duration = Duration::from_secs(30);
@@ -4242,7 +4243,7 @@ pub(crate) mod tests {
             .update_in(cx, |view, window, cx| view.send(window, cx));
         cx.run_until_parked();
 
-        // Queue a follow-up while the agent is generating.
+        // Queue a navigate_with_agent-up while the agent is generating.
         active_thread(&conversation_view, cx).update_in(cx, |thread, window, cx| {
             thread.add_to_queue(
                 vec![acp::ContentBlock::Text(acp::TextContent::new(
@@ -6965,7 +6966,7 @@ pub(crate) mod tests {
             );
         });
 
-        // Second turn: a plain follow-up.
+        // Second turn: a plain navigate_with_agent-up.
         connection.set_next_prompt_updates(vec![acp::SessionUpdate::AgentMessageChunk(
             acp::ContentChunk::new("Response".into()),
         )]);
@@ -6983,7 +6984,7 @@ pub(crate) mod tests {
                 .unwrap()
         });
 
-        // Edit and regenerate the follow-up message.
+        // Edit and regenerate the navigate_with_agent-up message.
         let user_message_editor = conversation_view.read_with(cx, |view, cx| {
             view.active_thread()
                 .unwrap()
@@ -6997,7 +6998,7 @@ pub(crate) mod tests {
                 .clone()
         });
         user_message_editor.update_in(cx, |editor, window, cx| {
-            editor.set_text("Edited follow-up", window, cx);
+            editor.set_text("Edited navigate_with_agent-up", window, cx);
         });
 
         connection.set_next_prompt_updates(vec![acp::SessionUpdate::AgentMessageChunk(
@@ -7014,7 +7015,7 @@ pub(crate) mod tests {
             assert_eq!(entries.len(), 4);
             assert_eq!(
                 entries[2].to_markdown(cx),
-                "## User\n\nEdited follow-up\n\n"
+                "## User\n\nEdited navigate_with_agent-up\n\n"
             );
         });
 
@@ -8643,7 +8644,7 @@ pub(crate) mod tests {
             assert_eq!(active.thread.read(cx).status(), ThreadStatus::Generating);
             assert!(
                 active.list_state.is_following_tail(),
-                "stale stop events from the cancelled turn must not disable follow-tail for the new turn"
+                "stale stop events from the cancelled turn must not disable navigate_with_agent-tail for the new turn"
             );
         });
     }

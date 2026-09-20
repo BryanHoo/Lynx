@@ -279,8 +279,8 @@ actions!(
         AllowAlways,
         /// Reject this operation only this time.
         RejectOnce,
-        /// Follows the agent's suggestions.
-        Follow,
+        /// Tracks the agent's location while it reads and edits files.
+        TrackAgent,
         /// Re-enables the fast mode warning for every provider and model.
         ResetFastModeWarnings,
         /// Opens the "Add Context" menu in the message editor.

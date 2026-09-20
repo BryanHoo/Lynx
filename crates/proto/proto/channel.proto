@@ -20,8 +20,6 @@ enum ChannelVisibility {
 message UpdateChannels {
   repeated Channel channels = 1;
   repeated uint64 delete_channels = 4;
-  repeated Channel channel_invitations = 5;
-  repeated uint64 remove_channel_invitations = 6;
   repeated ChannelParticipants channel_participants = 7;
   repeated ChannelBufferVersion latest_channel_buffer_versions = 9;
 
@@ -77,13 +75,7 @@ message GetChannelMembersResponse {
 
 message ChannelMember {
   uint64 user_id = 1;
-  Kind kind = 3;
   ChannelRole role = 4;
-
-  enum Kind {
-    Member = 0;
-    Invitee = 1;
-  }
 }
 
 message SubscribeToChannels {}
@@ -96,12 +88,6 @@ message CreateChannel {
 message CreateChannelResponse {
   Channel channel = 1;
   optional uint64 parent_id = 2;
-}
-
-message InviteChannelMember {
-  uint64 channel_id = 1;
-  uint64 user_id = 2;
-  ChannelRole role = 4;
 }
 
 message RemoveChannelMember {
@@ -228,11 +214,6 @@ message ChannelBufferVersion {
   uint64 epoch = 3;
 }
 
-message UpdateChannelBufferCollaborators {
-  uint64 channel_id = 1;
-  repeated Collaborator collaborators = 2;
-}
-
 message UpdateChannelBuffer {
   uint64 channel_id = 1;
   repeated Operation operations = 2;
@@ -273,7 +254,6 @@ message JoinChannelBufferResponse {
   uint32 replica_id = 2;
   string base_text = 3;
   repeated Operation operations = 4;
-  repeated Collaborator collaborators = 5;
   uint64 epoch = 6;
 }
 
@@ -281,14 +261,8 @@ message RejoinedChannelBuffer {
   uint64 channel_id = 1;
   repeated VectorClockEntry version = 2;
   repeated Operation operations = 3;
-  repeated Collaborator collaborators = 4;
 }
 
 message LeaveChannelBuffer {
   uint64 channel_id = 1;
-}
-
-message RespondToChannelInvite {
-  uint64 channel_id = 1;
-  bool accept = 2;
 }

@@ -9036,16 +9036,9 @@ dependencies = [
 name = "notifications"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "client",
  "component",
- "futures-lite",
  "gpui",
- "rpc",
- "sum_tree",
- "time",
  "ui",
- "util",
  "workspace",
  "zed_actions",
 ]

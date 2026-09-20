@@ -12,7 +12,6 @@ import "download.proto";
 import "git.proto";
 import "image.proto";
 import "lsp.proto";
-import "notification.proto";
 import "task.proto";
 import "toolchain.proto";
 import "worktree.proto";
@@ -53,9 +52,6 @@ message Envelope {
     JoinProject join_project = 26;
     JoinProjectResponse join_project_response = 27;
     LeaveProject leave_project = 28;
-    AddProjectCollaborator add_project_collaborator = 29;
-    UpdateProjectCollaborator update_project_collaborator = 30;
-    RemoveProjectCollaborator remove_project_collaborator = 31;
 
     GetDefinition get_definition = 32;
     GetDefinitionResponse get_definition_response = 33;
@@ -125,20 +121,10 @@ message Envelope {
     PerformRename perform_rename = 85;
     PerformRenameResponse perform_rename_response = 86;
 
-    UpdateContacts update_contacts = 89;
-    ShowContacts show_contacts = 91;
-
     GetUsers get_users = 92;
     FuzzySearchUsers fuzzy_search_users = 93;
     UsersResponse users_response = 94;
-    RequestContact request_contact = 95;
-    RespondToContactRequest respond_to_contact_request = 96;
-    RemoveContact remove_contact = 97;
 
-    Follow follow = 98;
-    FollowResponse follow_response = 99;
-    UpdateFollowers update_followers = 100;
-    Unfollow unfollow = 101;
     UpdateDiffBases update_diff_bases = 104;
 
     OnTypeFormatting on_type_formatting = 105;
@@ -154,9 +140,7 @@ message Envelope {
 
     CreateChannel create_channel = 113;
     CreateChannelResponse create_channel_response = 114;
-    InviteChannelMember invite_channel_member = 115;
     RemoveChannelMember remove_channel_member = 116;
-    RespondToChannelInvite respond_to_channel_invite = 117;
     UpdateChannels update_channels = 118;
     JoinChannel join_channel = 119;
     DeleteChannel delete_channel = 120;
@@ -171,7 +155,6 @@ message Envelope {
     JoinChannelBufferResponse join_channel_buffer_response = 127;
     UpdateChannelBuffer update_channel_buffer = 128;
     LeaveChannelBuffer leave_channel_buffer = 129;
-    UpdateChannelBufferCollaborators update_channel_buffer_collaborators = 130;
     RejoinChannelBuffers rejoin_channel_buffers = 131;
     RejoinChannelBuffersResponse rejoin_channel_buffers_response = 132;
     AckBufferOperation ack_buffer_operation = 133;
@@ -192,11 +175,6 @@ message Envelope {
     ReorderChannel reorder_channel = 349;
     SetChannelVisibility set_channel_visibility = 148;
 
-    AddNotification add_notification = 149;
-    GetNotifications get_notifications = 150;
-    GetNotificationsResponse get_notifications_response = 151;
-    DeleteNotification delete_notification = 152;
-    MarkNotificationRead mark_notification_read = 153;
     LspExtExpandMacro lsp_ext_expand_macro = 154;
     LspExtExpandMacroResponse lsp_ext_expand_macro_response = 155;
     SetRoomParticipantRole set_room_participant_role = 156;
@@ -211,8 +189,6 @@ message Envelope {
 
     BlameBuffer blame_buffer = 172;
     BlameBufferResponse blame_buffer_response = 173;
-
-    UpdateNotification update_notification = 174;
 
     RestartLanguageServers restart_language_servers = 208;
 

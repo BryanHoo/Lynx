@@ -35,8 +35,7 @@ use crate::{
         editor_test_context::EditorTestContext,
     },
 };
-use rpc::proto::PeerId;
-use workspace::CollaboratorId;
+use workspace::AgentNavigationTarget;
 
 struct EditorWithRightOccluders {
     editor: Entity<crate::Editor>,
@@ -523,7 +522,9 @@ async fn test_edit_prediction_jump_disabled_for_non_zed_providers(cx: &mut gpui:
 }
 
 #[gpui::test]
-async fn test_edit_prediction_refresh_suppressed_while_following(cx: &mut gpui::TestAppContext) {
+async fn test_edit_prediction_refresh_suppressed_during_agent_navigation(
+    cx: &mut gpui::TestAppContext,
+) {
     init_test(cx, |_| {});
 
     let mut cx = EditorTestContext::new(cx).await;
@@ -555,7 +556,7 @@ async fn test_edit_prediction_refresh_suppressed_while_following(cx: &mut gpui::
     });
 
     cx.update_editor(|editor, window, cx| {
-        editor.leader_id = Some(CollaboratorId::PeerId(PeerId::default()));
+        editor.agent_navigation_target = Some(AgentNavigationTarget::Agent);
         editor.refresh_edit_prediction(
             false,
             false,
@@ -576,7 +577,7 @@ async fn test_edit_prediction_refresh_suppressed_while_following(cx: &mut gpui::
     });
 
     cx.update_editor(|editor, window, cx| {
-        editor.leader_id = None;
+        editor.agent_navigation_target = None;
         editor.refresh_edit_prediction(
             false,
             false,

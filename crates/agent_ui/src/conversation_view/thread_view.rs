@@ -455,7 +455,7 @@ pub struct ThreadView {
     pub plan_expanded: bool,
     pub queue_expanded: bool,
     pub editor_expanded: bool,
-    pub should_be_following: bool,
+    pub should_track_agent: bool,
     pub editing_message: Option<usize>,
     pub message_queue: MessageQueue,
     pub turn_fields: TurnFields,
@@ -869,7 +869,7 @@ impl ThreadView {
             plan_expanded: false,
             queue_expanded: true,
             editor_expanded: false,
-            should_be_following: false,
+            should_track_agent: false,
             editing_message: None,
             message_queue: MessageQueue::default(),
             turn_fields: TurnFields::default(),
@@ -1366,7 +1366,7 @@ impl ThreadView {
     }
 
     /// Sends a bare `/command` turn and queues everything the user typed after
-    /// it as a follow-up message. The queued remainder auto-processes when the
+    /// it as a navigate_with_agent-up message. The queued remainder auto-processes when the
     /// command turn stops, so e.g. `/compact do X` compacts and then runs `do X`
     /// rather than discarding it.
     fn send_command_queueing_remainder(
@@ -1393,7 +1393,7 @@ impl ThreadView {
 
             // Strip the leading `/command` from the first text block; whatever
             // remains (including any later mention blocks) becomes the queued
-            // follow-up message.
+            // navigate_with_agent-up message.
             if let Some(acp::ContentBlock::Text(text_content)) = content.first_mut() {
                 text_content.text = strip_leading_command(&text_content.text, &command_name);
             }
@@ -1439,10 +1439,10 @@ impl ThreadView {
         // was paused by a manual stop.
         self.message_queue.resume();
 
-        if self.should_be_following {
+        if self.should_track_agent {
             self.workspace
                 .update(cx, |workspace, cx| {
-                    workspace.follow(CollaboratorId::Agent, window, cx);
+                    workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                 })
                 .ok();
         }
@@ -1607,13 +1607,13 @@ impl ThreadView {
                 .ok();
             } else {
                 this.update(cx, |this, cx| {
-                    let should_be_following = this
+                    let should_track_agent = this
                         .workspace
                         .update(cx, |workspace, _| {
-                            workspace.is_being_followed(CollaboratorId::Agent)
+                            workspace.is_navigating_with_agent(AgentNavigationTarget::Agent)
                         })
                         .unwrap_or_default();
-                    this.should_be_following = should_be_following;
+                    this.should_track_agent = should_track_agent;
                 })
                 .ok();
             }
@@ -2092,13 +2092,13 @@ impl ThreadView {
 
         let workspace = self.workspace.clone();
 
-        let should_be_following = self.should_be_following;
+        let should_track_agent = self.should_track_agent;
         let contents_task = cx.spawn_in(window, async move |_this, cx| {
             cancelled.await;
-            if should_be_following {
+            if should_track_agent {
                 workspace
                     .update_in(cx, |workspace, window, cx| {
-                        workspace.follow(CollaboratorId::Agent, window, cx);
+                        workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                     })
                     .ok();
             }
@@ -2295,10 +2295,10 @@ impl ThreadView {
         self.conversation.update(cx, |conversation, cx| {
             conversation.authorize_tool_call(session_id, tool_call_id, outcome, cx);
         });
-        if self.should_be_following {
+        if self.should_track_agent {
             self.workspace
                 .update(cx, |workspace, cx| {
-                    workspace.follow(CollaboratorId::Agent, window, cx);
+                    workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                 })
                 .ok();
         }
@@ -2354,10 +2354,10 @@ impl ThreadView {
         self.conversation.update(cx, |conversation, cx| {
             conversation.authorize_pending_tool_call(&session_id, kind, cx)
         })?;
-        if self.should_be_following {
+        if self.should_track_agent {
             self.workspace
                 .update(cx, |workspace, cx| {
-                    workspace.follow(CollaboratorId::Agent, window, cx);
+                    workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                 })
                 .ok();
         }
@@ -2690,10 +2690,10 @@ impl ThreadView {
                 cx,
             )
         });
-        if self.should_be_following {
+        if self.should_track_agent {
             self.workspace
                 .update(cx, |workspace, cx| {
-                    workspace.follow(CollaboratorId::Agent, window, cx);
+                    workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                 })
                 .ok();
         }
@@ -2782,35 +2782,35 @@ impl ThreadView {
         cx.notify();
     }
 
-    fn is_following(&self, cx: &App) -> bool {
+    fn tracks_agent_location(&self, cx: &App) -> bool {
         match self.thread.read(cx).status() {
             ThreadStatus::Generating => self
                 .workspace
                 .read_with(cx, |workspace, _| {
-                    workspace.is_being_followed(CollaboratorId::Agent)
+                    workspace.is_navigating_with_agent(AgentNavigationTarget::Agent)
                 })
                 .unwrap_or(false),
-            _ => self.should_be_following,
+            _ => self.should_track_agent,
         }
     }
 
-    fn toggle_following(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let following = self.is_following(cx);
+    fn toggle_agent_tracking(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let tracking = self.tracks_agent_location(cx);
 
-        self.should_be_following = !following;
+        self.should_track_agent = !tracking;
         if self.thread.read(cx).status() == ThreadStatus::Generating {
             self.workspace
                 .update(cx, |workspace, cx| {
-                    if following {
-                        workspace.unfollow(CollaboratorId::Agent, window, cx);
+                    if tracking {
+                        workspace.stop_agent_navigation(AgentNavigationTarget::Agent, window, cx);
                     } else {
-                        workspace.follow(CollaboratorId::Agent, window, cx);
+                        workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                     }
                 })
                 .ok();
         }
 
-        telemetry::event!("Follow Agent Selected", following = !following);
+        telemetry::event!("Track Agent Selected", tracking = !tracking);
     }
 
     fn callout_border_position(&self) -> CalloutBorderPosition {
@@ -4259,7 +4259,7 @@ impl ThreadView {
                                     .flex_wrap()
                                     .gap_0p5()
                                     .child(self.render_add_context_button(cx))
-                                    .child(self.render_follow_toggle(cx))
+                                    .child(self.render_agent_tracking_toggle(cx))
                                     .children(self.render_fast_mode_control(cx))
                                     .children(self.render_thinking_control(cx)),
                             )
@@ -5500,42 +5500,42 @@ impl ThreadView {
             })
     }
 
-    fn render_follow_toggle(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let following = self.is_following(cx);
+    fn render_agent_tracking_toggle(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let tracking = self.tracks_agent_location(cx);
 
-        let tooltip_label = if following {
+        let tooltip_label = if tracking {
             if self.agent_id.as_ref() == agent::ZED_AGENT_ID.as_ref() {
-                format!("Stop Following the {}", self.agent_id)
+                format!("Stop Tracking the {}", self.agent_id)
             } else {
-                format!("Stop Following {}", self.agent_id)
+                format!("Stop Tracking {}", self.agent_id)
             }
         } else {
             if self.agent_id.as_ref() == agent::ZED_AGENT_ID.as_ref() {
-                format!("Follow the {}", self.agent_id)
+                format!("Track the {}", self.agent_id)
             } else {
-                format!("Follow {}", self.agent_id)
+                format!("Track {}", self.agent_id)
             }
         };
 
-        IconButton::new("follow-agent", IconName::Crosshair)
+        IconButton::new("navigate_with_agent-agent", IconName::Crosshair)
             .icon_size(IconSize::Small)
             .icon_color(Color::Muted)
-            .toggle_state(following)
+            .toggle_state(tracking)
             .selected_icon_color(Some(Color::Custom(cx.theme().players().agent().cursor)))
             .tooltip(move |_window, cx| {
-                if following {
-                    Tooltip::for_action(tooltip_label.clone(), &Follow, cx)
+                if tracking {
+                    Tooltip::for_action(tooltip_label.clone(), &TrackAgent, cx)
                 } else {
                     Tooltip::with_meta(
                         tooltip_label.clone(),
-                        Some(&Follow),
+                        Some(&TrackAgent),
                         "Track the agent's location as it reads and edits files.",
                         cx,
                     )
                 }
             })
             .on_click(cx.listener(move |this, _, window, cx| {
-                this.toggle_following(window, cx);
+                this.toggle_agent_tracking(window, cx);
             }))
     }
 }

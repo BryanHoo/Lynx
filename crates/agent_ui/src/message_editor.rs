@@ -42,7 +42,7 @@ use theme_settings::ThemeSettings;
 use ui::{ContextMenu, prelude::*};
 use util::paths::PathStyle;
 use util::{ResultExt, debug_panic};
-use workspace::{CollaboratorId, Workspace};
+use workspace::{AgentNavigationTarget, Workspace};
 use zed_actions::agent::{Chat, PasteRaw};
 
 #[derive(Default)]
@@ -991,7 +991,7 @@ impl MessageEditor {
     ) {
         self.workspace
             .update(cx, |this, cx| {
-                this.follow(CollaboratorId::Agent, window, cx)
+                this.navigate_with_agent(AgentNavigationTarget::Agent, window, cx)
             })
             .log_err();
 

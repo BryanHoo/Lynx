@@ -18,7 +18,7 @@ use agent_ui::AgentPanel;
 use anyhow::{Context as _, Result};
 use clap::Parser;
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
-use client::{Client, ProxySettings, UserStore, parse_zed_link};
+use client::{Client, ProxySettings, UserStore};
 use collections::HashMap;
 use db::kvp::KeyValueStore;
 use editor::Editor;
@@ -1462,7 +1462,7 @@ impl ToString for IdType {
     }
 }
 
-fn parse_url_arg(arg: &str, cx: &App) -> String {
+fn parse_url_arg(arg: &str, _cx: &App) -> String {
     match std::fs::canonicalize(Path::new(&arg)) {
         Ok(path) => format!("file://{}", path.display()),
         Err(_) => {
@@ -1470,7 +1470,6 @@ fn parse_url_arg(arg: &str, cx: &App) -> String {
                 || arg.starts_with("zed://")
                 || arg.starts_with("zed-cli://")
                 || arg.starts_with("ssh://")
-                || parse_zed_link(arg, cx).is_some()
             {
                 arg.into()
             } else {

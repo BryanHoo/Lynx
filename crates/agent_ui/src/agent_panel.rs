@@ -39,10 +39,10 @@ use crate::{
     NewNativeAgentThreadFromSummary,
 };
 use crate::{
-    AgentDiffPane, ConversationView, CopyThreadToClipboard, Follow, LoadThreadFromClipboard,
+    AgentDiffPane, ConversationView, CopyThreadToClipboard, LoadThreadFromClipboard,
     NewTerminalThread, NewThread, OpenActiveThreadAsMarkdown, OpenAgentDiff, RenameSelectedThread,
     ResetFastModeWarnings, ShowAllSidebarThreadMetadata, ShowThreadMetadata, ToggleNewThreadMenu,
-    ToggleOptionsMenu,
+    ToggleOptionsMenu, TrackAgent,
     conversation_view::{
         AcpThreadViewEvent, RootThreadUpdated, ThreadView, reset_fast_mode_warnings,
     },
@@ -81,8 +81,9 @@ use ui::{
 };
 use util::ResultExt as _;
 use workspace::{
-    CollaboratorId, DraggedSelection, DraggedTab, MultiWorkspace, PathList, SerializedPathList,
-    ToggleWorkspaceSidebar, ToggleZoom, ToolbarItemView, Workspace, WorkspaceId,
+    AgentNavigationTarget, DraggedSelection, DraggedTab, MultiWorkspace, PathList,
+    SerializedPathList, ToggleWorkspaceSidebar, ToggleZoom, ToolbarItemView, Workspace,
+    WorkspaceId,
     dock::{DockPosition, Panel, PanelEvent},
     item::{ItemEvent, ItemHandle},
 };
@@ -428,8 +429,8 @@ pub fn init(cx: &mut App) {
                 .register_action(|workspace, _: &OpenProjectAgentsMdRules, window, cx| {
                     open_project_rules(workspace, window, cx);
                 })
-                .register_action(|workspace, _: &Follow, window, cx| {
-                    workspace.follow(CollaboratorId::Agent, window, cx);
+                .register_action(|workspace, _: &TrackAgent, window, cx| {
+                    workspace.navigate_with_agent(AgentNavigationTarget::Agent, window, cx);
                 })
                 .register_action(|workspace, _: &OpenAgentDiff, window, cx| {
                     let thread = workspace

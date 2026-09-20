@@ -1510,7 +1510,7 @@ fn currently_following(project: &Entity<Project>, cx: &App) -> bool {
             workspace.read(cx).project().entity_id() == project.entity_id()
                 && workspace
                     .read(cx)
-                    .leader_for_pane(workspace.read(cx).active_pane())
+                    .agent_navigation_target_for_pane(workspace.read(cx).active_pane())
                     .is_some()
         })
 }
