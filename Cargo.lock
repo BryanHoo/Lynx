@@ -2289,7 +2289,6 @@ name = "cloud_api_client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-lock",
  "cloud_api_types",
  "futures 0.3.34",
  "futures-lite",
@@ -3840,11 +3839,8 @@ name = "edit_prediction"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "buffer_diff",
  "client",
  "clock",
- "cloud_api_client",
- "cloud_api_types",
  "cloud_llm_client",
  "collections",
  "credentials_provider",
@@ -3854,7 +3850,6 @@ dependencies = [
  "edit_prediction_context",
  "edit_prediction_metrics",
  "edit_prediction_types",
- "feature_flags",
  "fs",
  "futures 0.3.34",
  "git",
@@ -3879,7 +3874,6 @@ dependencies = [
  "rand 0.9.4",
  "regex",
  "release_channel",
- "semver",
  "serde",
  "serde_json",
  "settings",
@@ -3891,14 +3885,12 @@ dependencies = [
  "toml 0.8.23",
  "ui",
  "util",
- "uuid",
  "workspace",
  "worktree",
  "zed_actions",
  "zed_credentials_provider",
  "zeta_prompt",
  "zlog",
- "zstd 0.11.2+zstd.1.5.2",
 ]
 
 [[package]]
