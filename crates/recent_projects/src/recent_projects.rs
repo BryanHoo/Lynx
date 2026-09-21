@@ -1167,7 +1167,6 @@ impl PickerDelegate for RecentProjectsDelegate {
             }
             ProjectPickerEntry::RecentProject(hit) => {
                 let workspace = self.workspaces.get(hit.candidate_id)?;
-                let location = &workspace.location;
                 let raw_paths = &workspace.paths;
                 let identity_paths = &workspace.identity_paths;
                 let is_local = true;

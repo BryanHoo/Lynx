@@ -10404,6 +10404,15 @@ mod tests {
     #[gpui::test]
     async fn test_terminal_notification_dismissed_when_sidebar_opens(cx: &mut TestAppContext) {
         let (panel, mut cx) = setup_visible_panel(cx).await;
+        cx.update(|window, cx| {
+            let multi_workspace = window
+                .root::<MultiWorkspace>()
+                .flatten()
+                .expect("test window should have a MultiWorkspace root");
+            multi_workspace.update(cx, |multi_workspace, cx| {
+                multi_workspace.close_sidebar(window, cx);
+            });
+        });
         let first_terminal_id = panel
             .update_in(&mut cx, |panel, window, cx| {
                 panel.insert_test_terminal("Build", true, window, cx)
@@ -13578,7 +13587,7 @@ mod tests {
     }
 
     #[gpui::test]
-    async fn test_initialize_from_source_inherits_agent_without_draft_content(
+    async fn test_initialize_from_source_retargets_auto_created_draft_without_content(
         cx: &mut TestAppContext,
     ) {
         init_test(cx);
@@ -13634,15 +13643,20 @@ mod tests {
             "fresh destination panel should inherit the source agent"
         );
 
-        panel_b.read_with(cx, |panel, _cx| {
+        panel_b.read_with(cx, |panel, cx| {
             assert_eq!(
                 panel.selected_agent,
                 Agent::Stub,
                 "destination panel should inherit the source panel's selected agent"
             );
-            assert!(
-                panel.active_conversation_view().is_none(),
-                "agent-only initialization should not create a draft thread"
+            let draft = panel
+                .draft_thread
+                .as_ref()
+                .expect("auto-created draft should be retained");
+            assert_eq!(
+                *draft.read(cx).agent_key(),
+                Agent::Stub,
+                "auto-created draft should be retargeted to the inherited agent"
             );
         });
     }

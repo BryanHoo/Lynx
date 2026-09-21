@@ -208,7 +208,7 @@ impl DapStore {
     pub fn get_debug_adapter_binary(
         &mut self,
         definition: DebugTaskDefinition,
-        session_id: SessionId,
+        _session_id: SessionId,
         worktree: &Entity<Worktree>,
         console: UnboundedSender<String>,
         cx: &mut Context<Self>,

@@ -19,6 +19,7 @@ use db::{
     },
     sqlez_macros::sql,
 };
+#[cfg(test)]
 use fs::Fs;
 use futures::{FutureExt, future::Shared};
 use gpui::{AppContext as _, Entity, Global, Subscription, Task, TaskExt};
@@ -26,7 +27,7 @@ pub use project::WorktreePaths;
 use project::{AgentId, linked_worktree_short_name};
 use ui::{App, Context, SharedString, ThreadItemWorktreeInfo, WorktreeKind};
 use util::ResultExt as _;
-use workspace::{PathList, SerializedWorkspaceLocation, WorkspaceDb};
+use workspace::PathList;
 
 use crate::DEFAULT_THREAD_TITLE;
 
@@ -1769,7 +1770,6 @@ mod tests {
     use gpui::{TestAppContext, VisualTestContext};
     use project::FakeFs;
     use project::Project;
-    use remote::WslConnectionOptions;
     use std::path::Path;
     use std::rc::Rc;
     use workspace::MultiWorkspace;
@@ -2365,82 +2365,6 @@ mod tests {
     }
 
     #[gpui::test]
-    async fn test_migrate_thread_remote_connections_backfills_from_workspace_db(
-        cx: &mut TestAppContext,
-    ) {
-        init_test(cx);
-
-        let folder_paths = PathList::new(&[Path::new("/remote-project")]);
-        let updated_at = Utc::now();
-        let metadata = make_metadata(
-            "remote-session",
-            "Remote Thread",
-            updated_at,
-            folder_paths.clone(),
-        );
-
-        cx.update(|cx| {
-            let store = ThreadMetadataStore::global(cx);
-            store.update(cx, |store, cx| {
-                store.save(metadata, cx);
-            });
-        });
-        cx.run_until_parked();
-
-        let workspace_db = cx.update(|cx| WorkspaceDb::global(cx));
-        let workspace_id = workspace_db.next_id().await.unwrap();
-        let serialized_paths = folder_paths.serialize();
-        let remote_connection_id = 1_i64;
-        workspace_db
-            .write(move |conn| {
-                let mut stmt = Statement::prepare(
-                    conn,
-                    "INSERT INTO remote_connections(id, kind, user, distro) VALUES (?1, ?2, ?3, ?4)",
-                )?;
-                let mut next_index = stmt.bind(&remote_connection_id, 1)?;
-                next_index = stmt.bind(&"wsl", next_index)?;
-                next_index = stmt.bind(&Some("anth".to_string()), next_index)?;
-                stmt.bind(&Some("Ubuntu".to_string()), next_index)?;
-                stmt.exec()?;
-
-                let mut stmt = Statement::prepare(
-                    conn,
-                    "UPDATE workspaces SET paths = ?2, paths_order = ?3, remote_connection_id = ?4, timestamp = CURRENT_TIMESTAMP WHERE workspace_id = ?1",
-                )?;
-                let mut next_index = stmt.bind(&workspace_id, 1)?;
-                next_index = stmt.bind(&serialized_paths.paths, next_index)?;
-                next_index = stmt.bind(&serialized_paths.order, next_index)?;
-                stmt.bind(&Some(remote_connection_id as i32), next_index)?;
-                stmt.exec()
-            })
-            .await
-            .unwrap();
-
-        clear_thread_metadata_remote_connection_backfill(cx);
-        cx.update(|cx| {
-            migrate_thread_remote_connections(cx, Task::ready(Ok(())));
-        });
-        cx.run_until_parked();
-
-        let metadata = cx.update(|cx| {
-            let store = ThreadMetadataStore::global(cx);
-            store
-                .read(cx)
-                .entry_by_session(&acp::SessionId::new("remote-session"))
-                .cloned()
-                .expect("expected migrated metadata row")
-        });
-
-        assert_eq!(
-            metadata.remote_connection,
-            Some(RemoteConnectionOptions::Wsl(WslConnectionOptions {
-                distro_name: "Ubuntu".to_string(),
-                user: Some("anth".to_string()),
-            }))
-        );
-    }
-
-    #[gpui::test]
     async fn test_migrate_thread_metadata_archives_beyond_five_most_recent_per_project(
         cx: &mut TestAppContext,
     ) {
@@ -3030,8 +2954,8 @@ mod tests {
         let linked_paths = PathList::new(&[Path::new("/wt-feature")]);
         let now = Utc::now();
 
-        let remote_a = RemoteConnectionOptions::Mock(remote::MockConnectionOptions { id: 1 });
-        let remote_b = RemoteConnectionOptions::Mock(remote::MockConnectionOptions { id: 2 });
+        let remote_a = serde_json::json!({ "kind": "mock", "id": 1 });
+        let remote_b = serde_json::json!({ "kind": "mock", "id": 2 });
 
         // Three threads at the same folder_paths but different hosts.
         let local_thread = make_metadata("local-session", "Local Thread", now, main_paths.clone());

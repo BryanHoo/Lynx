@@ -227,9 +227,7 @@ impl ThreadEntryWorkspace {
             ThreadEntryWorkspace::Open(workspace) => {
                 !workspace.read(cx).project().read(cx).is_local()
             }
-            ThreadEntryWorkspace::Closed {
-                project_group_key, ..
-            } => false,
+            ThreadEntryWorkspace::Closed { .. } => false,
         }
     }
 }
@@ -2210,14 +2208,6 @@ impl Sidebar {
         } else {
             rendered
         }
-    }
-
-    fn render_remote_project_icon(
-        &self,
-        _ix: usize,
-        _host: Option<&RemoteConnectionOptions>,
-    ) -> Option<AnyElement> {
-        None
     }
 
     fn render_project_header(
@@ -5361,7 +5351,6 @@ impl Sidebar {
                     thread_id,
                     neighbor.as_ref(),
                     thread_folder_paths.as_ref(),
-                    thread_remote_connection.as_ref(),
                     in_flight,
                     window,
                     cx,
@@ -5392,7 +5381,6 @@ impl Sidebar {
         thread_id: Option<agent_ui::ThreadId>,
         neighbor: Option<&ActivatableEntry>,
         thread_folder_paths: Option<&PathList>,
-        thread_remote_connection: Option<&RemoteConnectionOptions>,
         in_flight_archive: Option<(Task<()>, async_channel::Sender<()>)>,
         window: &mut Window,
         cx: &mut Context<Self>,

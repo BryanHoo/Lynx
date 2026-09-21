@@ -66,6 +66,18 @@ impl From<&str> for AgentModelId {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentAuthenticationKind {
+    Account,
+    ApiKey,
+    Gateway,
+    External,
+    None,
+    #[serde(other)]
+    Other,
+}
+
 pub fn build_terminal_auth_task(
     id: String,
     label: String,
@@ -94,6 +106,10 @@ pub trait AgentConnection {
     fn telemetry_id(&self) -> SharedString;
 
     fn agent_version(&self) -> Option<SharedString> {
+        None
+    }
+
+    fn authentication_kind(&self) -> Option<AgentAuthenticationKind> {
         None
     }
 

@@ -322,12 +322,10 @@ impl ContextServerStore {
     }
 
     pub fn shared(&mut self, project_id: u64, client: AnyProtoClient) {
-        if let ContextServerStoreState::Local {
+        let ContextServerStoreState::Local {
             downstream_client, ..
-        } = &mut self.state
-        {
-            *downstream_client = Some((project_id, client));
-        }
+        } = &mut self.state;
+        *downstream_client = Some((project_id, client));
     }
 
     /// Returns all configured context server ids, excluding the ones that are disabled

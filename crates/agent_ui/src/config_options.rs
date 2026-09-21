@@ -1,8 +1,8 @@
 use std::{cmp::Reverse, rc::Rc, sync::Arc};
 
-use acp_thread::AgentSessionConfigOptions;
+use acp_thread::{AgentAuthenticationKind, AgentSessionConfigOptions};
 use agent_client_protocol::schema::v1 as acp;
-use agent_servers::AgentServer;
+use agent_servers::{AgentServer, CODEX_ID};
 
 use collections::HashSet;
 use fs::Fs;
@@ -29,11 +29,13 @@ use crate::{
 };
 
 const PICKER_THRESHOLD: usize = 5;
+const CODEX_FAST_MODE_CONFIG_ID: &str = "fast-mode";
 
 pub struct ConfigOptionsView {
     config_options: Rc<dyn AgentSessionConfigOptions>,
     selectors: Vec<Entity<ConfigOptionSelector>>,
     agent_server: Rc<dyn AgentServer>,
+    authentication_kind: Option<AgentAuthenticationKind>,
     fs: Arc<dyn Fs>,
     config_option_ids: Vec<acp::SessionConfigId>,
     _refresh_task: Task<()>,
@@ -43,11 +45,19 @@ impl ConfigOptionsView {
     pub fn new(
         config_options: Rc<dyn AgentSessionConfigOptions>,
         agent_server: Rc<dyn AgentServer>,
+        authentication_kind: Option<AgentAuthenticationKind>,
         fs: Arc<dyn Fs>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let selectors = Self::build_selectors(&config_options, &agent_server, &fs, window, cx);
+        let selectors = Self::build_selectors(
+            &config_options,
+            &agent_server,
+            authentication_kind,
+            &fs,
+            window,
+            cx,
+        );
         let config_option_ids = Self::config_option_ids(&config_options);
 
         let rx = config_options.watch(cx);
@@ -67,6 +77,7 @@ impl ConfigOptionsView {
             config_options,
             selectors,
             agent_server,
+            authentication_kind,
             fs,
             config_option_ids,
             _refresh_task: refresh_task,
@@ -138,7 +149,14 @@ impl ConfigOptionsView {
         self.config_options
             .config_options()
             .into_iter()
-            .find(|option| option.category.as_ref() == Some(&category) && predicate(option))
+            .find(|option| {
+                is_config_option_visible(
+                    &self.agent_server.agent_id(),
+                    self.authentication_kind,
+                    &option.id,
+                ) && option.category.as_ref() == Some(&category)
+                    && predicate(option)
+            })
             .map(|option| option.id)
     }
 
@@ -236,6 +254,7 @@ impl ConfigOptionsView {
         self.selectors = Self::build_selectors(
             &self.config_options,
             &self.agent_server,
+            self.authentication_kind,
             &self.fs,
             window,
             cx,
@@ -246,6 +265,7 @@ impl ConfigOptionsView {
     fn build_selectors(
         config_options: &Rc<dyn AgentSessionConfigOptions>,
         agent_server: &Rc<dyn AgentServer>,
+        authentication_kind: Option<AgentAuthenticationKind>,
         fs: &Arc<dyn Fs>,
         window: &mut Window,
         cx: &mut Context<Self>,
@@ -253,6 +273,9 @@ impl ConfigOptionsView {
         config_options
             .config_options()
             .into_iter()
+            .filter(|option| {
+                is_config_option_visible(&agent_server.agent_id(), authentication_kind, &option.id)
+            })
             .map(|option| {
                 let config_options = config_options.clone();
                 let agent_server = agent_server.clone();
@@ -270,6 +293,17 @@ impl ConfigOptionsView {
             })
             .collect()
     }
+}
+
+fn is_config_option_visible(
+    agent_id: &project::AgentId,
+    authentication_kind: Option<AgentAuthenticationKind>,
+    config_id: &acp::SessionConfigId,
+) -> bool {
+    // codex-acp 仅在官方账户登录时支持 Fast mode；未知状态和外部认证均按非官方登录处理。
+    !(agent_id.as_ref() == CODEX_ID
+        && authentication_kind != Some(AgentAuthenticationKind::Account)
+        && config_id.0.as_ref() == CODEX_FAST_MODE_CONFIG_ID)
 }
 
 impl Render for ConfigOptionsView {
@@ -1131,6 +1165,7 @@ mod tests {
                 config_options,
                 selectors: Vec::new(),
                 agent_server,
+                authentication_kind: None,
                 fs,
                 _refresh_task: Task::ready(()),
             });
@@ -1174,6 +1209,7 @@ mod tests {
                 config_options,
                 selectors: Vec::new(),
                 agent_server,
+                authentication_kind: None,
                 fs,
                 _refresh_task: Task::ready(()),
             });
@@ -1227,6 +1263,7 @@ mod tests {
                 config_options,
                 selectors: Vec::new(),
                 agent_server,
+                authentication_kind: None,
                 fs,
                 _refresh_task: Task::ready(()),
             });
@@ -1265,7 +1302,9 @@ mod tests {
             move |window, cx| {
                 let config_options: Rc<dyn AgentSessionConfigOptions> = config_options;
                 let agent_server: Rc<dyn AgentServer> = agent_server;
-                cx.new(|cx| ConfigOptionsView::new(config_options, agent_server, fs, window, cx))
+                cx.new(|cx| {
+                    ConfigOptionsView::new(config_options, agent_server, None, fs, window, cx)
+                })
             }
         });
 
@@ -1276,6 +1315,57 @@ mod tests {
         });
 
         assert!(!handled);
+    }
+
+    #[test]
+    fn codex_fast_mode_is_visible_for_official_account_authentication() {
+        let codex_id = AgentId::new(CODEX_ID);
+        let fast_mode_id = acp::SessionConfigId::new(CODEX_FAST_MODE_CONFIG_ID);
+
+        assert!(is_config_option_visible(
+            &codex_id,
+            Some(AgentAuthenticationKind::Account),
+            &fast_mode_id,
+        ));
+    }
+
+    #[test]
+    fn codex_fast_mode_is_hidden_when_authentication_is_unknown() {
+        let codex_id = AgentId::new(CODEX_ID);
+        let fast_mode_id = acp::SessionConfigId::new(CODEX_FAST_MODE_CONFIG_ID);
+
+        assert!(!is_config_option_visible(&codex_id, None, &fast_mode_id,));
+    }
+
+    #[test]
+    fn codex_fast_mode_is_hidden_for_non_official_authentication() {
+        let codex_id = AgentId::new(CODEX_ID);
+        let fast_mode_id = acp::SessionConfigId::new(CODEX_FAST_MODE_CONFIG_ID);
+
+        for authentication_kind in [
+            AgentAuthenticationKind::ApiKey,
+            AgentAuthenticationKind::Gateway,
+            AgentAuthenticationKind::External,
+            AgentAuthenticationKind::None,
+            AgentAuthenticationKind::Other,
+        ] {
+            assert!(!is_config_option_visible(
+                &codex_id,
+                Some(authentication_kind),
+                &fast_mode_id,
+            ));
+        }
+    }
+
+    #[test]
+    fn fast_mode_visibility_is_unchanged_for_other_agents() {
+        let fast_mode_id = acp::SessionConfigId::new(CODEX_FAST_MODE_CONFIG_ID);
+
+        assert!(is_config_option_visible(
+            &AgentId::new("other-acp"),
+            Some(AgentAuthenticationKind::ApiKey),
+            &fast_mode_id,
+        ));
     }
 
     #[derive(Default)]

@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::Context as _;
 use collections::HashSet;
 use fuzzy::StringMatchCandidate;
 use git::repository::Worktree as GitWorktree;
@@ -17,10 +16,7 @@ use ui::{
     ListItemSpacing, ListSubHeader, Tooltip, prelude::*,
 };
 use util::{ResultExt as _, paths::PathExt};
-use workspace::{
-    ModalView, MultiWorkspace, RemovalIntent, Workspace, dock::DockPosition,
-    notifications::DetachAndPromptErr,
-};
+use workspace::{ModalView, MultiWorkspace, RemovalIntent, Workspace, dock::DockPosition};
 
 use crate::notifications::show_error_toast;
 use crate::worktree_service::{RemoteBranchName, WorktreeCreateTarget, worktree_create_targets};

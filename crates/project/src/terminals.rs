@@ -439,7 +439,7 @@ impl Project {
             let mut env = env_task.await.unwrap_or_default();
             env.extend(settings.env);
 
-            project.update(cx, move |_, cx| {
+            project.update(cx, move |_, _cx| {
                 let mut command = new_std_command(command);
                 command.args(args);
                 command.envs(env);

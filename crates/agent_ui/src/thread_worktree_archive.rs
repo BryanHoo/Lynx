@@ -4,7 +4,7 @@ use std::{
     time::SystemTime,
 };
 
-use crate::{RemoteConnectionOptions, same_remote_connection_identity};
+use crate::RemoteConnectionOptions;
 use anyhow::{Context as _, Result, anyhow};
 use gpui::{App, AsyncApp, Entity, Task};
 use project::{
@@ -936,7 +936,7 @@ mod tests {
         worktree_path: &Path,
         cx: &mut TestAppContext,
     ) {
-        crate::test_support::record_zed_created_worktree(fs, worktree_path, None, cx).await
+        crate::test_support::record_zed_created_worktree(fs, worktree_path, cx).await
     }
 
     #[gpui::test]
@@ -1523,7 +1523,6 @@ mod tests {
         cx.update(|cx| {
             git_ui_core::created_worktrees::record_created_worktree(
                 worktree_path,
-                None,
                 actual_created_at + Duration::from_secs(1),
                 cx,
             )
@@ -1585,8 +1584,7 @@ mod tests {
         // attempts skip the worktree entirely.
         workspace.read_with(cx, |_workspace, cx| {
             assert!(
-                git_ui_core::created_worktrees::recorded_created_at(worktree_path, None, cx)
-                    .is_none(),
+                git_ui_core::created_worktrees::recorded_created_at(worktree_path, cx).is_none(),
                 "stale created-worktree record should be removed"
             );
             let plan = build_root_plan(worktree_path, None, std::slice::from_ref(&workspace), cx);

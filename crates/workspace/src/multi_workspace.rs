@@ -804,6 +804,7 @@ impl MultiWorkspace {
         ));
     }
 
+    #[cfg(test)]
     pub(crate) fn activate_provisional_workspace(
         &mut self,
         workspace: Entity<Workspace>,

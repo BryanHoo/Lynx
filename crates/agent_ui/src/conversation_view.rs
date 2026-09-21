@@ -1315,10 +1315,16 @@ impl ConversationView {
             // Use config options - don't create mode_selector or model_selector
             let agent_server = self.agent.clone();
             let fs = self.project.read(cx).fs().clone();
-            config_options_view =
-                Some(cx.new(|cx| {
-                    ConfigOptionsView::new(config_options, agent_server, fs, window, cx)
-                }));
+            config_options_view = Some(cx.new(|cx| {
+                ConfigOptionsView::new(
+                    config_options,
+                    agent_server,
+                    connection.authentication_kind(),
+                    fs,
+                    window,
+                    cx,
+                )
+            }));
             model_selector = None;
             mode_selector = None;
         } else {
@@ -5314,6 +5320,15 @@ pub(crate) mod tests {
 
         let cx = &mut VisualTestContext::from_window(multi_workspace_handle.into(), cx);
         register_test_sidebar(true, cx);
+        cx.update(|window, cx| {
+            let multi_workspace = window
+                .root::<MultiWorkspace>()
+                .flatten()
+                .expect("test window should have a MultiWorkspace root");
+            multi_workspace.update(cx, |multi_workspace, cx| {
+                multi_workspace.close_sidebar(window, cx);
+            });
+        });
 
         let thread_store = cx.update(|_window, cx| cx.new(|cx| ThreadStore::new(cx)));
         let connection_store =
@@ -6643,9 +6658,11 @@ pub(crate) mod tests {
     }
 
     pub(crate) fn init_test(cx: &mut TestAppContext) {
+        let fs = FakeFs::new(cx.executor());
         cx.update(|cx| {
             let settings_store = SettingsStore::test(cx);
             cx.set_global(settings_store);
+            <dyn Fs>::set_global(fs, cx);
             // Use an isolated DB so parallel tests can't overwrite each
             // other's global keys (e.g. the last-created entry kind).
             cx.set_global(db::AppDatabase::test_new());

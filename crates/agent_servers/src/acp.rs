@@ -1,6 +1,6 @@
 use acp_thread::{
-    AgentConnection, AgentSessionInfo, AgentSessionList, AgentSessionListRequest,
-    AgentSessionListResponse, ElicitationStore,
+    AgentAuthenticationKind, AgentConnection, AgentSessionInfo, AgentSessionList,
+    AgentSessionListRequest, AgentSessionListResponse, ElicitationStore,
 };
 use action_log::ActionLog;
 use agent_client_protocol::schema::{
@@ -21,7 +21,7 @@ use project::agent_server_store::{
     AgentServerCommand, AgentServerStore, AllAgentServersSettings, CustomAgentServerSettings,
 };
 use project::{AgentId, Project};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use settings::{AgentConfigOptionValue, SettingsStore};
 use std::path::PathBuf;
 use std::process::{ExitStatus, Stdio};
@@ -397,6 +397,7 @@ pub struct AcpConnection {
     id: AgentId,
     telemetry_id: SharedString,
     agent_version: Option<SharedString>,
+    authentication_kind: Arc<Mutex<Option<AgentAuthenticationKind>>>,
     connection: ConnectionTo<Agent>,
     sessions: Rc<RefCell<HashMap<acp::SessionId, AcpSession>>>,
     pending_sessions: Rc<RefCell<HashMap<acp::SessionId, PendingAcpSession>>>,
@@ -413,6 +414,18 @@ pub struct AcpConnection {
     _dispatch_task: Task<()>,
     _wait_task: Task<Result<()>>,
     _stderr_task: Task<Result<()>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, agent_client_protocol::JsonRpcNotification)]
+#[notification(method = "_auth/status_update")]
+struct AuthStatusUpdateNotification {
+    #[serde(rename = "authStatus")]
+    auth_status: AuthStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct AuthStatus {
+    kind: AgentAuthenticationKind,
 }
 
 #[derive(Clone, Default)]
@@ -665,9 +678,10 @@ fn connect_client_future(
     name: &'static str,
     transport: impl agent_client_protocol::ConnectTo<Client> + 'static,
     dispatch_tx: mpsc::UnboundedSender<ForegroundWork>,
+    authentication_kind: Arc<Mutex<Option<AgentAuthenticationKind>>>,
     connection_tx: futures::channel::oneshot::Sender<ConnectionTo<Agent>>,
 ) -> impl Future<Output = Result<(), acp::Error>> {
-    client_builder(name, dispatch_tx).connect_with(
+    client_builder(name, dispatch_tx, authentication_kind).connect_with(
         transport,
         move |connection: ConnectionTo<Agent>| async move {
             if connection_tx.send(connection).is_err() {
@@ -682,6 +696,7 @@ fn connect_client_future(
 fn client_builder(
     name: &'static str,
     dispatch_sender: mpsc::UnboundedSender<ForegroundWork>,
+    authentication_kind: Arc<Mutex<Option<AgentAuthenticationKind>>>,
 ) -> Builder<Client, impl HandleDispatchFrom<Agent>> {
     // Each handler forwards its inputs onto the foreground dispatch queue.
     // The SDK requires the closure to be `Send`, so we move a clone of
@@ -752,6 +767,16 @@ fn client_builder(
         )
         .on_receive_notification(
             on_notification!(handle_complete_elicitation),
+            agent_client_protocol::on_receive_notification!(),
+        )
+        .on_receive_notification(
+            async move |notification: AuthStatusUpdateNotification, _connection| {
+                *authentication_kind
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner()) =
+                    Some(notification.auth_status.kind);
+                Ok(())
+            },
             agent_client_protocol::on_receive_notification!(),
         )
 }
@@ -907,8 +932,14 @@ impl AcpConnection {
         });
 
         let (connection_tx, connection_rx) = futures::channel::oneshot::channel();
-        let connection_future =
-            connect_client_future("zed", transport, dispatch_tx.clone(), connection_tx);
+        let authentication_kind = Arc::new(Mutex::new(None));
+        let connection_future = connect_client_future(
+            "zed",
+            transport,
+            dispatch_tx.clone(),
+            authentication_kind.clone(),
+            connection_tx,
+        );
         let io_task = cx.background_spawn(async move {
             if let Err(err) = connection_future.await {
                 log::error!("ACP connection error: {err}");
@@ -1064,6 +1095,7 @@ impl AcpConnection {
             connection,
             telemetry_id,
             agent_version,
+            authentication_kind,
             sessions,
             pending_sessions: Rc::new(RefCell::new(HashMap::default())),
             agent_capabilities: response.agent_capabilities,
@@ -1093,6 +1125,7 @@ impl AcpConnection {
         agent_server_store: WeakEntity<AgentServerStore>,
         io_task: Task<()>,
         dispatch_task: Task<()>,
+        authentication_kind: Arc<Mutex<Option<AgentAuthenticationKind>>>,
         cx: &mut App,
     ) -> Self {
         let agent_id = AgentId::new("test");
@@ -1103,6 +1136,7 @@ impl AcpConnection {
             id: agent_id,
             telemetry_id: "test".into(),
             agent_version: None,
+            authentication_kind,
             connection,
             sessions,
             pending_sessions: Rc::new(RefCell::new(HashMap::default())),
@@ -1595,6 +1629,13 @@ impl AgentConnection for AcpConnection {
 
     fn agent_version(&self) -> Option<SharedString> {
         self.agent_version.clone()
+    }
+
+    fn authentication_kind(&self) -> Option<AgentAuthenticationKind> {
+        *self
+            .authentication_kind
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     fn new_session(
@@ -2467,10 +2508,12 @@ pub mod test_support {
         let (dispatch_tx, dispatch_rx) = mpsc::unbounded::<ForegroundWork>();
 
         let (connection_tx, connection_rx) = futures::channel::oneshot::channel();
+        let authentication_kind = Arc::new(Mutex::new(None));
         let client_future = connect_client_future(
             "zed-test",
             client_transport,
             dispatch_tx.clone(),
+            authentication_kind.clone(),
             connection_tx,
         );
         let client_io_task = cx.background_spawn(async move {
@@ -2515,6 +2558,7 @@ pub mod test_support {
                 agent_server_store,
                 client_io_task,
                 dispatch_task,
+                authentication_kind,
                 cx,
             )
         });
@@ -2957,6 +3001,19 @@ mod tests {
                 .and_then(|session| session.config_options)
                 .and_then(|config_options| config_options.boolean)
                 .is_some()
+        );
+    }
+
+    #[test]
+    fn auth_status_update_parses_api_key_authentication() {
+        let notification: AuthStatusUpdateNotification = serde_json::from_value(
+            serde_json::json!({ "authStatus": { "kind": "api_key", "label": "API key" } }),
+        )
+        .expect("auth status update should deserialize");
+
+        assert_eq!(
+            notification.auth_status.kind,
+            AgentAuthenticationKind::ApiKey
         );
     }
 
@@ -3674,6 +3731,7 @@ mod tests {
                 WeakEntity::new_invalid(),
                 client_io_task,
                 Task::ready(()),
+                Arc::new(Mutex::new(None)),
                 cx,
             )
         });
@@ -3921,10 +3979,12 @@ mod tests {
         let (dispatch_tx, dispatch_rx) = mpsc::unbounded::<ForegroundWork>();
 
         let (connection_tx, connection_rx) = futures::channel::oneshot::channel();
+        let authentication_kind = Arc::new(Mutex::new(None));
         let client_future = connect_client_future(
             "zed-test",
             client_transport,
             dispatch_tx.clone(),
+            authentication_kind.clone(),
             connection_tx,
         );
         let client_io_task = cx.background_spawn(async move {
@@ -3975,6 +4035,7 @@ mod tests {
                 agent_server_store,
                 client_io_task,
                 dispatch_task,
+                authentication_kind,
                 cx,
             )
         });
