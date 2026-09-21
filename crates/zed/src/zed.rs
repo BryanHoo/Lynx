@@ -733,8 +733,14 @@ fn initialize_panels(window: &mut Window, cx: &mut Context<Workspace>) -> Task<a
             initialize_agent_panel(workspace_handle.clone(), cx.clone()).map(|r| r.log_err()),
         );
 
-        workspace_handle.update(cx, |workspace, cx| {
+        workspace_handle.update_in(cx, |workspace, window, cx| {
             workspace.finish_dock_restoration(cx);
+
+            // 启动时没有项目则保持欢迎页整洁，面板仍可由用户主动打开。
+            let has_project = workspace.project().read(cx).worktrees(cx).next().is_some();
+            if !has_project {
+                workspace.close_all_docks(window, cx);
+            }
         })?;
 
         anyhow::Ok(())

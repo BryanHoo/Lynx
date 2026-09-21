@@ -2239,15 +2239,6 @@ impl Workspace {
                 };
 
             notify_if_database_failed(window, cx);
-            // Check if this is an empty workspace (no paths to open)
-            // An empty workspace is one where project_paths is empty
-            let is_empty_workspace = project_paths.is_empty();
-            // Check if serialized workspace has paths before it's moved
-            let serialized_workspace_has_paths = serialized_workspace
-                .as_ref()
-                .map(|ws| !ws.paths.is_empty())
-                .unwrap_or(false);
-
             let opened_items = window
                 .update(cx, |_, window, cx| {
                     workspace.update(cx, |_workspace: &mut Workspace, cx| {
@@ -2256,35 +2247,6 @@ impl Workspace {
                 })?
                 .await
                 .unwrap_or_default();
-
-            // Restore default dock state for empty workspaces
-            // Only restore if:
-            // 1. This is an empty workspace (no paths), AND
-            // 2. The serialized workspace either doesn't exist or has no paths
-            if is_empty_workspace && !serialized_workspace_has_paths {
-                if let Some(default_docks) = persistence::read_default_dock_state(&kvp) {
-                    window
-                        .update(cx, |_, window, cx| {
-                            workspace.update(cx, |workspace, cx| {
-                                for (dock, serialized_dock) in [
-                                    (&workspace.right_dock, &default_docks.right),
-                                    (&workspace.left_dock, &default_docks.left),
-                                    (&workspace.bottom_dock, &default_docks.bottom),
-                                ] {
-                                    dock.update(cx, |dock, cx| {
-                                        dock.restore_serialized_state(
-                                            serialized_dock.clone(),
-                                            window,
-                                            cx,
-                                        );
-                                    });
-                                }
-                                cx.notify();
-                            });
-                        })
-                        .log_err();
-                }
-            }
 
             window
                 .update(cx, |_, _window, cx| {
