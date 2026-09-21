@@ -198,6 +198,43 @@ async fn test_workspace_menu_uses_bare_repository_worktree_name(cx: &mut TestApp
     assert_eq!(labels[0].secondary_name, None);
 }
 
+#[gpui::test]
+async fn test_workspace_menu_labels_main_worktree_as_current_workspace(cx: &mut TestAppContext) {
+    init_test(cx);
+    let fs = FakeFs::new(cx.executor());
+    fs.insert_tree(
+        "/project",
+        serde_json::json!({
+            ".git": {},
+            "src": {},
+        }),
+    )
+    .await;
+    fs.set_branch_name(Path::new("/project/.git"), Some("dev"));
+    cx.update(|cx| <dyn fs::Fs>::set_global(fs.clone(), cx));
+
+    let project = project::Project::test(fs, [Path::new("/project")], cx).await;
+    project
+        .update(cx, |project, cx| project.git_scans_complete(cx))
+        .await;
+
+    let (multi_workspace, cx) =
+        cx.add_window_view(|window, cx| MultiWorkspace::test_new(project, window, cx));
+    let workspace = multi_workspace.read_with(cx, |multi_workspace, _cx| {
+        multi_workspace.workspace().clone()
+    });
+    let (labels, expected_label) = cx.update(|_window, cx| {
+        (
+            workspace_menu_worktree_labels(&workspace, cx),
+            i18n::translate_in(cx, "Current Workspace"),
+        )
+    });
+
+    assert_eq!(labels.len(), 1);
+    assert_eq!(labels[0].primary_name.as_ref(), expected_label);
+    assert_eq!(labels[0].secondary_name, None);
+}
+
 fn setup_sidebar(
     multi_workspace: &Entity<MultiWorkspace>,
     cx: &mut gpui::VisualTestContext,

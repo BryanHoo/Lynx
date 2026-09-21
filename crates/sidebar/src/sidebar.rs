@@ -655,7 +655,8 @@ fn workspace_menu_worktree_labels(
                         })
                         .unwrap_or_else(|| folder_name.clone())
                 } else {
-                    "main".into()
+                    // 主 worktree 只表达 thread 的工作区归属，避免与分支名称混淆。
+                    i18n::translate_in(cx, "Current Workspace").into()
                 };
 
                 if show_folder_name {

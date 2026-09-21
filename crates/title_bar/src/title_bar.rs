@@ -54,6 +54,13 @@ fn linked_worktree_name_anchor<'a>(
     })
 }
 
+fn worktree_display_label(
+    linked_worktree_name: Option<SharedString>,
+    current_workspace_label: &'static str,
+) -> SharedString {
+    linked_worktree_name.unwrap_or_else(|| current_workspace_label.into())
+}
+
 actions!(
     collab,
     [
@@ -718,7 +725,11 @@ impl TitleBar {
         let settings = TitleBarSettings::get_global(cx);
         let effective_repository = Some(repository);
 
-        let worktree_label: SharedString = linked_worktree_name.unwrap_or_else(|| "main".into());
+        // 主 worktree 显示工作区语义，右侧分支控件继续显示真实分支名。
+        let worktree_label = worktree_display_label(
+            linked_worktree_name,
+            i18n::translate_in(cx, "Current Workspace"),
+        );
 
         let (creation_in_progress, is_switch) = self
             .workspace
@@ -930,6 +941,22 @@ impl TitleBar {
 mod tests {
     use super::*;
     use util::paths::PathStyle;
+
+    #[test]
+    fn test_main_worktree_uses_current_workspace_label() {
+        assert_eq!(
+            worktree_display_label(None, "Current Workspace").as_ref(),
+            "Current Workspace"
+        );
+    }
+
+    #[test]
+    fn test_linked_worktree_keeps_its_name() {
+        assert_eq!(
+            worktree_display_label(Some("feature-a".into()), "Current Workspace").as_ref(),
+            "feature-a"
+        );
+    }
 
     #[test]
     fn test_foreign_path_style_does_not_use_repository_identity_as_name_anchor() {

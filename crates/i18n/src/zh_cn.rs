@@ -52,6 +52,7 @@ fn translate_core(message: &str) -> Option<&'static str> {
         "General" => "常规",
         "General Settings" => "常规设置",
         "Display Language" => "显示语言",
+        "Current Workspace" => "当前工作区",
         "Choose the language used by Lynx's interface." => "选择 Lynx 界面使用的语言。",
         "Accessible Mode" => "无障碍模式",
         "When Closing With No Tabs" => "无标签页时关闭",

@@ -153,6 +153,10 @@ mod tests {
             "LLM 提供商"
         );
         assert_eq!(
+            translate(Locale::SimplifiedChinese, "Current Workspace"),
+            "当前工作区"
+        );
+        assert_eq!(
             translate(
                 Locale::SimplifiedChinese,
                 "View, add, configure, and remove Model Context Protocol servers.",
