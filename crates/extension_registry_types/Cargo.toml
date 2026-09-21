@@ -1,0 +1,18 @@
+[package]
+name = "extension_registry_types"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+license = "Apache-2.0"
+
+[lints]
+workspace = true
+
+[lib]
+path = "src/extension_registry_types.rs"
+doctest = false
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+strum.workspace = true
