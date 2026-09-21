@@ -804,19 +804,6 @@ impl MultiWorkspace {
         ));
     }
 
-    #[cfg(test)]
-    pub(crate) fn activate_provisional_workspace(
-        &mut self,
-        workspace: Entity<Workspace>,
-        provisional_key: ProjectGroupKey,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let index = self.hold(workspace.clone(), window, cx);
-        self.pin(index, provisional_key, cx);
-        self.activate(workspace, None, window, cx);
-    }
-
     fn register_workspace(
         &mut self,
         workspace: &Entity<Workspace>,

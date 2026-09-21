@@ -619,10 +619,6 @@ impl RecentProjectsDelegate {
     pub fn set_workspaces(&mut self, workspaces: Vec<RecentWorkspace>) {
         self.workspaces = workspaces;
     }
-
-    fn filtered_entries_include_remote_project(&self) -> bool {
-        false
-    }
 }
 impl EventEmitter<DismissEvent> for RecentProjectsDelegate {}
 impl PickerDelegate for RecentProjectsDelegate {
@@ -969,9 +965,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                     )
                     .into_any_element();
 
-                let icon = IconName::Screen;
-                let show_icon = self.filtered_entries_include_remote_project();
-
                 let tooltip_path: SharedString = path.to_string_lossy().to_string().into();
                 let tooltip_branch = branch.clone();
 
@@ -986,9 +979,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                                 .w_full()
                                 .min_w_0()
                                 .gap_2p5()
-                                .when(show_icon, |this| {
-                                    this.child(Icon::new(icon).color(Color::Muted))
-                                })
                                 .child(
                                     v_flex()
                                         .min_w_0()
@@ -1051,9 +1041,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                     .map(|p| p.compact().to_string_lossy().to_string())
                     .collect();
                 let tooltip_path: SharedString = ordered_paths.join("\n").into();
-                let icon = icon_for_project_group(key);
-                let show_icon = self.filtered_entries_include_remote_project();
-
                 let mut path_start_offset = 0;
                 let (match_labels, path_highlights): (Vec<_>, Vec<_>) = paths
                     .ordered_paths()
@@ -1148,9 +1135,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                                 .w_full()
                                 .min_w_0()
                                 .gap_2p5()
-                                .when(show_icon, |this| {
-                                    this.child(Icon::new(icon).color(Color::Muted))
-                                })
                                 .child({
                                     let mut highlighted = highlighted_match;
                                     if !self.render_paths {
@@ -1295,9 +1279,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                     )
                     .into_any_element();
 
-                let icon = IconName::Screen;
-                let show_icon = self.filtered_entries_include_remote_project();
-
                 Some(
                     ListItem::new(ix)
                         .toggle_state(selected)
@@ -1310,9 +1291,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                                 .min_w_0()
                                 .gap_2p5()
                                 .flex_grow_1()
-                                .when(show_icon, |this| {
-                                    this.child(Icon::new(icon).color(Color::Muted))
-                                })
                                 .child({
                                     let mut highlighted = highlighted_match;
                                     if !self.render_paths {
@@ -1618,11 +1596,6 @@ impl PickerDelegate for RecentProjectsDelegate {
                 .into_any(),
         )
     }
-}
-
-fn icon_for_project_group(key: &ProjectGroupKey) -> IconName {
-    let _ = key;
-    IconName::Screen
 }
 
 // Compute the highlighted text for the name and path
@@ -2103,26 +2076,13 @@ mod tests {
             path: PathBuf::from(format!("/current/project-folder-{index}")),
             branch: None,
             is_active: false,
-            connection_options: None,
         }
     }
 
     fn project_group(index: usize) -> ProjectGroupKey {
-        ProjectGroupKey::new(
-            None,
-            PathList::new(&[PathBuf::from(format!("/this-window/project-{index}"))]),
-        )
-    }
-
-    fn remote_project_group(index: usize) -> ProjectGroupKey {
-        ProjectGroupKey::new(
-            Some(RemoteConnectionOptions::Mock(
-                remote::MockConnectionOptions { id: index as u64 },
-            )),
-            PathList::new(&[PathBuf::from(format!(
-                "/this-window/remote-project-{index}"
-            ))]),
-        )
+        ProjectGroupKey::new(PathList::new(&[PathBuf::from(format!(
+            "/this-window/project-{index}"
+        ))]))
     }
 
     fn recent_workspace(index: usize) -> RecentWorkspace {
@@ -2247,93 +2207,6 @@ mod tests {
                 .get(picker.delegate.selected_index),
             Some(ProjectPickerEntry::RecentProject(_))
         ));
-    }
-
-    #[gpui::test]
-    fn this_window_project_icons_use_each_project_group_host(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let mut delegate = RecentProjectsDelegate::new(
-            WeakEntity::new_invalid(),
-            false,
-            cx.update(|cx| cx.focus_handle()),
-            Vec::new(),
-            vec![project_group(0), remote_project_group(1)],
-            ProjectPickerStyle::Modal,
-        );
-        delegate.filtered_entries = vec![
-            ProjectPickerEntry::ProjectGroup(StringMatch {
-                candidate_id: 0,
-                score: 0.0,
-                positions: Vec::new(),
-                string: Default::default(),
-            }),
-            ProjectPickerEntry::ProjectGroup(StringMatch {
-                candidate_id: 1,
-                score: 0.0,
-                positions: Vec::new(),
-                string: Default::default(),
-            }),
-        ];
-
-        assert!(!delegate.entry_is_remote_project(&delegate.filtered_entries[0]));
-        assert!(delegate.entry_is_remote_project(&delegate.filtered_entries[1]));
-        assert!(delegate.filtered_entries_include_remote_project());
-        assert_eq!(
-            icon_for_project_group(&delegate.window_project_groups[0]),
-            IconName::Screen
-        );
-        assert_eq!(
-            icon_for_project_group(&delegate.window_project_groups[1]),
-            IconName::Server
-        );
-    }
-
-    #[gpui::test]
-    fn is_open_folder_distinguishes_local_and_remote(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let shared_path = PathBuf::from("/repo");
-        let local_open_folder = OpenFolderEntry {
-            worktree_id: WorktreeId::from_usize(0),
-            name: "repo".into(),
-            path: shared_path.clone(),
-            branch: None,
-            is_active: false,
-            connection_options: None,
-        };
-
-        let delegate = RecentProjectsDelegate::new(
-            WeakEntity::new_invalid(),
-            false,
-            cx.update(|cx| cx.focus_handle()),
-            vec![local_open_folder],
-            Vec::new(),
-            ProjectPickerStyle::Modal,
-        );
-
-        let paths = PathList::new(&[shared_path]);
-        let local_workspace = RecentWorkspace {
-            workspace_id: WorkspaceId::from_i64(1),
-            location: SerializedWorkspaceLocation::Local,
-            paths: paths.clone(),
-            identity_paths: paths.clone(),
-            timestamp: Utc::now(),
-        };
-        let remote_workspace = RecentWorkspace {
-            workspace_id: WorkspaceId::from_i64(2),
-            location: SerializedWorkspaceLocation::Remote(RemoteConnectionOptions::Mock(
-                remote::MockConnectionOptions { id: 0 },
-            )),
-            paths: paths.clone(),
-            identity_paths: paths,
-            timestamp: Utc::now(),
-        };
-
-        // A local open folder should hide only the matching local recent
-        // project, not a remote checkout that shares the same path.
-        assert!(delegate.is_open_folder(&local_workspace));
-        assert!(!delegate.is_open_folder(&remote_workspace));
     }
 
     #[gpui::test]
@@ -2553,115 +2426,6 @@ mod tests {
             editor::init(cx);
             state
         })
-    }
-
-    #[gpui::test]
-    async fn test_remote_project_group_confirm_does_not_create_local_workspace(
-        cx: &mut TestAppContext,
-    ) {
-        // Regression test: confirming a ProjectGroup entry with a remote host
-        // should call find_or_create_workspace with the host, not
-        // find_or_create_local_workspace.
-        let app_state = init_test(cx);
-        app_state
-            .fs
-            .as_fake()
-            .insert_tree("/local", json!({}))
-            .await;
-
-        cx.update(|cx| {
-            open_paths(
-                &[PathBuf::from("/local")],
-                app_state,
-                workspace::OpenOptions::default(),
-                cx,
-            )
-        })
-        .await
-        .unwrap();
-
-        cx.run_until_parked();
-
-        let mw = cx.update(|cx| cx.windows()[0].downcast::<MultiWorkspace>().unwrap());
-        let remote_key = remote_project_group(1);
-
-        // Get workspace info via WindowHandle::read_with (returns Result)
-        let (workspace, groups, fh) = mw
-            .read_with(cx, |mw, _cx| {
-                let ws = mw.workspace().clone();
-                (
-                    ws.clone(),
-                    mw.project_group_keys(),
-                    ws.read(_cx).focus_handle(_cx),
-                )
-            })
-            .unwrap();
-
-        let mut augmented_groups = groups.clone();
-        augmented_groups.push(remote_key.clone());
-
-        // Create the popover (same as the title bar does)
-        let popover: Entity<RecentProjects> = cx.update(|cx| {
-            let window = cx.windows()[0];
-            window
-                .update(cx, |_, window, cx| {
-                    RecentProjects::popover(
-                        workspace.downgrade(),
-                        augmented_groups,
-                        Some(false),
-                        fh,
-                        window,
-                        cx,
-                    )
-                })
-                .unwrap()
-        });
-
-        cx.run_until_parked();
-
-        // Get the picker from the popover
-        let picker: Entity<Picker<RecentProjectsDelegate>> = cx.update(|cx| {
-            let window = cx.windows()[0];
-            window
-                .update(cx, |_, _window, cx| popover.read(cx).picker.clone())
-                .unwrap()
-        });
-
-        cx.run_until_parked();
-
-        // Find the remote project group entry index via Entity::read_with (no unwrap)
-        let filtered = picker.read_with(cx, |p, _| p.delegate.filtered_entries.clone());
-        let remote_idx = filtered
-            .iter()
-            .position(|entry| {
-                matches!(entry, ProjectPickerEntry::ProjectGroup(m) if m.candidate_id == groups.len())
-            })
-            .expect("remote project group entry should exist");
-
-        // Select and confirm the remote entry via Entity::update
-        let _ = cx.update(|cx| {
-            let window = cx.windows()[0];
-            window.update(cx, |_, window, cx| {
-                picker.update(cx, |picker, cx| {
-                    picker.delegate.set_selected_index(remote_idx, window, cx);
-                    picker.delegate.confirm(false, window, cx);
-                });
-            })
-        });
-
-        cx.run_until_parked();
-
-        // Verify no local workspace was created for the remote paths
-        let has_local = mw
-            .read_with(cx, |mw, cx| {
-                mw.workspace_for_paths(remote_key.path_list(), None, cx)
-                    .is_some()
-            })
-            .unwrap();
-        assert!(
-            !has_local,
-            "remote project group confirm should not create a local workspace"
-        );
     }
 
     #[gpui::test]
