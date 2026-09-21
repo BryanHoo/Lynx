@@ -1628,10 +1628,8 @@
   //
   // Default: true
   "word_diff_enabled": true,
-  // Control what info is collected by Lynx.
+  // Control model-provider data retention.
   "telemetry": {
-    // Send anonymized usage data like what languages you're using Lynx with.
-    "metrics": false,
     // Allow sending requests to Anthropic models that cannot be offered with
     // Zero Data Retention
     "anthropic_retention": false,

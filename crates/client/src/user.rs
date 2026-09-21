@@ -1,5 +1,4 @@
 use super::{Client, Status, proto};
-use crate::GetAuthenticatedUserResponse;
 use anyhow::{Context as _, Result};
 use collections::HashMap;
 use futures::{StreamExt, channel::mpsc};
@@ -91,15 +90,13 @@ impl UserStore {
                         | Status::Reauthenticated
                         | Status::Connected { .. } => {
                             if let Some(user_id) = client.user_id() {
-                                let system_id =
-                                    client.telemetry().system_id().map(|id| id.to_string());
                                 let response = client
                                     .account_client()
-                                    .get_authenticated_user(system_id)
+                                    .get_authenticated_user()
                                     .await
                                     .log_err();
 
-                                let current_user_and_response = if let Some(response) = response {
+                                let current_user = if let Some(response) = response {
                                     let user = Arc::new(User {
                                         legacy_id: user_id,
                                         username: response.user.username.clone().into(),
@@ -107,24 +104,16 @@ impl UserStore {
                                         name: response.user.name.clone(),
                                     });
 
-                                    Some((user, response))
+                                    Some(user)
                                 } else {
                                     None
                                 };
-                                current_user_tx
-                                    .send(
-                                        current_user_and_response
-                                            .as_ref()
-                                            .map(|(user, _)| user.clone()),
-                                    )
-                                    .await
-                                    .ok();
+                                current_user_tx.send(current_user.clone()).await.ok();
 
                                 cx.update(|cx| {
-                                    if let Some((user, response)) = current_user_and_response {
+                                    if let Some(user) = current_user {
                                         this.update(cx, |this, _cx| {
                                             this.users.insert(user_id, user);
-                                            this.update_authenticated_user(response)
                                         })
                                     } else {
                                         anyhow::Ok(())
@@ -243,14 +232,6 @@ impl UserStore {
 
     pub fn current_user(&self) -> Option<Arc<User>> {
         self.current_user.borrow().clone()
-    }
-
-    fn update_authenticated_user(&mut self, response: GetAuthenticatedUserResponse) {
-        if let Some(client) = self.client.upgrade() {
-            client
-                .telemetry
-                .set_authenticated_user_info(Some(response.user.metrics_id), false);
-        }
     }
 
     pub fn watch_current_user(&self) -> watch::Receiver<Option<Arc<User>>> {

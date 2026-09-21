@@ -3,14 +3,10 @@ use std::sync::Arc;
 use anyhow::{Result, anyhow};
 use futures::AsyncReadExt as _;
 use http_client::http::request;
-use http_client::{
-    AsyncBody, HttpClientWithUrl, HttpRequestExt, Method, Request, Response, StatusCode,
-};
+use http_client::{AsyncBody, HttpClientWithUrl, Method, Request, Response, StatusCode};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-const SYSTEM_ID_HEADER_NAME: &str = "x-zed-system-id";
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetAuthenticatedUserResponse {
@@ -19,7 +15,6 @@ pub struct GetAuthenticatedUserResponse {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthenticatedUser {
-    pub metrics_id: String,
     pub username: String,
     pub avatar_url: String,
     pub name: Option<String>,
@@ -80,19 +75,13 @@ impl AccountClient {
 
     pub async fn get_authenticated_user(
         &self,
-        system_id: Option<String>,
     ) -> Result<GetAuthenticatedUserResponse, AccountApiError> {
-        let request_builder = Request::builder()
-            .method(Method::GET)
-            .uri(
-                self.http_client
-                    .build_zed_cloud_url("/client/users/me")
-                    .map_err(AccountApiError::RequestBuildFailed)?
-                    .as_ref(),
-            )
-            .when_some(system_id, |builder, system_id| {
-                builder.header(SYSTEM_ID_HEADER_NAME, system_id)
-            });
+        let request_builder = Request::builder().method(Method::GET).uri(
+            self.http_client
+                .build_zed_cloud_url("/client/users/me")
+                .map_err(AccountApiError::RequestBuildFailed)?
+                .as_ref(),
+        );
 
         let mut response = self
             .send_authenticated_request(request_builder, AsyncBody::default())

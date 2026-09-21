@@ -500,14 +500,10 @@ impl strum::VariantNames for BaseKeymapContent {
     ];
 }
 
-/// Control what info is collected by Zed.
+/// Control model-provider data retention.
 #[with_fallible_options]
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema, Debug, MergeFrom)]
 pub struct TelemetrySettingsContent {
-    /// Send anonymized usage data like what languages you're using Zed with.
-    ///
-    /// Default: true
-    pub metrics: Option<bool>,
     /// Allow sending requests to Anthropic models that cannot be offered with
     /// Zero Data Retention.
     ///
@@ -518,7 +514,6 @@ pub struct TelemetrySettingsContent {
 impl Default for TelemetrySettingsContent {
     fn default() -> Self {
         Self {
-            metrics: Some(true),
             anthropic_retention: Some(false),
         }
     }

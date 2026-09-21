@@ -295,8 +295,8 @@ fn main() {
             app_version,
             app_commit_sha,
             *release_channel::RELEASE_CHANNEL,
-            client::telemetry::os_name(),
-            client::telemetry::os_version(),
+            system_specs::os_name(),
+            system_specs::os_version(),
         );
         println!("Lynx System Specs (from CLI):\n{}", system_specs);
         return;

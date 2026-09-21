@@ -3,7 +3,6 @@ pub mod test;
 
 mod auth_api;
 mod proxy;
-pub mod telemetry;
 pub mod user;
 pub mod zed_urls;
 
@@ -14,7 +13,6 @@ use async_tungstenite::tungstenite::{
     http::{HeaderValue, Request, StatusCode},
 };
 use auth_api::AccountClient;
-use clock::SystemClock;
 use credentials_provider::CredentialsProvider;
 use futures::{
     AsyncReadExt, FutureExt, SinkExt, Stream, StreamExt, TryFutureExt as _, TryStreamExt,
@@ -31,7 +29,7 @@ use rand::prelude::*;
 use release_channel::{AppVersion, ReleaseChannel};
 use rpc::proto::{AnyTypedEnvelope, EnvelopedMessage, PeerId, RequestMessage};
 use serde::{Deserialize, Serialize};
-use settings::{RegisterSetting, Settings, SettingsContent};
+use settings::{RegisterSetting, Settings};
 use std::{
     any::TypeId,
     convert::TryFrom,
@@ -45,7 +43,6 @@ use std::{
     time::{Duration, Instant},
 };
 use std::{cmp, pin::Pin};
-use telemetry::Telemetry;
 use thiserror::Error;
 use tokio::net::TcpStream;
 use url::Url;
@@ -53,7 +50,6 @@ use util::{ConnectionResult, ResultExt};
 
 pub use auth_api::{AuthenticatedUser, GetAuthenticatedUserResponse};
 pub use rpc::*;
-pub use telemetry_events::Event;
 pub use user::*;
 
 const LOCAL_SERVICE_URL: &str = "http://127.0.0.1:0";
@@ -150,7 +146,6 @@ pub struct Client {
     peer: Arc<Peer>,
     http: Arc<HttpClientWithUrl>,
     account_client: Arc<AccountClient>,
-    telemetry: Arc<Telemetry>,
     credentials_provider: ClientCredentialsProvider,
     state: RwLock<ClientState>,
     handler_set: Mutex<ProtoMessageHandlerSet>,
@@ -472,33 +467,11 @@ impl<T: 'static> Drop for PendingEntitySubscription<T> {
     }
 }
 
-#[derive(Copy, Clone, Deserialize, Debug, RegisterSetting)]
-pub struct TelemetrySettings {
-    pub metrics: bool,
-    pub anthropic_retention: bool,
-}
-
-impl settings::Settings for TelemetrySettings {
-    fn from_settings(content: &SettingsContent) -> Self {
-        let telemetry = content.telemetry.as_ref().unwrap();
-        Self {
-            // 本地发行版不允许配置重新启用 Zed 遥测或诊断上传。
-            metrics: cfg!(any(test, feature = "test-support")),
-            anthropic_retention: telemetry.anthropic_retention.unwrap(),
-        }
-    }
-}
-
 impl Client {
-    pub fn new(
-        clock: Arc<dyn SystemClock>,
-        http: Arc<HttpClientWithUrl>,
-        cx: &mut App,
-    ) -> Arc<Self> {
+    pub fn new(http: Arc<HttpClientWithUrl>, cx: &mut App) -> Arc<Self> {
         Arc::new(Self {
             id: AtomicU64::new(0),
             peer: Peer::new(0),
-            telemetry: Telemetry::new(clock, http.clone(), cx),
             account_client: Arc::new(AccountClient::new(http.clone())),
             http,
             credentials_provider: ClientCredentialsProvider::new(cx),
@@ -516,13 +489,12 @@ impl Client {
     }
 
     pub fn production(cx: &mut App) -> Arc<Self> {
-        let clock = Arc::new(clock::RealSystemClock);
         let http = Arc::new(HttpClientWithUrl::new_url(
             cx.http_client(),
             &ClientSettings::get_global(cx).server_url,
             cx.http_client().proxy().cloned(),
         ));
-        Self::new(clock, http, cx)
+        Self::new(http, cx)
     }
 
     pub fn id(&self) -> u64 {
@@ -665,7 +637,6 @@ impl Client {
                 }));
             }
             Status::SignedOut | Status::UpgradeRequired => {
-                self.telemetry.set_authenticated_user_info(None, false);
                 state._reconnect_task.take();
             }
             _ => {}
@@ -1148,8 +1119,6 @@ impl Client {
         let user_agent = http.user_agent().cloned();
         let credentials = credentials.clone();
         let rpc_url = self.rpc_url(http, release_channel);
-        let system_id = self.telemetry.system_id();
-        let metrics_id = self.telemetry.metrics_id();
         cx.spawn(async move |cx| {
             use HttpOrHttps::*;
 
@@ -1216,13 +1185,6 @@ impl Client {
             if let Some(user_agent) = user_agent {
                 request_headers.insert(http::header::USER_AGENT, user_agent);
             }
-            if let Some(system_id) = system_id {
-                request_headers.insert("x-zed-system-id", HeaderValue::from_str(&system_id)?);
-            }
-            if let Some(metrics_id) = metrics_id {
-                request_headers.insert("x-zed-metrics-id", HeaderValue::from_str(&metrics_id)?);
-            }
-
             let (stream, _) = async_tungstenite::tokio::client_async_tls_with_connector_and_config(
                 request,
                 stream,
@@ -1291,7 +1253,6 @@ impl Client {
                     struct NativeAppSignInQueryParams {
                         native_app_port: u16,
                         native_app_public_key: String,
-                        system_id: Option<Arc<str>>,
                     }
 
                     // Open the Zed sign-in page in the user's browser, with query parameters that indicate
@@ -1301,7 +1262,6 @@ impl Client {
                         serde_urlencoded::to_string(&NativeAppSignInQueryParams {
                             native_app_port: port,
                             native_app_public_key: public_key,
-                            system_id: this.telemetry.system_id(),
                         })?
                     ));
 
@@ -1576,10 +1536,6 @@ impl Client {
                 .log_err();
         }
     }
-
-    pub fn telemetry(&self) -> &Arc<Telemetry> {
-        &self.telemetry
-    }
 }
 
 impl ProtoClient for Client {
@@ -1655,12 +1611,11 @@ mod tests {
     use super::*;
     use crate::test::{FakeServer, parse_authorization_header};
 
-    use clock::FakeSystemClock;
     use gpui::{AppContext as _, BackgroundExecutor, TestAppContext};
     use http_client::FakeHttpClient;
     use parking_lot::Mutex;
     use proto::TypedEnvelope;
-    use settings::SettingsStore;
+    use settings::{SettingsContent, SettingsStore};
     use std::future;
 
     #[test]
@@ -1680,13 +1635,7 @@ mod tests {
     async fn test_reconnection(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
-        let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::new()),
-                FakeHttpClient::with_404_response(),
-                cx,
-            )
-        });
+        let client = cx.update(|cx| Client::new(FakeHttpClient::with_404_response(), cx));
         let server = FakeServer::for_client(user_id, &client, cx).await;
         let mut status = client.status();
         assert!(matches!(
@@ -1721,8 +1670,7 @@ mod tests {
     async fn test_auth_failure_during_reconnection(cx: &mut TestAppContext) {
         init_test(cx);
         let http_client = FakeHttpClient::with_200_response();
-        let client =
-            cx.update(|cx| Client::new(Arc::new(FakeSystemClock::new()), http_client.clone(), cx));
+        let client = cx.update(|cx| Client::new(http_client.clone(), cx));
         let server = FakeServer::for_client(42, &client, cx).await;
         let mut status = client.status();
         assert!(matches!(
@@ -1761,13 +1709,7 @@ mod tests {
     async fn test_connection_timeout(executor: BackgroundExecutor, cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
-        let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::new()),
-                FakeHttpClient::with_404_response(),
-                cx,
-            )
-        });
+        let client = cx.update(|cx| Client::new(FakeHttpClient::with_404_response(), cx));
         let mut status = client.status();
 
         // Time out when client tries to connect.
@@ -1836,8 +1778,7 @@ mod tests {
                 .body("".into())
                 .unwrap())
         });
-        let client =
-            cx.update(|cx| Client::new(Arc::new(FakeSystemClock::new()), http_client.clone(), cx));
+        let client = cx.update(|cx| Client::new(http_client.clone(), cx));
         client.override_authenticate({
             let auth_count = auth_count.clone();
             move |cx| {
@@ -1904,8 +1845,7 @@ mod tests {
                 .body("".into())
                 .unwrap())
         });
-        let client =
-            cx.update(|cx| Client::new(Arc::new(FakeSystemClock::new()), http_client.clone(), cx));
+        let client = cx.update(|cx| Client::new(http_client.clone(), cx));
         client.override_authenticate(move |cx| {
             cx.background_spawn(async move {
                 Ok(Credentials {
@@ -1942,13 +1882,7 @@ mod tests {
         init_test(cx);
         let auth_count = Arc::new(Mutex::new(0));
         let dropped_auth_count = Arc::new(Mutex::new(0));
-        let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::new()),
-                FakeHttpClient::with_404_response(),
-                cx,
-            )
-        });
+        let client = cx.update(|cx| Client::new(FakeHttpClient::with_404_response(), cx));
         client.override_authenticate({
             let auth_count = auth_count.clone();
             let dropped_auth_count = dropped_auth_count.clone();
@@ -1982,13 +1916,7 @@ mod tests {
     async fn test_subscribing_to_entity(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
-        let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::new()),
-                FakeHttpClient::with_404_response(),
-                cx,
-            )
-        });
+        let client = cx.update(|cx| Client::new(FakeHttpClient::with_404_response(), cx));
         let server = FakeServer::for_client(user_id, &client, cx).await;
 
         let (done_tx1, done_rx1) = async_channel::unbounded();
@@ -2052,13 +1980,7 @@ mod tests {
     async fn test_subscribing_after_dropping_subscription(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
-        let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::new()),
-                FakeHttpClient::with_404_response(),
-                cx,
-            )
-        });
+        let client = cx.update(|cx| Client::new(FakeHttpClient::with_404_response(), cx));
         let server = FakeServer::for_client(user_id, &client, cx).await;
 
         let entity = cx.new(|_| TestEntity::default());
@@ -2087,13 +2009,7 @@ mod tests {
     async fn test_dropping_subscription_in_handler(cx: &mut TestAppContext) {
         init_test(cx);
         let user_id = 5;
-        let client = cx.update(|cx| {
-            Client::new(
-                Arc::new(FakeSystemClock::new()),
-                FakeHttpClient::with_404_response(),
-                cx,
-            )
-        });
+        let client = cx.update(|cx| Client::new(FakeHttpClient::with_404_response(), cx));
         let server = FakeServer::for_client(user_id, &client, cx).await;
 
         let entity = cx.new(|_| TestEntity::default());

@@ -8,7 +8,7 @@ mod extension_store_test;
 use anyhow::{Context as _, Result, bail};
 use async_compression::futures::bufread::GzipDecoder;
 use async_tar::Archive;
-use client::{Client, telemetry::Telemetry};
+use client::Client;
 use cloud_api_types::{ExtensionMetadata, ExtensionProvides, GetExtensionsResponse};
 use collections::{BTreeMap, BTreeSet, FxHashSet, HashSet, btree_map};
 pub use extension::ExtensionManifest;
@@ -131,7 +131,6 @@ pub struct ExtensionStore {
     pub extension_index: ExtensionIndex,
     pub fs: Arc<dyn Fs>,
     pub http_client: Arc<HttpClientWithUrl>,
-    pub telemetry: Option<Arc<Telemetry>>,
     pub reload_tx: UnboundedSender<Option<Arc<str>>>,
     pub reload_complete_senders: Vec<oneshot::Sender<()>>,
     pub installed_dir: PathBuf,
@@ -228,7 +227,6 @@ pub fn init(
             fs,
             client.http_client(),
             client.http_client(),
-            Some(client.telemetry().clone()),
             node_runtime,
             cx,
         )
@@ -259,7 +257,6 @@ impl ExtensionStore {
         fs: Arc<dyn Fs>,
         http_client: Arc<HttpClientWithUrl>,
         builder_client: Arc<dyn HttpClient>,
-        telemetry: Option<Arc<Telemetry>>,
         node_runtime: NodeRuntime,
         cx: &mut Context<Self>,
     ) -> Self {
@@ -291,7 +288,6 @@ impl ExtensionStore {
             wasm_extensions: Vec::new(),
             fs,
             http_client,
-            telemetry,
             reload_tx,
             tasks: Vec::new(),
 

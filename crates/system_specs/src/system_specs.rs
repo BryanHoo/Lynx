@@ -7,6 +7,30 @@ use serde::Serialize;
 use std::{env, fmt::Display};
 use sysinfo::{MemoryRefreshKind, RefreshKind, System};
 
+pub fn os_name() -> String {
+    #[cfg(target_os = "macos")]
+    {
+        "macOS".to_owned()
+    }
+    #[cfg(target_os = "linux")]
+    {
+        format!("Linux {}", gpui::guess_compositor())
+    }
+    #[cfg(target_os = "freebsd")]
+    {
+        format!("FreeBSD {}", gpui::guess_compositor())
+    }
+    #[cfg(target_os = "windows")]
+    {
+        "Windows".to_owned()
+    }
+}
+
+/// 按需读取系统版本，避免在创建网络客户端时执行系统探测。
+pub fn os_version() -> String {
+    System::os_version().unwrap_or_else(|| "unknown".to_owned())
+}
+
 actions!(
     zed,
     [

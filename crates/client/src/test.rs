@@ -62,7 +62,6 @@ impl FakeServer {
                                 .status(200)
                                 .body(
                                     serde_json::to_string(&make_get_authenticated_user_response(
-                                        client_user_id as i32,
                                         format!("user-{client_user_id}"),
                                     ))
                                     .unwrap()
@@ -232,13 +231,9 @@ pub fn parse_authorization_header(req: &Request<AsyncBody>) -> Option<Credential
     })
 }
 
-pub fn make_get_authenticated_user_response(
-    user_id: i32,
-    username: String,
-) -> GetAuthenticatedUserResponse {
+pub fn make_get_authenticated_user_response(username: String) -> GetAuthenticatedUserResponse {
     GetAuthenticatedUserResponse {
         user: AuthenticatedUser {
-            metrics_id: format!("metrics-id-{user_id}"),
             username,
             avatar_url: "".to_string(),
             name: None,

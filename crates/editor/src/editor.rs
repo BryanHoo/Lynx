@@ -10064,15 +10064,6 @@ impl Editor {
 
                 cx.emit(EditorEvent::BufferEdited);
                 cx.emit(SearchEvent::MatchesInvalidated);
-
-                let Some(project) = &self.project else { return };
-                let (telemetry, is_via_ssh) = {
-                    let project = project.read(cx);
-                    let telemetry = project.client().telemetry().clone();
-                    let is_via_ssh = false;
-                    (telemetry, is_via_ssh)
-                };
-                telemetry.log_edit_event("editor", is_via_ssh);
             }
             multi_buffer::Event::BufferRangesUpdated {
                 buffer,
