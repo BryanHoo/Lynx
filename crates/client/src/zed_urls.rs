@@ -5,7 +5,6 @@
 //! zed.dev in development).
 
 use gpui::App;
-use release_channel::ReleaseChannel;
 use settings::Settings;
 
 use crate::ClientSettings;
@@ -16,17 +15,7 @@ fn server_url(cx: &App) -> &str {
 
 fn docs_url(cx: &App) -> String {
     let server_url = server_url(cx);
-    match ReleaseChannel::try_global(cx).unwrap_or_default() {
-        ReleaseChannel::Stable => {
-            format!("{server_url}/docs")
-        }
-        ReleaseChannel::Preview => {
-            format!("{server_url}/docs/preview")
-        }
-        ReleaseChannel::Dev | ReleaseChannel::Nightly => {
-            format!("{server_url}/docs/nightly")
-        }
-    }
+    format!("{server_url}/docs")
 }
 
 /// Returns the URL to Zed AI's privacy and security docs.

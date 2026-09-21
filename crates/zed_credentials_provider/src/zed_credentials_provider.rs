@@ -8,7 +8,6 @@ use anyhow::Result;
 use credentials_provider::CredentialsProvider;
 use futures::FutureExt as _;
 use gpui::{App, AsyncApp, Global};
-use release_channel::ReleaseChannel;
 
 /// An environment variable whose presence indicates that the system keychain
 /// should be used in development.
@@ -32,31 +31,19 @@ pub fn init_global(cx: &mut App) {
     // The `CredentialsProvider` trait has `Send + Sync` bounds on it, so it
     // seems like this is a false positive from Clippy.
     #[allow(clippy::arc_with_non_send_sync)]
-    let provider = new(cx);
+    let provider = new();
     cx.set_global(ZedCredentialsProvider(provider));
 }
 
 pub fn global(cx: &App) -> Arc<dyn CredentialsProvider> {
     cx.try_global::<ZedCredentialsProvider>()
         .map(|provider| provider.0.clone())
-        .unwrap_or_else(|| new(cx))
+        .unwrap_or_else(new)
 }
 
-fn new(cx: &App) -> Arc<dyn CredentialsProvider> {
-    let use_development_provider = match ReleaseChannel::try_global(cx) {
-        Some(ReleaseChannel::Dev) => {
-            // In development we default to using the development
-            // credentials provider to avoid getting spammed by relentless
-            // keychain access prompts.
-            //
-            // However, if the `ZED_DEVELOPMENT_USE_KEYCHAIN` environment
-            // variable is set, we will use the actual keychain.
-            !*ZED_DEVELOPMENT_USE_KEYCHAIN
-        }
-        Some(ReleaseChannel::Nightly | ReleaseChannel::Preview | ReleaseChannel::Stable) | None => {
-            false
-        }
-    };
+fn new() -> Arc<dyn CredentialsProvider> {
+    // Debug builds avoid repeated keychain prompts unless explicitly enabled.
+    let use_development_provider = cfg!(debug_assertions) && !*ZED_DEVELOPMENT_USE_KEYCHAIN;
 
     if use_development_provider {
         Arc::new(DevelopmentCredentialsProvider::new())

@@ -365,13 +365,10 @@ impl PaneLeaderDecorator for ActivePaneDecorator<'_> {
 
 impl PaneLeaderDecorator for PaneRenderContext<'_> {
     fn decorate(&self, pane: &Entity<Pane>, cx: &App) -> LeaderDecoration {
-        let navigation_state = self.agent_navigation_states.values().find(|state| {
-            if state.center_pane == *pane {
-                true
-            } else {
-                false
-            }
-        });
+        let navigation_state = self
+            .agent_navigation_states
+            .values()
+            .find(|state| state.center_pane == *pane);
         let Some(navigation_state) = navigation_state else {
             return LeaderDecoration::default();
         };

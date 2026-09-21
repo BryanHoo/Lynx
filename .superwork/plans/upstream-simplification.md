@@ -175,4 +175,4 @@
 
 - 安装包升级或数据目录契约尚未明确。
 
-- [ ] **Task Status:** pending
+- [x] **Task Status:** completed

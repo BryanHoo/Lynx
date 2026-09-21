@@ -6349,7 +6349,7 @@ impl Workspace {
             file_stem,
             app_name: if needs.app_name {
                 ReleaseChannel::try_global(cx)
-                    .unwrap_or(ReleaseChannel::Stable)
+                    .unwrap_or_default()
                     .display_name()
             } else {
                 ""
@@ -8213,7 +8213,7 @@ fn leader_border_for_pane(
 ) -> Option<Div> {
     let _follower_state = agent_navigation_states
         .values()
-        .find(|state| if state.pane() == pane { true } else { false })?;
+        .find(|state| state.pane() == pane)?;
 
     let mut navigation_color = cx.theme().players().agent().cursor;
     navigation_color.fade_out(0.3);

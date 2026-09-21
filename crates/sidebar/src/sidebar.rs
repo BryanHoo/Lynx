@@ -17,9 +17,8 @@ use agent_ui::threads_archive_view::{
 };
 use agent_ui::{
     AcpThreadImportOnboarding, Agent, AgentPanel, AgentPanelEvent, AgentThreadSource,
-    ArchiveSelectedThread, CrossChannelImportOnboarding, DEFAULT_THREAD_TITLE, NewTerminalThread,
-    NewThread, RenameSelectedThread, TerminalId, ThreadId, ThreadImportModal,
-    ThreadTitleRegenerationResult, channels_with_threads, import_threads_from_other_channels,
+    ArchiveSelectedThread, DEFAULT_THREAD_TITLE, NewTerminalThread, NewThread,
+    RenameSelectedThread, TerminalId, ThreadId, ThreadImportModal, ThreadTitleRegenerationResult,
 };
 use agent_ui::{MessageEditorEvent, StateChange, thread_worktree_archive};
 use chrono::{DateTime, Utc};
@@ -774,15 +773,6 @@ pub struct Sidebar {
     _subscriptions: Vec<gpui::Subscription>,
     _draft_editor_observations: Vec<gpui::Subscription>,
     update_task: Option<Task<()>>,
-    /// For the thread import banners, if there is just one we show "Import
-    /// Threads" but if we are showing both the external agents and other
-    /// channels import banners then we change the text to disambiguate the
-    /// buttons. This field tracks whether we were using verbose labels so they
-    /// can stay stable after dismissing one of the banners.
-    import_banners_use_verbose_labels: Option<bool>,
-    /// Display names of other release channels that have threads available to
-    /// import.
-    cross_channel_import_channels: Vec<SharedString>,
 }
 
 impl Sidebar {
@@ -865,17 +855,6 @@ impl Sidebar {
         )
         .detach();
 
-        let channels_with_threads = channels_with_threads(cx);
-        cx.spawn(async move |this, cx| {
-            let channels = channels_with_threads.await;
-            this.update(cx, |this, cx| {
-                this.cross_channel_import_channels = channels;
-                cx.notify();
-            })
-            .ok();
-        })
-        .detach();
-
         let deferred_multi_workspace = multi_workspace.downgrade();
         cx.defer_in(window, move |this, window, cx| {
             if let Some(multi_workspace) = deferred_multi_workspace.upgrade() {
@@ -920,8 +899,6 @@ impl Sidebar {
             _subscriptions: Vec::new(),
             _draft_editor_observations: Vec::new(),
             update_task: None,
-            import_banners_use_verbose_labels: None,
-            cross_channel_import_channels: Vec::new(),
         }
     }
 
@@ -7413,11 +7390,7 @@ impl Sidebar {
         has_external_agents && !AcpThreadImportOnboarding::dismissed(cx)
     }
 
-    fn render_acp_import_onboarding(
-        &mut self,
-        verbose_labels: bool,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render_acp_import_onboarding(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
         let on_import = cx.listener(|this, _, window, cx| {
             this.show_archive(window, cx);
             this.show_thread_import_modal("external_agent_onboarding", window, cx);
@@ -7426,64 +7399,8 @@ impl Sidebar {
             "acp",
             "Looking for threads from external agents?",
             "Import threads from agents like Claude Agent, Codex, and more, whether started in Lynx or another client.",
-            if verbose_labels {
-                "Import Threads from External Agents"
-            } else {
-                "Import Threads"
-            },
+            "Import Threads",
             |_, _window, cx| AcpThreadImportOnboarding::dismiss(cx),
-            on_import,
-            cx,
-        )
-    }
-
-    fn should_render_cross_channel_import_onboarding(&self, cx: &App) -> bool {
-        !CrossChannelImportOnboarding::dismissed(cx)
-            && !self.cross_channel_import_channels.is_empty()
-    }
-
-    fn render_cross_channel_import_onboarding(
-        &mut self,
-        verbose_labels: bool,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let channel_names = self
-            .cross_channel_import_channels
-            .iter()
-            .map(SharedString::as_str)
-            .join(" and ");
-
-        let description = format!(
-            "Import threads from {} to continue where you left off.",
-            channel_names
-        );
-
-        let on_import = cx.listener(|this, _, _window, cx| {
-            telemetry::event!(
-                "Agent Threads Import Clicked",
-                source = "cross_channel_onboarding",
-                side = match this.side(cx) {
-                    SidebarSide::Left => "left",
-                    SidebarSide::Right => "right",
-                }
-            );
-            CrossChannelImportOnboarding::dismiss(cx);
-            if let Some(workspace) = this.active_workspace(cx) {
-                workspace.update(cx, |workspace, cx| {
-                    import_threads_from_other_channels(workspace, cx);
-                });
-            }
-        });
-        render_import_onboarding_banner(
-            "channel",
-            "Threads found from other channels",
-            description,
-            if verbose_labels {
-                "Import Threads from Other Channels"
-            } else {
-                "Import Threads"
-            },
-            |_, _window, cx| CrossChannelImportOnboarding::dismiss(cx),
             on_import,
             cx,
         )
@@ -7869,17 +7786,8 @@ impl Render for Sidebar {
             })
             .map(|this| {
                 let show_acp = self.should_render_acp_import_onboarding(cx);
-                let show_cross_channel = self.should_render_cross_channel_import_onboarding(cx);
-
-                let verbose = *self
-                    .import_banners_use_verbose_labels
-                    .get_or_insert(show_acp && show_cross_channel);
-
                 this.when(show_acp, |this| {
-                    this.child(self.render_acp_import_onboarding(verbose, cx))
-                })
-                .when(show_cross_channel, |this| {
-                    this.child(self.render_cross_channel_import_onboarding(verbose, cx))
+                    this.child(self.render_acp_import_onboarding(cx))
                 })
             })
             .child(self.render_sidebar_bottom_bar(cx))

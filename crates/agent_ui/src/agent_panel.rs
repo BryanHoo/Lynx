@@ -1151,6 +1151,7 @@ pub struct AgentPanel {
     _active_draft_reclaim_observation: Option<Subscription>,
     _thread_metadata_store_subscription: Subscription,
     last_context_source: Option<AgentContextSource>,
+    starts_open: bool,
 
     is_active: bool,
 }
@@ -1543,6 +1544,7 @@ impl AgentPanel {
             _draft_editor_observation: None,
             _active_draft_reclaim_observation: None,
             _thread_metadata_store_subscription,
+            starts_open: matches!(AgentSettings::get_layout(cx), WindowLayout::Agent(_)),
             last_context_source: None,
             is_active: false,
         };
@@ -4933,8 +4935,8 @@ impl Panel for AgentPanel {
         AGENT_PANEL_KEY
     }
 
-    fn starts_open(&self, _: &Window, cx: &App) -> bool {
-        matches!(AgentSettings::get_layout(cx), WindowLayout::Agent(_))
+    fn starts_open(&self, _: &Window, _: &App) -> bool {
+        self.starts_open
     }
 
     fn activation_focus_handle(&self, cx: &App) -> FocusHandle {
@@ -6413,6 +6415,17 @@ impl Render for AgentPanel {
 impl AgentPanel {
     pub fn test_new(workspace: &Workspace, window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self::new(workspace, window, cx)
+    }
+
+    /// 构造不会因当前布局自动打开的面板，供显式控制面板状态的集成测试使用。
+    pub fn test_new_closed(
+        workspace: &Workspace,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let mut panel = Self::new(workspace, window, cx);
+        panel.starts_open = false;
+        panel
     }
 
     /// Drops a thread's `ConversationView` from `retained_threads` without

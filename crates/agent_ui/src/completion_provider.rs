@@ -1403,7 +1403,6 @@ impl<T: PromptCompletionProviderDelegate> CompletionProvider for PromptCompletio
                     Arc<dyn Fn(CompletionIntent, &mut Window, &mut App) -> bool + Send + Sync>,
                 );
                 let slash_candidates: Task<Vec<(SlashCompletionCandidate, Option<SkillInfo>)>> = {
-                    let source = source.clone();
                     cx.spawn(async move |_this, cx| {
                         let candidates = search_task.await;
                         cx.update(|cx| {

@@ -10,6 +10,7 @@ Use this guide for networking, persistence, RPC, databases, background services,
 - Bound queues, retries, buffers, and concurrency to protect memory use and tail latency.
 - Preserve cancellation and propagate actionable errors across task and RPC boundaries.
 - Treat protobuf, RPC, database, and persisted state changes as cross-consumer contract changes.
+- Store the production database under the fixed `lynx` scope; do not partition persisted data by release channel.
 - Avoid extra serialization and copies on latency-sensitive paths; measure when impact is uncertain.
 
 ## Verification

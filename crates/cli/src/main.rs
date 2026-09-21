@@ -486,17 +486,6 @@ fn run() -> Result<()> {
         flatpak::ld_extra_libs();
     }
 
-    // Intercept version designators
-    #[cfg(target_os = "macos")]
-    if let Some(channel) = std::env::args().nth(1).filter(|arg| arg.starts_with("--")) {
-        // When the first argument is a name of a release channel, we're going to spawn off the CLI of that version, with trailing args passed along.
-        use std::str::FromStr as _;
-
-        if let Ok(channel) = release_channel::ReleaseChannel::from_str(&channel[2..]) {
-            return mac_os::spawn_channel_cli(channel, std::env::args().skip(2).collect());
-        }
-    }
-
     // Must happen before clap — SSH invokes cli.exe directly as SSH_ASKPASS
     // and passes the socket path via env var to avoid argument parsing.
     if let Ok(socket) = std::env::var("ZED_ASKPASS_SOCKET") {
@@ -1301,7 +1290,7 @@ mod mac_os {
         ffi::OsStr,
         fs, io,
         path::{Path, PathBuf},
-        process::{Command, ExitStatus},
+        process::ExitStatus,
         ptr,
     };
 
@@ -1479,31 +1468,5 @@ mod mac_os {
                 Self::LocalPath { executable, .. } => executable,
             }
         }
-    }
-
-    pub(super) fn spawn_channel_cli(
-        channel: release_channel::ReleaseChannel,
-        leftover_args: Vec<String>,
-    ) -> Result<()> {
-        use anyhow::bail;
-
-        let app_path_prompt = format!(
-            "POSIX path of (path to application \"{}\")",
-            channel.display_name()
-        );
-        let app_path_output = Command::new("osascript")
-            .arg("-e")
-            .arg(&app_path_prompt)
-            .output()?;
-        if !app_path_output.status.success() {
-            bail!(
-                "Could not determine app path for {}",
-                channel.display_name()
-            );
-        }
-        let app_path = String::from_utf8(app_path_output.stdout)?.trim().to_owned();
-        let cli_path = format!("{app_path}/Contents/MacOS/cli");
-        Command::new(cli_path).args(leftover_args).spawn()?;
-        Ok(())
     }
 }

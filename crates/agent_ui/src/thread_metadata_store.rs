@@ -61,22 +61,9 @@ impl Column for ThreadId {
 const THREAD_REMOTE_CONNECTION_MIGRATION_KEY: &str = "thread-metadata-remote-connection-backfill";
 const THREAD_ID_MIGRATION_KEY: &str = "thread-metadata-thread-id-backfill";
 
-/// List all sidebar thread metadata from an arbitrary SQLite connection.
-///
-/// This is used to read thread metadata from another release channel's
-/// database without opening a full `ThreadSafeConnection`.
-pub(crate) fn list_thread_metadata_from_connection(
-    connection: &db::sqlez::connection::Connection,
-) -> anyhow::Result<Vec<ThreadMetadata>> {
-    connection.select::<ThreadMetadata>(ThreadMetadataDb::LIST_QUERY)?()
-}
-
-/// Run the `ThreadMetadataDb` migrations on a raw connection.
-///
-/// This is used in tests to set up the sidebar_threads schema in a
-/// temporary database.
+/// Creates the thread metadata schema for raw-connection tests.
 #[cfg(test)]
-pub(crate) fn run_thread_metadata_migrations(connection: &db::sqlez::connection::Connection) {
+fn run_thread_metadata_migrations(connection: &db::sqlez::connection::Connection) {
     connection
         .migrate(
             ThreadMetadataDb::NAME,

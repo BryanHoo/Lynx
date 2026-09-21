@@ -1549,7 +1549,13 @@ impl MultiWorkspace {
     #[cfg(any(test, feature = "test-support"))]
     pub fn test_new(project: Entity<Project>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let workspace = cx.new(|cx| Workspace::test_new(project, window, cx));
-        Self::new(workspace, window, cx)
+        let mut multi_workspace = Self::new(workspace, window, cx);
+
+        // 测试通过显式开关侧栏来构造场景，不能继承 Agent 布局的自动打开状态。
+        multi_workspace.sidebar_open = false;
+        multi_workspace.held[0].pinned = false;
+        multi_workspace.project_groups.clear();
+        multi_workspace
     }
 
     #[cfg(any(test, feature = "test-support"))]

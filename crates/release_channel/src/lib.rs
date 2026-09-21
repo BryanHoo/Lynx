@@ -1,57 +1,28 @@
-//! Provides constructs for the Zed app version and release channel.
+//! Provides constructs for the Lynx app version and release channel.
 
 #![deny(missing_docs)]
 
-use std::{env, str::FromStr, sync::LazyLock};
+use std::{env, sync::LazyLock};
 
 use gpui::{App, Global};
 use semver::Version;
 
-const ZED_DOCS_URL: &str = "https://zed.dev/docs";
+const LYNX_DOCS_DIRECTORY_URL: &str = "https://github.com/BryanHoo/Lynx/tree/main/docs/src";
+const LYNX_DOCS_FILE_URL: &str = "https://github.com/BryanHoo/Lynx/blob/main/docs/src";
 
-/// stable | dev | nightly | preview
-pub static RELEASE_CHANNEL_NAME: LazyLock<String> = LazyLock::new(|| {
-    if cfg!(debug_assertions) {
-        env::var("ZED_RELEASE_CHANNEL").unwrap_or_else(|_| compile_time_release_channel_name())
-    } else {
-        compile_time_release_channel_name()
-    }
-});
-
-/// When a crate in zed is used as a dependency that uses the `crane` nix
-/// library, it vendors each crate separately and builds it in isolation, which
-/// makes the `include_str!` fail.
-///
-/// The build script checks for `$ZED_RELEASE_CHANNEL` and emits the `cfg`
-#[cfg(__do_not_set_zed_release_channel)]
-fn compile_time_release_channel_name() -> String {
-    env!("ZED_RELEASE_CHANNEL").trim().to_string()
-}
-
-#[cfg(not(__do_not_set_zed_release_channel))]
-fn compile_time_release_channel_name() -> String {
-    include_str!("../../zed/RELEASE_CHANNEL").trim().to_string()
-}
+/// The fixed release channel name used for data-directory isolation.
+pub static RELEASE_CHANNEL_NAME: LazyLock<String> = LazyLock::new(|| "lynx".to_owned());
 
 #[doc(hidden)]
-pub static RELEASE_CHANNEL: LazyLock<ReleaseChannel> =
-    LazyLock::new(|| match ReleaseChannel::from_str(&RELEASE_CHANNEL_NAME) {
-        Ok(channel) => channel,
-        _ => panic!("invalid release channel {}", *RELEASE_CHANNEL_NAME),
-    });
+pub static RELEASE_CHANNEL: LazyLock<ReleaseChannel> = LazyLock::new(ReleaseChannel::default);
 
 /// The app identifier for the current release channel, Windows only.
 #[cfg(target_os = "windows")]
 pub fn app_identifier() -> &'static str {
-    match *RELEASE_CHANNEL {
-        ReleaseChannel::Dev => "Zed-Editor-Dev",
-        ReleaseChannel::Nightly => "Zed-Editor-Nightly",
-        ReleaseChannel::Preview => "Zed-Editor-Preview",
-        ReleaseChannel::Stable => "Zed-Editor-Stable",
-    }
+    "Lynx"
 }
 
-/// The Git commit SHA that Zed was built at.
+/// The Git commit SHA that Lynx was built at.
 #[derive(Clone, Eq, Debug, PartialEq)]
 pub struct AppCommitSha(String);
 
@@ -91,7 +62,7 @@ struct GlobalAppVersion(Version);
 
 impl Global for GlobalAppVersion {}
 
-/// The version of Zed.
+/// The version of Lynx.
 pub struct AppVersion;
 
 impl AppVersion {
@@ -134,23 +105,12 @@ impl AppVersion {
     }
 }
 
-/// A Zed release channel.
+/// The Lynx release channel.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum ReleaseChannel {
-    /// The development release channel.
-    ///
-    /// Used for local debug builds of Zed.
+    /// The only Lynx release channel.
     #[default]
-    Dev,
-
-    /// The Nightly release channel.
-    Nightly,
-
-    /// The Preview release channel.
-    Preview,
-
-    /// The Stable release channel.
-    Stable,
+    Lynx,
 }
 
 struct GlobalReleaseChannel(ReleaseChannel);
@@ -163,13 +123,13 @@ pub fn init(app_version: Version, cx: &mut App) {
     cx.set_global(GlobalReleaseChannel(*RELEASE_CHANNEL))
 }
 
-/// Initializes the release channel for tests that rely on fake release channel.
+/// Initializes the app version and release channel for tests.
 pub fn init_test(app_version: Version, release_channel: ReleaseChannel, cx: &mut App) {
     cx.set_global(GlobalAppVersion(app_version));
     cx.set_global(GlobalReleaseChannel(release_channel))
 }
 
-/// Returns the Zed docs URL for the current release channel for the given
+/// Returns the Lynx docs URL for the current release channel for the given
 /// `slug`.
 pub fn docs_url(slug: &str, cx: &App) -> String {
     ReleaseChannel::try_global(cx)
@@ -178,14 +138,6 @@ pub fn docs_url(slug: &str, cx: &App) -> String {
 }
 
 impl ReleaseChannel {
-    /// All release channels.
-    pub const ALL: [ReleaseChannel; 4] = [
-        ReleaseChannel::Dev,
-        ReleaseChannel::Nightly,
-        ReleaseChannel::Preview,
-        ReleaseChannel::Stable,
-    ];
-
     /// Returns the global [`ReleaseChannel`].
     pub fn global(cx: &App) -> Self {
         cx.global::<GlobalReleaseChannel>().0
@@ -197,110 +149,64 @@ impl ReleaseChannel {
             .map(|channel| channel.0)
     }
 
-    /// Returns whether we want to poll for updates for this [`ReleaseChannel`]
-    pub fn poll_for_updates(&self) -> bool {
-        !matches!(self, ReleaseChannel::Dev)
-    }
-
     /// Returns the display name for this [`ReleaseChannel`].
     pub fn display_name(&self) -> &'static str {
-        match self {
-            ReleaseChannel::Dev => "Lynx Dev",
-            ReleaseChannel::Nightly => "Lynx Nightly",
-            ReleaseChannel::Preview => "Lynx Preview",
-            ReleaseChannel::Stable => "Lynx",
-        }
+        "Lynx"
     }
 
     /// Returns the programmatic name for this [`ReleaseChannel`].
     pub fn dev_name(&self) -> &'static str {
-        match self {
-            ReleaseChannel::Dev => "dev",
-            ReleaseChannel::Nightly => "nightly",
-            ReleaseChannel::Preview => "preview",
-            ReleaseChannel::Stable => "stable",
-        }
+        "lynx"
     }
 
     /// Returns the application ID that's used by Wayland as application ID
     /// and WM_CLASS on X11.
-    /// This also has to match the bundle identifier for Zed on macOS.
+    /// This also has to match the bundle identifier for Lynx on macOS.
     pub fn app_id(&self) -> &'static str {
-        match self {
-            ReleaseChannel::Dev => "dev.zed.Zed-Dev",
-            ReleaseChannel::Nightly => "dev.zed.Zed-Nightly",
-            ReleaseChannel::Preview => "dev.zed.Zed-Preview",
-            ReleaseChannel::Stable => "dev.zed.Zed",
-        }
+        "dev.lynx.Lynx"
     }
 
-    /// Returns the query parameter for this [`ReleaseChannel`].
-    pub fn release_query_param(&self) -> Option<&'static str> {
-        match self {
-            Self::Dev => None,
-            Self::Nightly => Some("nightly=1"),
-            Self::Preview => Some("preview=1"),
-            Self::Stable => None,
-        }
-    }
-
-    /// Returns the Zed docs URL for this [`ReleaseChannel`] for the given
-    /// `slug`.
+    /// Returns the Lynx docs URL for the given `slug`.
     pub fn docs_url(&self, slug: &str) -> String {
-        let channel_path_segment = match self {
-            Self::Dev | Self::Nightly => Some("nightly"),
-            Self::Preview => Some("preview"),
-            Self::Stable => None,
-        };
-
-        match channel_path_segment {
-            Some(channel) if slug.is_empty() => format!("{ZED_DOCS_URL}/{channel}"),
-            Some(channel) => format!("{ZED_DOCS_URL}/{channel}/{slug}"),
-            None if slug.is_empty() => ZED_DOCS_URL.to_string(),
-            None => format!("{ZED_DOCS_URL}/{slug}"),
+        if slug.is_empty() {
+            LYNX_DOCS_DIRECTORY_URL.to_owned()
+        } else {
+            let (path, fragment) = slug
+                .split_once('#')
+                .map_or((slug, None), |(path, fragment)| (path, Some(fragment)));
+            let mut url = format!("{LYNX_DOCS_FILE_URL}/{path}.md");
+            if let Some(fragment) = fragment {
+                url.push('#');
+                url.push_str(fragment);
+            }
+            url
         }
-    }
-}
-
-/// Error indicating that release channel string does not match any known release channel names.
-#[derive(Copy, Clone, Debug, Hash, PartialEq)]
-pub struct InvalidReleaseChannel;
-
-impl FromStr for ReleaseChannel {
-    type Err = InvalidReleaseChannel;
-
-    fn from_str(channel: &str) -> Result<Self, Self::Err> {
-        Ok(match channel {
-            "dev" => ReleaseChannel::Dev,
-            "nightly" => ReleaseChannel::Nightly,
-            "preview" => ReleaseChannel::Preview,
-            "stable" => ReleaseChannel::Stable,
-            _ => return Err(InvalidReleaseChannel),
-        })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ReleaseChannel;
+    use super::{RELEASE_CHANNEL_NAME, ReleaseChannel};
+
+    #[test]
+    fn release_channel_uses_lynx_identity() {
+        let channel = ReleaseChannel::default();
+
+        assert_eq!(&*RELEASE_CHANNEL_NAME, "lynx");
+        assert_eq!(channel.dev_name(), "lynx");
+        assert_eq!(channel.display_name(), "Lynx");
+        assert_eq!(channel.app_id(), "dev.lynx.Lynx");
+    }
 
     #[test]
     fn test_docs_url_for_release_channel() {
         assert_eq!(
-            ReleaseChannel::Dev.docs_url("settings"),
-            "https://zed.dev/docs/nightly/settings"
+            ReleaseChannel::Lynx.docs_url("settings"),
+            "https://github.com/BryanHoo/Lynx/blob/main/docs/src/settings.md"
         );
         assert_eq!(
-            ReleaseChannel::Nightly.docs_url("settings"),
-            "https://zed.dev/docs/nightly/settings"
-        );
-        assert_eq!(
-            ReleaseChannel::Preview.docs_url("settings"),
-            "https://zed.dev/docs/preview/settings"
-        );
-        assert_eq!(
-            ReleaseChannel::Stable.docs_url("settings"),
-            "https://zed.dev/docs/settings"
+            ReleaseChannel::Lynx.docs_url("tasks#custom-git-commands"),
+            "https://github.com/BryanHoo/Lynx/blob/main/docs/src/tasks.md#custom-git-commands"
         );
     }
 }

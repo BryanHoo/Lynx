@@ -113,7 +113,7 @@ fn main() {
     gpui_platform::headless().run(move |cx| {
         release_channel::init_test(
             semver::Version::new(0, 0, 0),
-            release_channel::ReleaseChannel::Dev,
+            release_channel::ReleaseChannel::Lynx,
             cx,
         );
         settings::init(cx);

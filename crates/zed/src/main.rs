@@ -40,7 +40,7 @@ use assets::Assets;
 use node_runtime::{NodeBinaryOptions, NodeRuntime};
 use parking_lot::Mutex;
 use project::{project_settings::ProjectSettings, trusted_worktrees};
-use release_channel::{AppCommitSha, AppVersion, ReleaseChannel};
+use release_channel::{AppCommitSha, AppVersion};
 use session::{AppSession, Session};
 use settings::{Settings, SettingsStore, watch_config_file};
 use std::{
@@ -338,9 +338,7 @@ fn main() {
 
     let (open_listener, mut open_rx) = OpenListener::new();
 
-    let failed_single_instance_check = if *zed_env_vars::ZED_STATELESS
-        || *release_channel::RELEASE_CHANNEL == ReleaseChannel::Dev
-    {
+    let failed_single_instance_check = if *zed_env_vars::ZED_STATELESS || cfg!(debug_assertions) {
         false
     } else {
         #[cfg(any(target_os = "linux", target_os = "freebsd"))]

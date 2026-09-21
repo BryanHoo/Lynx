@@ -280,7 +280,7 @@ mod tests {
         cx.set_global(settings_store);
         cx.set_global(db::AppDatabase::test_new());
         let app_version = AppVersion::global(cx);
-        release_channel::init_test(app_version, release_channel::ReleaseChannel::Dev, cx);
+        release_channel::init_test(app_version, release_channel::ReleaseChannel::Lynx, cx);
         gpui_tokio::init(cx);
         let client = Client::new(FakeHttpClient::with_404_response(), cx);
         (client, Arc::new(FakeCredentialsProvider))

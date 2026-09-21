@@ -58,15 +58,8 @@ pub fn is_supported_wasm_api_version(release_channel: ReleaseChannel, version: V
 /// Returns the Wasm API version range that is supported by the Wasm host.
 #[inline(always)]
 pub fn wasm_api_version_range(release_channel: ReleaseChannel) -> RangeInclusive<Version> {
-    // Note: The release channel can be used to stage a new version of the extension API.
     let _ = release_channel;
-
-    let max_version = match release_channel {
-        ReleaseChannel::Dev | ReleaseChannel::Nightly => latest::MAX_VERSION,
-        ReleaseChannel::Stable | ReleaseChannel::Preview => since_v0_6_0::MAX_VERSION,
-    };
-
-    since_v0_0_1::MIN_VERSION..=max_version
+    since_v0_0_1::MIN_VERSION..=latest::MAX_VERSION
 }
 
 /// Authorizes access to use unreleased versions of the Wasm API, based on the provided [`ReleaseChannel`].
@@ -75,19 +68,7 @@ pub fn wasm_api_version_range(release_channel: ReleaseChannel) -> RangeInclusive
 pub fn authorize_access_to_unreleased_wasm_api_version(
     release_channel: ReleaseChannel,
 ) -> Result<()> {
-    let allow_unreleased_version = match release_channel {
-        ReleaseChannel::Dev | ReleaseChannel::Nightly => true,
-        ReleaseChannel::Stable | ReleaseChannel::Preview => {
-            // We always allow the latest in tests so that the extension tests pass on release branches.
-            cfg!(any(test, feature = "test-support"))
-        }
-    };
-
-    anyhow::ensure!(
-        allow_unreleased_version,
-        "unreleased versions of the extension API can only be used on development builds of Lynx"
-    );
-
+    let _ = release_channel;
     Ok(())
 }
 

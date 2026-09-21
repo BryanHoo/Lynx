@@ -64,7 +64,7 @@ fn main() -> Result<(), anyhow::Error> {
         )
     }?;
     gpui_platform::headless().run(|cx| {
-        release_channel::init_test(semver::Version::new(0, 0, 0), ReleaseChannel::Dev, cx);
+        release_channel::init_test(semver::Version::new(0, 0, 0), ReleaseChannel::Lynx, cx);
         settings::init(cx);
         let client = Client::production(cx);
         let http_client = FakeHttpClient::with_200_response();

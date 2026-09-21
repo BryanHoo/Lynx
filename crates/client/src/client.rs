@@ -1066,7 +1066,6 @@ impl Client {
     fn rpc_url(
         &self,
         http: Arc<HttpClientWithUrl>,
-        release_channel: Option<ReleaseChannel>,
     ) -> impl Future<Output = Result<url::Url>> + use<> {
         #[cfg(any(test, feature = "test-support"))]
         let url_override = self.rpc_url.read().clone();
@@ -1081,13 +1080,7 @@ impl Client {
                 return Url::parse(url).context("invalid rpc url");
             }
 
-            let mut url = http.build_url("/rpc");
-            if let Some(preview_param) =
-                release_channel.and_then(|channel| channel.release_query_param())
-            {
-                url += "?";
-                url += preview_param;
-            }
+            let url = http.build_url("/rpc");
 
             let response = http.get(&url, Default::default(), false).await?;
             anyhow::ensure!(
@@ -1118,7 +1111,7 @@ impl Client {
         let proxy = http.proxy().cloned();
         let user_agent = http.user_agent().cloned();
         let credentials = credentials.clone();
-        let rpc_url = self.rpc_url(http, release_channel);
+        let rpc_url = self.rpc_url(http);
         cx.spawn(async move |cx| {
             use HttpOrHttps::*;
 
