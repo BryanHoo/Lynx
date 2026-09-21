@@ -1,10 +1,11 @@
 use std::{ops::Range, sync::Arc};
 
-use cloud_llm_client::{EditPredictionRejectReason, PredictEditsRequestTrigger};
 use edit_prediction_types::{PredictedCursorPosition, interpolate_edits};
 use gpui::{AsyncApp, Entity, SharedString};
 use language::{Anchor, Buffer, BufferSnapshot, EditPreview, TextBufferSnapshot};
 use zeta_prompt::{Zeta2PromptInput, Zeta3PromptInput};
+
+use crate::{EditPredictionRejectReason, PredictEditsRequestTrigger};
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Hash)]
 pub struct EditPredictionId(pub SharedString);

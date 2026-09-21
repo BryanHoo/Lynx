@@ -285,7 +285,7 @@ impl Project {
         let path_style = self.path_style(cx);
 
         // Prepare a task for resolving the environment
-        let env_task = self.resolve_directory_environment(&env_shell, path.clone(), cx);
+        let env_task = self.resolve_directory_environment(&env_shell, path, cx);
 
         let lang_registry = self.languages.clone();
         cx.spawn(async move |project, cx| {

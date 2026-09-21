@@ -7,6 +7,7 @@ Use this guide for core models, algorithms, language support, utilities, and oth
 ## Contracts
 
 - Place behavior in the crate that owns its data and lifecycle.
+- Keep DTOs with their domain owner: extension registry DTOs belong in `extension_registry_types`, edit-prediction protocols in `edit_prediction`, web-search DTOs in `web_search`, and model status DTOs in `language_model_core`; do not recreate cloud-service aggregation crates for these local workflows.
 - Prefer borrowing and existing shared types on hot paths; clone only when ownership or task boundaries require it.
 - Keep public APIs narrow and inspect reverse dependencies before changing them.
 - Document complexity, allocation, caching, and invalidation assumptions for performance-sensitive code.

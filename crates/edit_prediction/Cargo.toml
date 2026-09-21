@@ -20,7 +20,6 @@ anyhow.workspace = true
 heapless.workspace = true
 client.workspace = true
 clock.workspace = true
-cloud_llm_client = { workspace = true, features = ["predict-edits"] }
 collections.workspace = true
 credentials_provider.workspace = true
 db.workspace = true

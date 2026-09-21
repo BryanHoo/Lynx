@@ -1,10 +1,31 @@
 use anyhow::{Context as _, Result};
-use cloud_llm_client::predict_edits_v3::{RawCompletionRequest, RawCompletionResponse};
 use futures::AsyncReadExt as _;
 use gpui::{App, AppContext as _, Entity, Global, SharedString, Task, http_client};
 use language::language_settings::{OpenAiCompatibleEditPredictionSettings, all_language_settings};
 use language_model::{ApiKeyState, EnvVar, env_var};
 use std::sync::Arc;
+
+#[derive(Debug, serde::Serialize)]
+struct RawCompletionRequest {
+    model: String,
+    prompt: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f32>,
+    stop: Vec<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct RawCompletionResponse {
+    id: String,
+    choices: Vec<RawCompletionChoice>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct RawCompletionChoice {
+    text: String,
+}
 
 pub fn open_ai_compatible_api_url(cx: &App) -> SharedString {
     all_language_settings(None, cx)
@@ -87,11 +108,7 @@ pub(crate) async fn send_custom_server_request(
                 prompt,
                 max_tokens: Some(max_tokens),
                 temperature: None,
-                stop: stop_tokens
-                    .into_iter()
-                    .map(std::borrow::Cow::Owned)
-                    .collect(),
-                environment: None,
+                stop: stop_tokens,
             };
 
             let request_body = serde_json::to_string(&request)?;

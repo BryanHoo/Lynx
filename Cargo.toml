@@ -20,8 +20,6 @@ members = [
     "crates/cli",
     "crates/client",
     "crates/clock",
-    "crates/cloud_api_types",
-    "crates/cloud_llm_client",
     "crates/collections",
     "crates/command_palette",
     "crates/command_palette_hooks",
@@ -50,6 +48,7 @@ members = [
     "crates/extension_api",
     "crates/extension_cli",
     "crates/extension_host",
+    "crates/extension_registry_types",
     "crates/file_finder",
     "crates/file_icons",
     "crates/fs",
@@ -250,8 +249,6 @@ call_hierarchy = { path = "crates/call_hierarchy" }
 cli = { path = "crates/cli" }
 client = { path = "crates/client" }
 clock = { path = "crates/clock" }
-cloud_api_types = { path = "crates/cloud_api_types" }
-cloud_llm_client = { path = "crates/cloud_llm_client" }
 collections = { path = "crates/collections", version = "0.1.0" }
 command_palette = { path = "crates/command_palette" }
 command_palette_hooks = { path = "crates/command_palette_hooks" }
@@ -277,6 +274,7 @@ etw_tracing = { path = "crates/etw_tracing" }
 eval_utils = { path = "crates/eval_utils" }
 extension = { path = "crates/extension" }
 extension_host = { path = "crates/extension_host" }
+extension_registry_types = { path = "crates/extension_registry_types" }
 file_finder = { path = "crates/file_finder" }
 file_icons = { path = "crates/file_icons" }
 fs = { path = "crates/fs" }
@@ -904,6 +902,9 @@ features = [
 ]
 
 [patch.crates-io]
+# `block` 0.1.6 declares an extern static with an uninhabited empty enum. Keep
+# the compatible API while fixing the declaration before Rust makes it an error.
+block = { path = "third_party/block" }
 # Unify `tree_sitter_language::LanguageFn` between crates.io grammar crates and
 # the git tree-sitter above; two instances of the crate would make grammar
 # constants type-incompatible with `tree_sitter::Language`.

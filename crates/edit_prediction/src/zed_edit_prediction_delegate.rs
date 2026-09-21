@@ -1,7 +1,6 @@
 use std::{cmp, sync::Arc, time::Duration};
 
 use client::Client;
-use cloud_llm_client::EditPredictionRejectReason;
 use edit_prediction_types::{
     DataCollectionState, EditPredictionDelegate, EditPredictionDiscardReason,
     EditPredictionIconSet, EditPredictionRequestTrigger, SuggestionDisplayType,
@@ -10,7 +9,7 @@ use gpui::{App, Entity, prelude::*};
 use language::ToPoint as _;
 use project::Project;
 
-use crate::{BufferEditPrediction, EditPredictionStore};
+use crate::{BufferEditPrediction, EditPredictionRejectReason, EditPredictionStore};
 
 pub struct ZedEditPredictionDelegate {
     store: Entity<EditPredictionStore>,

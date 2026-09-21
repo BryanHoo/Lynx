@@ -1,6 +1,5 @@
 use anyhow::{Context as _, Result};
 use client::Client;
-use cloud_llm_client::{EditPredictionRejectReason, PredictEditsRequestTrigger};
 use collections::{HashMap, HashSet};
 use credentials_provider::CredentialsProvider;
 use edit_prediction_context::{RelatedExcerptStore, RelatedExcerptStoreEvent, RelatedFile};
@@ -43,6 +42,7 @@ pub mod metrics;
 pub mod ollama;
 pub mod open_ai_response;
 mod prediction;
+mod protocol;
 pub mod sweep_prompt;
 
 pub mod udiff;
@@ -58,6 +58,7 @@ use crate::mercury::Mercury;
 pub use crate::metrics::{KeptRateResult, compute_kept_rate};
 use crate::prediction::EditPredictionResult;
 pub use crate::prediction::{EditPrediction, EditPredictionId, EditPredictionInputs};
+pub use crate::protocol::{EditPredictionRejectReason, PredictEditsRequestTrigger};
 pub use language_model::ApiKeyState;
 pub use zed_edit_prediction_delegate::ZedEditPredictionDelegate;
 

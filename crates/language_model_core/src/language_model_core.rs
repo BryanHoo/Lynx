@@ -1,4 +1,5 @@
 pub mod chat_completion;
+mod completion_request_status;
 mod provider;
 mod rate_limiter;
 mod request;
@@ -7,7 +8,6 @@ pub mod tool_schema;
 pub mod util;
 
 use anyhow::{Context as _, Result, anyhow};
-use cloud_llm_client::CompletionRequestStatus;
 use http_client::{StatusCode, http};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -21,6 +21,7 @@ fn is_default<T: Default + PartialEq>(value: &T) -> bool {
     *value == T::default()
 }
 
+pub use crate::completion_request_status::*;
 pub use crate::provider::*;
 pub use crate::rate_limiter::*;
 pub use crate::request::*;
