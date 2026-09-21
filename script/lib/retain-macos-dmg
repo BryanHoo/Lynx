@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+dmg_file_path=${1:?"DMG path is required"}
+artifact_directory=${2:-release-artifacts}
+dmg_file_name=$(basename "$dmg_file_path")
+
+if [[ ! -f "$dmg_file_path" || "$dmg_file_name" != *.dmg ]]; then
+    echo "Expected a DMG file: $dmg_file_path" >&2
+    exit 1
+fi
+
+# 先把最终安装包移出 target，避免 cargo clean 将测试产物一并删除。
+mkdir -p "$artifact_directory"
+artifact_path="$artifact_directory/$dmg_file_name"
+mv -f -- "$dmg_file_path" "$artifact_path"
+
+# 仅在完整打包成功后清理，失败构建仍保留现场用于排查。
+cargo clean
+
+echo "Retained DMG: $artifact_path"

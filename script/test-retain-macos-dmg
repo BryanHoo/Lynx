@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+temp_dir=$(mktemp -d)
+trap 'rm -rf "$temp_dir"' EXIT
+
+cargo() {
+    [[ "$1" == "clean" ]]
+    rm -rf target
+}
+export -f cargo
+
+cd "$temp_dir"
+mkdir -p target/aarch64-apple-darwin/release
+printf 'dmg' > target/aarch64-apple-darwin/release/Lynx-aarch64.dmg
+printf 'cache' > target/build-cache
+
+"$repo_root/script/lib/retain-macos-dmg" \
+    target/aarch64-apple-darwin/release/Lynx-aarch64.dmg \
+    release-artifacts
+
+[[ -f release-artifacts/Lynx-aarch64.dmg ]]
+[[ ! -e target ]]
+
+echo "macOS DMG cleanup test passed"

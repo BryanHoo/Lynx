@@ -270,8 +270,15 @@ function sign_app_binaries() {
             "${xcode_bin_dir_path}/stapler" staple "${dmg_file_path}"
         fi
 
+        # 本地构建只保留最终 DMG；CI 仍使用原路径上传产物和复用缓存。
+        if [[ "${CI:-false}" != "true" ]]; then
+            artifact_directory="${LYNX_RELEASE_ARTIFACTS_DIR:-release-artifacts}"
+            script/lib/retain-macos-dmg "$dmg_file_path" "$artifact_directory"
+            dmg_target_directory="$artifact_directory"
+        fi
+
         if [ "$open_result" = true ]; then
-            open $dmg_target_directory
+            open "$dmg_target_directory"
         fi
     fi
 }
