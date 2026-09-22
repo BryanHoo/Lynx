@@ -2,14 +2,11 @@ mod ignore;
 mod worktree_settings;
 
 use ::ignore::gitignore::{Gitignore, GitignoreBuilder};
-use anyhow::{Context as _, Result, anyhow};
+use anyhow::{Context as _, Result};
 use clock::ReplicaId;
 use collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use encoding_rs::Encoding;
-use fs::{
-    Fs, MTime, PathEvent, PathEventKind, RemoveOptions, TrashId, Watcher, copy_recursive,
-    read_dir_items,
-};
+use fs::{Fs, MTime, PathEvent, PathEventKind, RemoveOptions, TrashId, Watcher, copy_recursive};
 use futures::{
     FutureExt as _, Stream, StreamExt,
     channel::{
@@ -37,14 +34,8 @@ use language::{
 };
 
 use async_channel::{self, Sender};
-use parking_lot::Mutex;
 use paths::{local_settings_folder_name, local_vscode_folder_name};
-use postage::{
-    barrier,
-    prelude::{Sink as _, Stream as _},
-    watch,
-};
-use project_models::proto::split_worktree_update;
+use postage::{barrier, prelude::Stream as _, watch};
 pub use settings::WorktreeId;
 use settings::{Settings, SettingsLocation, SettingsStore};
 use smallvec::{SmallVec, smallvec};
@@ -537,12 +528,11 @@ impl Worktree {
 
             let settings = WorktreeSettings::get(settings_location, cx).clone();
             cx.observe_global::<SettingsStore>(move |this, cx| {
-                if let Self::Local(this) = this {
-                    let settings = WorktreeSettings::get(settings_location, cx).clone();
-                    if this.settings != settings {
-                        this.settings = settings;
-                        this.restart_background_scanners(cx);
-                    }
+                let Self::Local(this) = this;
+                let settings = WorktreeSettings::get(settings_location, cx).clone();
+                if this.settings != settings {
+                    this.settings = settings;
+                    this.restart_background_scanners(cx);
                 }
             })
             .detach();
@@ -2057,49 +2047,6 @@ impl Snapshot {
 
     pub fn contains_entry(&self, entry_id: ProjectEntryId) -> bool {
         self.entries_by_id.get(&entry_id, ()).is_some()
-    }
-
-    fn insert_entry(
-        &mut self,
-        entry: project_models::Entry,
-        always_included_paths: &PathMatcher,
-    ) -> Result<Entry> {
-        let entry = Entry::try_from((&self.root_char_bag, always_included_paths, entry))?;
-        let old_entry = self.entries_by_id.insert_or_replace(
-            PathEntry {
-                id: entry.id,
-                path: entry.path.clone(),
-                is_ignored: entry.is_ignored,
-                scan_id: 0,
-            },
-            (),
-        );
-        if let Some(old_entry) = old_entry {
-            self.entries_by_path.remove(&PathKey(old_entry.path), ());
-        }
-        self.entries_by_path.insert_or_replace(entry.clone(), ());
-        Ok(entry)
-    }
-
-    fn delete_entry(&mut self, entry_id: ProjectEntryId) -> Option<Arc<RelPath>> {
-        let removed_entry = self.entries_by_id.remove(&entry_id, ())?;
-        self.entries_by_path = {
-            let mut cursor = self.entries_by_path.cursor::<TraversalProgress>(());
-            let mut new_entries_by_path =
-                cursor.slice(&TraversalTarget::path(&removed_entry.path), Bias::Left);
-            while let Some(entry) = cursor.item() {
-                if entry.path.starts_with(&removed_entry.path) {
-                    self.entries_by_id.remove(&entry.id, ());
-                    cursor.next();
-                } else {
-                    break;
-                }
-            }
-            new_entries_by_path.append(cursor.suffix(), ());
-            new_entries_by_path
-        };
-
-        Some(removed_entry.path)
     }
 
     fn update_abs_path(&mut self, abs_path: Arc<SanitizedPath>, root_name: Arc<RelPath>) {
