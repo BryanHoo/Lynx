@@ -1305,10 +1305,6 @@ impl AcpConnection {
                     let (modes, config_options) =
                         config_state(response.modes, response.config_options);
 
-                    if let Some(config_opts) = config_options.as_ref() {
-                        this.apply_default_config_options(&session_id, config_opts, cx);
-                    }
-
                     this.pending_sessions.borrow_mut().remove(&session_id);
 
                     {
@@ -3851,6 +3847,7 @@ mod tests {
         Entity<project::Project>,
         Arc<AtomicUsize>,
         Arc<AtomicUsize>,
+        Arc<Mutex<Vec<acp::SetSessionConfigOptionRequest>>>,
         Arc<std::sync::Mutex<Vec<acp::SessionUpdate>>>,
         Arc<std::sync::Mutex<Option<async_channel::Receiver<()>>>>,
         Task<anyhow::Result<()>>,
@@ -3866,6 +3863,7 @@ mod tests {
 
         let load_count = Arc::new(AtomicUsize::new(0));
         let close_count = Arc::new(AtomicUsize::new(0));
+        let set_config_requests = Arc::new(Mutex::new(Vec::new()));
         let load_session_updates: Arc<std::sync::Mutex<Vec<acp::SessionUpdate>>> =
             Arc::new(std::sync::Mutex::new(Vec::new()));
         let load_session_gate: Arc<std::sync::Mutex<Option<async_channel::Receiver<()>>>> =
@@ -3950,7 +3948,36 @@ mod tests {
                             gate.recv().await.ok();
                         }
 
-                        responder.respond(acp::LoadSessionResponse::new())
+                        responder.respond(acp::LoadSessionResponse::new().config_options(vec![
+                            acp::SessionConfigOption::select(
+                                "model",
+                                "Model",
+                                "saved-model",
+                                vec![
+                                    acp::SessionConfigSelectOption::new(
+                                        "saved-model",
+                                        "Saved Model",
+                                    ),
+                                    acp::SessionConfigSelectOption::new(
+                                        "latest-model",
+                                        "Latest Model",
+                                    ),
+                                ],
+                            ),
+                        ]))
+                    }
+                },
+                agent_client_protocol::on_receive_request!(),
+            )
+            .on_receive_request(
+                {
+                    let set_config_requests = set_config_requests.clone();
+                    async move |req: acp::SetSessionConfigOptionRequest, responder, _cx| {
+                        set_config_requests
+                            .lock()
+                            .expect("set config requests mutex poisoned")
+                            .push(req);
+                        responder.respond(acp::SetSessionConfigOptionResponse::new(Vec::new()))
                     }
                 },
                 agent_client_protocol::on_receive_request!(),
@@ -4050,6 +4077,7 @@ mod tests {
             project,
             load_count,
             close_count,
+            set_config_requests,
             load_session_updates,
             load_session_gate,
             keep_agent_alive,
@@ -4065,6 +4093,7 @@ mod tests {
             project,
             load_count,
             close_count,
+            _set_config_requests,
             _load_session_updates,
             _load_session_gate,
             _keep_agent_alive,
@@ -4136,6 +4165,57 @@ mod tests {
         );
     }
 
+    #[gpui::test]
+    async fn test_load_session_preserves_saved_config_options(cx: &mut gpui::TestAppContext) {
+        let (
+            connection,
+            project,
+            _load_count,
+            _close_count,
+            set_config_requests,
+            _load_session_updates,
+            _load_session_gate,
+            _keep_agent_alive,
+        ) = connect_fake_agent(cx).await;
+        connection.defaults.set(
+            None,
+            HashMap::from_iter([(
+                "model".to_string(),
+                AgentConfigOptionValue::from("latest-model"),
+            )]),
+        );
+
+        let session_id = acp::SessionId::new("session-saved-config");
+        let work_dirs = util::path_list::PathList::new(&[std::path::Path::new("/a")]);
+        let _thread = cx
+            .update(|cx| {
+                connection
+                    .clone()
+                    .load_session(session_id.clone(), project, work_dirs, None, cx)
+            })
+            .await
+            .expect("load_session failed");
+        cx.run_until_parked();
+
+        assert!(
+            set_config_requests
+                .lock()
+                .expect("set config requests mutex poisoned")
+                .is_empty(),
+            "loading an existing session must not apply the latest defaults"
+        );
+        let config_options = cx.update(|cx| {
+            connection
+                .session_config_options(&session_id, cx)
+                .expect("loaded session should expose config options")
+                .config_options()
+        });
+        assert!(matches!(
+            &config_options[0].kind,
+            acp::SessionConfigKind::Select(select) if select.current_value.0.as_ref() == "saved-model"
+        ));
+    }
+
     // Regression test: per the ACP spec, an agent replays the entire conversation
     // history as `session/update` notifications *before* responding to the
     // `session/load` request. These notifications must be applied to the
@@ -4150,6 +4230,7 @@ mod tests {
             project,
             _load_count,
             _close_count,
+            _set_config_requests,
             load_session_updates,
             _load_session_gate,
             _keep_agent_alive,
@@ -4216,6 +4297,7 @@ mod tests {
             project,
             load_count,
             close_count,
+            _set_config_requests,
             _load_session_updates,
             load_session_gate,
             _keep_agent_alive,
@@ -4302,6 +4384,7 @@ mod tests {
             project,
             load_count,
             close_count,
+            _set_config_requests,
             _load_session_updates,
             load_session_gate,
             _keep_agent_alive,
