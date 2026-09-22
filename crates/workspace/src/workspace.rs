@@ -13,13 +13,11 @@ pub mod pane_group;
 pub mod path_list {
     pub use util::path_list::{PathList, SerializedPathList};
 }
+pub mod focus_follows_mouse;
 pub mod path_link;
 mod persistence;
 pub mod searchable;
 pub mod security_modal;
-pub mod shared_screen;
-pub use shared_screen::SharedScreen;
-pub mod focus_follows_mouse;
 mod status_bar;
 pub mod tasks;
 mod theme_preview;
@@ -42,10 +40,6 @@ pub use toast_layer::{ToastAction, ToastLayer, ToastView};
 
 use agent_settings::AgentSettings;
 use anyhow::{Context as _, Result, anyhow};
-use client::{
-    Client, ErrorExt, UserStore,
-    proto::{ErrorCode, PanelId},
-};
 use collections::{HashMap, HashSet, TypeIdHashMap, hash_map};
 use dock::{Dock, DockPosition, PanelButtons, PanelHandle, RESIZE_HANDLE_SIZE};
 use futures::{
@@ -66,6 +60,7 @@ use gpui::{
     transparent_black,
 };
 pub use history_manager::*;
+use http_client::HttpClientWithUrl;
 pub use item::{
     AgentNavigableItem, AgentNavigableItemHandle, Item, ItemHandle, ItemSettings,
     PreviewTabsSettings, ProjectItem, SerializableItem, SerializableItemHandle, WeakItemHandle,
@@ -92,7 +87,6 @@ pub use persistence::{
     read_serialized_multi_workspaces,
 };
 use persistence::{SerializedWindowBounds, model::SerializedWorkspace};
-use postage::stream::Stream;
 use project::{
     DirectoryLister, Project, ProjectEntryId, ProjectPath, ResolvedPath, Worktree, WorktreeId,
     WorktreeSettings,
@@ -102,6 +96,7 @@ use project::{
     toolchain_store::ToolchainStoreEvent,
     trusted_worktrees::{RemoteHostLocation, TrustedWorktrees, TrustedWorktreesEvent},
 };
+use project_models::{ErrorCode, ErrorExt, PanelId};
 use release_channel::ReleaseChannel;
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -1286,8 +1281,7 @@ pub fn register_serializable_item<I: SerializableItem>(cx: &mut App) {
 
 pub struct AppState {
     pub languages: Arc<LanguageRegistry>,
-    pub client: Arc<Client>,
-    pub user_store: Entity<UserStore>,
+    pub http_client: Arc<HttpClientWithUrl>,
     pub workspace_store: Entity<WorkspaceStore>,
     pub fs: Arc<dyn fs::Fs>,
     pub build_window_options: fn(Option<Uuid>, &mut App) -> WindowOptions,
@@ -1353,18 +1347,19 @@ impl AppState {
         let fs = fs::FakeFs::new(cx.background_executor().clone());
         <dyn Fs>::set_global(fs.clone(), cx);
         let languages = Arc::new(LanguageRegistry::test(cx.background_executor().clone()));
-        let http_client = http_client::FakeHttpClient::with_404_response();
-        let client = Client::new(http_client, cx);
+        let http_client = Arc::new(HttpClientWithUrl::new(
+            http_client::FakeHttpClient::with_404_response(),
+            "http://127.0.0.1:0",
+            None,
+        ));
         let session = cx.new(|cx| AppSession::new(Session::test(), cx));
-        let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
-        let workspace_store = cx.new(|cx| WorkspaceStore::new(client.clone(), cx));
+        let workspace_store = cx.new(WorkspaceStore::new);
 
         theme_settings::init(theme::LoadThemes::JustBase, cx);
         Arc::new(Self {
-            client,
+            http_client,
             fs,
             languages,
-            user_store,
             workspace_store,
             node_runtime: NodeRuntime::unavailable(),
             build_window_options: |_, _| Default::default(),
@@ -1544,7 +1539,6 @@ pub struct Workspace {
     app_state: Arc<AppState>,
     dispatching_keystrokes: Rc<RefCell<DispatchingKeystrokes>>,
     _subscriptions: Vec<Subscription>,
-    _observe_current_user: Task<Result<()>>,
     _schedule_serialize_workspace: Option<Task<()>>,
     _serialize_workspace_task: Option<Task<()>>,
     _schedule_serialize_ssh_paths: Option<Task<()>>,
@@ -1836,20 +1830,6 @@ impl Workspace {
                 .insert((any_window_handle, weak_handle.clone()));
         });
 
-        let mut current_user = app_state.user_store.read(cx).watch_current_user();
-        let mut connection_status = app_state.client.status();
-        let _observe_current_user = cx.spawn_in(window, async move |this, cx| {
-            current_user.next().await;
-            connection_status.next().await;
-            let mut stream =
-                Stream::map(current_user, drop).merge(Stream::map(connection_status, drop));
-
-            while stream.recv().await.is_some() {
-                this.update(cx, |_, cx| cx.notify())?;
-            }
-            anyhow::Ok(())
-        });
-
         cx.emit(Event::WorkspaceCreated(weak_handle.clone()));
         let modal_layer = cx.new(|_| ModalLayer::new());
         let toast_layer = cx.new(|_| ToastLayer::new());
@@ -2002,7 +1982,6 @@ impl Workspace {
             dirty_items: Default::default(),
             database_id: workspace_id,
             app_state,
-            _observe_current_user,
             _schedule_serialize_workspace: None,
             _serialize_workspace_task: None,
             _schedule_serialize_ssh_paths: None,
@@ -2045,9 +2024,8 @@ impl Workspace {
         cx: &mut App,
     ) -> Task<anyhow::Result<OpenResult>> {
         let project_handle = Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             env,
@@ -2761,10 +2739,6 @@ impl Workspace {
         self._panels_task.take()
     }
 
-    pub fn user_store(&self) -> &Entity<UserStore> {
-        &self.app_state.user_store
-    }
-
     pub fn project(&self) -> &Entity<Project> {
         &self.project
     }
@@ -3158,8 +3132,8 @@ impl Workspace {
         )
     }
 
-    pub fn client(&self) -> &Arc<Client> {
-        &self.app_state.client
+    pub fn http_client(&self) -> Arc<HttpClientWithUrl> {
+        self.app_state.http_client.clone()
     }
 
     pub fn set_titlebar_item(&mut self, item: AnyView, _: &mut Window, cx: &mut Context<Self>) {
@@ -7522,16 +7496,14 @@ impl Workspace {
         use node_runtime::NodeRuntime;
         use session::Session;
 
-        let client = project.read(cx).client();
-        let user_store = project.read(cx).user_store();
-        let workspace_store = cx.new(|cx| WorkspaceStore::new(client.clone(), cx));
+        let http_client = project.read(cx).http_client();
+        let workspace_store = cx.new(WorkspaceStore::new);
         let session = cx.new(|cx| AppSession::new(Session::test(), cx));
         window.activate_window();
         let app_state = Arc::new(AppState {
             languages: project.read(cx).languages().clone(),
             workspace_store,
-            client,
-            user_store,
+            http_client,
             fs: project.read(cx).fs().clone(),
             build_window_options: |_, _| Default::default(),
             node_runtime: NodeRuntime::unavailable(),
@@ -8961,7 +8933,7 @@ impl Render for Workspace {
 }
 
 impl WorkspaceStore {
-    pub fn new(_client: Arc<Client>, _cx: &mut Context<Self>) -> Self {
+    pub fn new(_cx: &mut Context<Self>) -> Self {
         Self {
             workspaces: Default::default(),
         }
@@ -9488,9 +9460,8 @@ pub fn open_workspace_by_id(
     cx: &mut App,
 ) -> Task<anyhow::Result<WindowHandle<MultiWorkspace>>> {
     let project_handle = Project::local(
-        app_state.client.clone(),
+        app_state.http_client.clone(),
         app_state.node_runtime.clone(),
-        app_state.user_store.clone(),
         app_state.languages.clone(),
         app_state.fs.clone(),
         None,
@@ -11071,36 +11042,6 @@ mod tests {
         fs.set_branch_name(Path::new(path!("/root1/.git")), Some("other"));
         cx.executor().run_until_parked();
         assert_eq!(cx.window_title().as_deref(), Some("root1 — a.txt"));
-    }
-
-    #[gpui::test]
-    async fn test_window_title_collab_indicator_remains_appended(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let fs = FakeFs::new(cx.executor());
-        let project = Project::test(fs, ["root1".as_ref()], cx).await;
-        project.update(cx, |project, _| project.mark_as_collab_for_testing());
-        let (workspace, cx) =
-            cx.add_window_view(|window, cx| Workspace::test_new(project.clone(), window, cx));
-
-        let item = cx.new(|cx| {
-            TestItem::new(cx).with_project_items(&[TestProjectItem::new(1, "src/one.txt", cx)])
-        });
-
-        workspace.update_in(cx, |workspace, window, cx| {
-            workspace.add_item_to_active_pane(Box::new(item), None, true, window, cx)
-        });
-
-        cx.update(|_, cx| {
-            SettingsStore::update_global(cx, |settings, cx| {
-                settings.update_user_settings(cx, |settings| {
-                    settings.workspace.window_title_format =
-                        Some("${projectName}${separator}${fileName}".to_string());
-                })
-            });
-        });
-        cx.executor().run_until_parked();
-        assert_eq!(cx.window_title().as_deref(), Some("root1 — one.txt ↙"));
     }
 
     #[gpui::test]
@@ -16290,7 +16231,6 @@ mod tests {
         struct TestPngItemView {
             focus_handle: FocusHandle,
             project_item: Entity<TestPngItem>,
-            project_path: ProjectPath,
         }
         // Model
         struct TestPngItem {
@@ -16375,7 +16315,6 @@ mod tests {
                 Self {
                     focus_handle: cx.focus_handle(),
                     project_item: item.clone(),
-                    project_path: item.read(cx).project_path.clone(),
                 }
             }
         }
@@ -16685,43 +16624,6 @@ mod tests {
             workspace.read_with(cx, |workspace, _| {
                 assert_eq!(workspace.panes.len(), 3);
             });
-        }
-
-        #[gpui::test]
-        async fn test_open_url_or_file_resolves_remote_base_path(cx: &mut TestAppContext) {
-            init_test(cx);
-            cx.update(register_project_item::<TestPngItemView>);
-
-            let project = Project::test(FakeFs::new(cx.executor()), [], cx).await;
-            let worktree = project.update(cx, |project, cx| {
-                let worktree = project.add_test_remote_worktree("/remote/project", cx);
-                project.mark_as_collab_for_testing();
-                worktree
-            });
-            let worktree_id = worktree.read_with(cx, |worktree, _| worktree.id());
-            let (workspace, cx) =
-                cx.add_window_view(|window, cx| Workspace::test_new(project, window, cx));
-
-            workspace.update_in(cx, |workspace, window, cx| {
-                workspace.open_url_or_file(
-                    "./sibling.png",
-                    Some(Path::new("/remote/project/docs")),
-                    window,
-                    cx,
-                );
-            });
-            cx.run_until_parked();
-
-            let opened_item = workspace
-                .read_with(cx, |workspace, cx| {
-                    workspace
-                        .active_item(cx)
-                        .and_then(|item| item.downcast::<TestPngItemView>())
-                })
-                .expect("resolved remote project item should be opened");
-            let project_path = opened_item.read_with(cx, |item, _| item.project_path.clone());
-            assert_eq!(project_path.worktree_id, worktree_id);
-            assert_eq!(project_path.path.as_ref(), rel_path("docs/sibling.png"));
         }
 
         #[gpui::test]

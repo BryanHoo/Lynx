@@ -2,7 +2,7 @@ use editor::Editor;
 use gpui::{App, Context, Entity, SharedString};
 use language::Buffer;
 use notifications::status_toast::StatusToast;
-use proto::RpcError;
+use project_models::StructuredError;
 use ui::prelude::*;
 use workspace::Workspace;
 
@@ -73,9 +73,11 @@ pub fn show_error_toast(
 }
 
 fn rpc_error_raw_message_from_chain(error: &anyhow::Error) -> Option<&str> {
-    error
-        .chain()
-        .find_map(|cause| cause.downcast_ref::<RpcError>().map(RpcError::raw_message))
+    error.chain().find_map(|cause| {
+        cause
+            .downcast_ref::<StructuredError>()
+            .map(StructuredError::raw_message)
+    })
 }
 
 fn format_git_error_toast_message(error: &anyhow::Error) -> String {
@@ -92,12 +94,12 @@ mod tests {
 
     #[test]
     fn test_format_git_error_toast_message_prefers_raw_rpc_message() {
-        let rpc_error = RpcError::from_proto(
-            &proto::Error {
+        let rpc_error = StructuredError::from_proto(
+            &project_models::Error {
                 message:
                     "Your local changes to the following files would be overwritten by merge\n"
                         .to_string(),
-                code: proto::ErrorCode::Internal as i32,
+                code: project_models::ErrorCode::Internal as i32,
                 tags: Default::default(),
             },
             "Pull",
@@ -112,12 +114,12 @@ mod tests {
 
     #[test]
     fn test_format_git_error_toast_message_prefers_raw_rpc_message_when_wrapped() {
-        let rpc_error = RpcError::from_proto(
-            &proto::Error {
+        let rpc_error = StructuredError::from_proto(
+            &project_models::Error {
                 message:
                     "Your local changes to the following files would be overwritten by merge\n"
                         .to_string(),
-                code: proto::ErrorCode::Internal as i32,
+                code: project_models::ErrorCode::Internal as i32,
                 tags: Default::default(),
             },
             "Pull",

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use lsp::{DiagnosticSeverity, DiagnosticTag};
 use project::lsp_command::*;
-use rpc::proto::{self};
+use project_models::{self};
 use serde_json::json;
 
 #[test]
@@ -33,7 +33,7 @@ fn test_serialize_lsp_diagnostic() {
     assert_eq!(end.column, 3);
     assert_eq!(
         proto_diagnostic.severity,
-        proto::lsp_diagnostic::Severity::Error as i32
+        project_models::lsp_diagnostic::Severity::Error as i32
     );
     assert_eq!(proto_diagnostic.code, Some("E001".to_string()));
     assert_eq!(proto_diagnostic.source, Some("test-source".to_string()));
@@ -42,10 +42,10 @@ fn test_serialize_lsp_diagnostic() {
 
 #[test]
 fn test_deserialize_lsp_diagnostic() {
-    let proto_diagnostic = proto::LspDiagnostic {
-        start: Some(proto::PointUtf16 { row: 0, column: 1 }),
-        end: Some(proto::PointUtf16 { row: 2, column: 3 }),
-        severity: proto::lsp_diagnostic::Severity::Warning as i32,
+    let proto_diagnostic = project_models::LspDiagnostic {
+        start: Some(project_models::PointUtf16 { row: 0, column: 1 }),
+        end: Some(project_models::PointUtf16 { row: 2, column: 3 }),
+        severity: project_models::lsp_diagnostic::Severity::Warning as i32,
         code: Some("ERR".to_string()),
         source: Some("Prism".to_string()),
         message: "assigned but unused variable - a".to_string(),
@@ -136,7 +136,7 @@ fn test_serialize_lsp_diagnostic_markup_message() {
     );
     assert_eq!(
         proto_diagnostic.markup_message_kind,
-        Some(proto::MarkupKind::Markdown as i32)
+        Some(project_models::MarkupKind::Markdown as i32)
     );
 
     let lsp_diagnostic = GetDocumentDiagnostics::deserialize_lsp_diagnostic(proto_diagnostic)
@@ -146,10 +146,10 @@ fn test_serialize_lsp_diagnostic_markup_message() {
 
 #[test]
 fn test_invalid_ranges() {
-    let proto_diagnostic = proto::LspDiagnostic {
+    let proto_diagnostic = project_models::LspDiagnostic {
         start: None,
-        end: Some(proto::PointUtf16 { row: 2, column: 3 }),
-        severity: proto::lsp_diagnostic::Severity::Error as i32,
+        end: Some(project_models::PointUtf16 { row: 2, column: 3 }),
+        severity: project_models::lsp_diagnostic::Severity::Error as i32,
         code: None,
         source: None,
         message: "Test message".to_string(),

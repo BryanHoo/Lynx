@@ -1573,9 +1573,8 @@ impl MultiWorkspace {
     ) -> Task<()> {
         let app_state = self.workspace().read(cx).app_state().clone();
         let project = Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -1783,9 +1782,8 @@ impl MultiWorkspace {
                             }
                             let app_state = displayed_workspace.read(cx).app_state().clone();
                             let project = Project::local(
-                                app_state.client.clone(),
+                                app_state.http_client.clone(),
                                 app_state.node_runtime.clone(),
-                                app_state.user_store.clone(),
                                 app_state.languages.clone(),
                                 app_state.fs.clone(),
                                 None,

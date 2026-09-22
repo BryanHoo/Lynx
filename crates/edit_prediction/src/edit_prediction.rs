@@ -1,5 +1,4 @@
 use anyhow::{Context as _, Result};
-use client::Client;
 use collections::{HashMap, HashSet};
 use credentials_provider::CredentialsProvider;
 use edit_prediction_context::{RelatedExcerptStore, RelatedExcerptStoreEvent, RelatedFile};
@@ -11,6 +10,7 @@ use gpui::{
     prelude::*,
 };
 use heapless::Vec as ArrayVec;
+use http_client::HttpClient;
 use language::{
     Anchor, Buffer, BufferEditSource, BufferSnapshot, EditPredictionPromptFormat, File,
     OffsetRangeExt, Point, TextBufferSnapshot, ToOffset, ToPoint,
@@ -85,7 +85,7 @@ struct EditPredictionStoreGlobal(Entity<EditPredictionStore>);
 impl Global for EditPredictionStoreGlobal {}
 
 pub struct EditPredictionStore {
-    client: Arc<Client>,
+    http_client: Arc<dyn HttpClient>,
     projects: HashMap<EntityId, ProjectState>,
     edit_prediction_model: EditPredictionModel,
     pub mercury: Mercury,
@@ -729,22 +729,22 @@ impl EditPredictionStore {
             .map(|global| global.0.clone())
     }
 
-    pub fn global(client: &Arc<Client>, cx: &mut App) -> Entity<Self> {
+    pub fn global(cx: &mut App) -> Entity<Self> {
         cx.try_global::<EditPredictionStoreGlobal>()
             .map(|global| global.0.clone())
             .unwrap_or_else(|| {
-                let ep_store = cx.new(|cx| Self::new(client.clone(), cx));
+                let ep_store = cx.new(Self::new);
                 cx.set_global(EditPredictionStoreGlobal(ep_store.clone()));
                 ep_store
             })
     }
 
-    pub fn new(client: Arc<Client>, cx: &mut Context<Self>) -> Self {
+    pub fn new(cx: &mut Context<Self>) -> Self {
         let credentials_provider = zed_credentials_provider::global(cx);
 
         let this = Self {
             projects: HashMap::default(),
-            client,
+            http_client: cx.http_client(),
             edit_prediction_model: EditPredictionModel::Zeta,
             mercury: Mercury::new(cx),
             credentials_provider,
@@ -1361,7 +1361,7 @@ impl EditPredictionStore {
             EditPredictionModel::Mercury => {
                 mercury::edit_prediction_accepted(
                     current_prediction.prediction.id,
-                    self.client.http_client(),
+                    self.http_client.clone(),
                     cx,
                 );
             }
@@ -1434,7 +1434,7 @@ impl EditPredictionStore {
                     prediction_id,
                     was_shown,
                     reason,
-                    self.client.http_client(),
+                    self.http_client.clone(),
                     cx,
                 );
             }

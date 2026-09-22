@@ -1,7 +1,7 @@
 /// Some helpers for structured error handling.
 ///
 /// The helpers defined here allow you to pass type-safe error codes from
-/// the collab server to the client; and provide a mechanism for additional
+/// local domain operations and provide a mechanism for additional
 /// structured data alongside the message.
 ///
 /// When returning an error, it can be as simple as:
@@ -23,7 +23,7 @@
 /// and .error_tag() to read any tags.
 ///
 /// ```ignore
-/// use proto::{ErrorCode, ErrorExt};
+/// use project_models::{ErrorCode, ErrorExt};
 ///
 /// match err.error_code() {
 ///   ErrorCode::Forbidden => alert("I'm sorry I can't do that."),
@@ -37,21 +37,21 @@ pub use crate::ErrorCode;
 
 /// ErrorCodeExt provides some helpers for structured error handling.
 ///
-/// The primary implementation is on the proto::ErrorCode to easily convert
+/// The primary implementation is on the project_models::ErrorCode to easily convert
 /// that into an anyhow::Error, which we use pervasively.
 ///
-/// The RpcError struct provides support for further metadata if needed.
+/// The StructuredError type provides support for further metadata when needed.
 pub trait ErrorCodeExt {
     /// Return an anyhow::Error containing this.
     /// (useful in places where .into() doesn't have enough type information)
     fn anyhow(self) -> anyhow::Error;
 
     /// Add a message to the error (by default the error code is used)
-    fn message(self, msg: String) -> RpcError;
+    fn message(self, msg: String) -> StructuredError;
 
     /// Add a tag to the error. Tags are key value pairs that can be used
     /// to send semi-structured data along with the error.
-    fn with_tag(self, k: &str, v: &str) -> RpcError;
+    fn with_tag(self, k: &str, v: &str) -> StructuredError;
 }
 
 impl ErrorCodeExt for ErrorCode {
@@ -59,13 +59,13 @@ impl ErrorCodeExt for ErrorCode {
         self.into()
     }
 
-    fn message(self, msg: String) -> RpcError {
-        let err: RpcError = self.into();
+    fn message(self, msg: String) -> StructuredError {
+        let err: StructuredError = self.into();
         err.message(msg)
     }
 
-    fn with_tag(self, k: &str, v: &str) -> RpcError {
-        let err: RpcError = self.into();
+    fn with_tag(self, k: &str, v: &str) -> StructuredError {
+        let err: StructuredError = self.into();
         err.with_tag(k, v)
     }
 }
@@ -87,24 +87,24 @@ pub trait ErrorExt {
 
 impl ErrorExt for anyhow::Error {
     fn error_code(&self) -> ErrorCode {
-        if let Some(rpc_error) = self.downcast_ref::<RpcError>() {
-            rpc_error.code
+        if let Some(structured_error) = self.downcast_ref::<StructuredError>() {
+            structured_error.code
         } else {
             ErrorCode::Internal
         }
     }
 
     fn error_tag(&self, k: &str) -> Option<&str> {
-        if let Some(rpc_error) = self.downcast_ref::<RpcError>() {
-            rpc_error.error_tag(k)
+        if let Some(structured_error) = self.downcast_ref::<StructuredError>() {
+            structured_error.error_tag(k)
         } else {
             None
         }
     }
 
     fn to_proto(&self) -> crate::Error {
-        if let Some(rpc_error) = self.downcast_ref::<RpcError>() {
-            rpc_error.to_proto()
+        if let Some(structured_error) = self.downcast_ref::<StructuredError>() {
+            structured_error.to_proto()
         } else {
             ErrorCode::Internal
                 .message(
@@ -123,8 +123,8 @@ impl ErrorExt for anyhow::Error {
     }
 
     fn cloned(&self) -> anyhow::Error {
-        if let Some(rpc_error) = self.downcast_ref::<RpcError>() {
-            rpc_error.cloned()
+        if let Some(structured_error) = self.downcast_ref::<StructuredError>() {
+            structured_error.cloned()
         } else {
             anyhow::anyhow!("{self:#}")
         }
@@ -133,7 +133,7 @@ impl ErrorExt for anyhow::Error {
 
 impl From<ErrorCode> for anyhow::Error {
     fn from(value: ErrorCode) -> Self {
-        RpcError {
+        StructuredError {
             request: None,
             code: value,
             msg: format!("{:?}", value),
@@ -144,31 +144,28 @@ impl From<ErrorCode> for anyhow::Error {
 }
 
 #[derive(Clone, Debug)]
-pub struct RpcError {
+pub struct StructuredError {
     request: Option<String>,
     msg: String,
     code: ErrorCode,
     tags: Vec<String>,
 }
 
-/// RpcError is a structured error type that is returned by the collab server.
-/// In addition to a message, it lets you set a specific ErrorCode, and attach
-/// small amounts of metadata to help the client handle the error appropriately.
+/// StructuredError carries an error code, message, and optional metadata.
 ///
 /// This struct is not typically used directly, as we pass anyhow::Error around
 /// in the app; however it is useful for chaining .message() and .with_tag() on
 /// ErrorCode.
-impl RpcError {
-    /// Returns the raw server-provided error message without any RPC framing
-    /// (e.g. without the "RPC request X failed: " prefix that `Display` adds).
+impl StructuredError {
+    /// Returns the original error message without request context.
     pub fn raw_message(&self) -> &str {
         &self.msg
     }
 
     /// from_proto converts a crate::Error into an anyhow::Error containing
-    /// an RpcError.
+    /// an StructuredError.
     pub fn from_proto(error: &crate::Error, request: &str) -> anyhow::Error {
-        RpcError {
+        StructuredError {
             request: Some(request.to_string()),
             code: error.code(),
             msg: error.message.clone(),
@@ -178,13 +175,13 @@ impl RpcError {
     }
 }
 
-impl ErrorCodeExt for RpcError {
-    fn message(mut self, msg: String) -> RpcError {
+impl ErrorCodeExt for StructuredError {
+    fn message(mut self, msg: String) -> StructuredError {
         self.msg = msg;
         self
     }
 
-    fn with_tag(mut self, k: &str, v: &str) -> RpcError {
+    fn with_tag(mut self, k: &str, v: &str) -> StructuredError {
         self.tags.push(format!("{}={}", k, v));
         self
     }
@@ -194,7 +191,7 @@ impl ErrorCodeExt for RpcError {
     }
 }
 
-impl ErrorExt for RpcError {
+impl ErrorExt for StructuredError {
     fn error_tag(&self, k: &str) -> Option<&str> {
         for tag in &self.tags {
             let mut parts = tag.split('=');
@@ -224,16 +221,16 @@ impl ErrorExt for RpcError {
     }
 }
 
-impl std::error::Error for RpcError {
+impl std::error::Error for StructuredError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
 }
 
-impl std::fmt::Display for RpcError {
+impl std::fmt::Display for StructuredError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if let Some(request) = &self.request {
-            write!(f, "RPC request {} failed: {}", request, self.msg)?
+            write!(f, "request {} failed: {}", request, self.msg)?
         } else {
             write!(f, "{}", self.msg)?
         }
@@ -244,9 +241,9 @@ impl std::fmt::Display for RpcError {
     }
 }
 
-impl From<ErrorCode> for RpcError {
+impl From<ErrorCode> for StructuredError {
     fn from(code: ErrorCode) -> Self {
-        RpcError {
+        StructuredError {
             request: None,
             code,
             msg: format!("{:?}", code),

@@ -288,7 +288,7 @@ pub struct TargetConfig {
 }
 
 impl TargetConfig {
-    pub fn from_proto(proto: proto::ExternalExtensionAgentTarget) -> Self {
+    pub fn from_proto(proto: project_models::ExternalExtensionAgentTarget) -> Self {
         Self {
             archive: proto.archive,
             cmd: proto.cmd,
@@ -298,8 +298,8 @@ impl TargetConfig {
         }
     }
 
-    pub fn to_proto(&self) -> proto::ExternalExtensionAgentTarget {
-        proto::ExternalExtensionAgentTarget {
+    pub fn to_proto(&self) -> project_models::ExternalExtensionAgentTarget {
+        project_models::ExternalExtensionAgentTarget {
             archive: self.archive.clone(),
             cmd: self.cmd.clone(),
             args: self.args.clone(),

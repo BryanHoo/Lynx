@@ -19,7 +19,6 @@ test-support = []
 anthropic = { workspace = true, features = ["schemars"] }
 anyhow.workspace = true
 base64.workspace = true
-client.workspace = true
 collections.workspace = true
 component.workspace = true
 convert_case.workspace = true
@@ -48,9 +47,9 @@ strum.workspace = true
 ui.workspace = true
 ui_input.workspace = true
 util.workspace = true
+zed_credentials_provider.workspace = true
 
 [dev-dependencies]
-client = { workspace = true, features = ["test-support"] }
 clock = { workspace = true, features = ["test-support"] }
 db = { workspace = true, features = ["test-support"] }
 gpui = { workspace = true, features = ["test-support"] }

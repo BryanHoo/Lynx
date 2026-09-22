@@ -4,7 +4,7 @@ use gpui::{App, AppContext, Entity, FontWeight, HighlightStyle, SharedString};
 use language::LanguageRegistry;
 use lsp::LanguageServerId;
 use markdown::Markdown;
-use rpc::proto::{self, documentation};
+use project_models::{self, documentation};
 use util::maybe;
 
 #[derive(Debug)]
@@ -158,26 +158,26 @@ fn documentation_to_markdown(
     }
 }
 
-pub fn lsp_to_proto_signature(lsp_help: lsp::SignatureHelp) -> proto::SignatureHelp {
-    proto::SignatureHelp {
+pub fn lsp_to_proto_signature(lsp_help: lsp::SignatureHelp) -> project_models::SignatureHelp {
+    project_models::SignatureHelp {
         signatures: lsp_help
             .signatures
             .into_iter()
-            .map(|signature| proto::SignatureInformation {
+            .map(|signature| project_models::SignatureInformation {
                 label: signature.label,
                 documentation: signature.documentation.map(lsp_to_proto_documentation),
                 parameters: signature
                     .parameters
                     .unwrap_or_default()
                     .into_iter()
-                    .map(|parameter_info| proto::ParameterInformation {
+                    .map(|parameter_info| project_models::ParameterInformation {
                         label: Some(match parameter_info.label {
                             lsp::ParameterLabel::Simple(label) => {
-                                proto::parameter_information::Label::Simple(label)
+                                project_models::parameter_information::Label::Simple(label)
                             }
                             lsp::ParameterLabel::LabelOffsets(offsets) => {
-                                proto::parameter_information::Label::LabelOffsets(
-                                    proto::LabelOffsets {
+                                project_models::parameter_information::Label::LabelOffsets(
+                                    project_models::LabelOffsets {
                                         start: offsets[0],
                                         end: offsets[1],
                                     },
@@ -195,21 +195,25 @@ pub fn lsp_to_proto_signature(lsp_help: lsp::SignatureHelp) -> proto::SignatureH
     }
 }
 
-fn lsp_to_proto_documentation(documentation: lsp::Documentation) -> proto::Documentation {
-    proto::Documentation {
+fn lsp_to_proto_documentation(documentation: lsp::Documentation) -> project_models::Documentation {
+    project_models::Documentation {
         content: Some(match documentation {
-            lsp::Documentation::String(string) => proto::documentation::Content::Value(string),
+            lsp::Documentation::String(string) => {
+                project_models::documentation::Content::Value(string)
+            }
             lsp::Documentation::MarkupContent(content) => {
-                proto::documentation::Content::MarkupContent(proto::MarkupContent {
-                    is_markdown: matches!(content.kind, lsp::MarkupKind::Markdown),
-                    value: content.value,
-                })
+                project_models::documentation::Content::MarkupContent(
+                    project_models::MarkupContent {
+                        is_markdown: matches!(content.kind, lsp::MarkupKind::Markdown),
+                        value: content.value,
+                    },
+                )
             }
         }),
     }
 }
 
-pub fn proto_to_lsp_signature(proto_help: proto::SignatureHelp) -> lsp::SignatureHelp {
+pub fn proto_to_lsp_signature(proto_help: project_models::SignatureHelp) -> lsp::SignatureHelp {
     lsp::SignatureHelp {
         signatures: proto_help
             .signatures
@@ -224,15 +228,15 @@ pub fn proto_to_lsp_signature(proto_help: proto::SignatureHelp) -> lsp::Signatur
                         .filter_map(|parameter_info| {
                             Some(lsp::ParameterInformation {
                                 label: match parameter_info.label? {
-                                    proto::parameter_information::Label::Simple(string) => {
-                                        lsp::ParameterLabel::Simple(string)
-                                    }
-                                    proto::parameter_information::Label::LabelOffsets(offsets) => {
-                                        lsp::ParameterLabel::LabelOffsets([
-                                            offsets.start,
-                                            offsets.end,
-                                        ])
-                                    }
+                                    project_models::parameter_information::Label::Simple(
+                                        string,
+                                    ) => lsp::ParameterLabel::Simple(string),
+                                    project_models::parameter_information::Label::LabelOffsets(
+                                        offsets,
+                                    ) => lsp::ParameterLabel::LabelOffsets([
+                                        offsets.start,
+                                        offsets.end,
+                                    ]),
                                 },
                                 documentation: parameter_info
                                     .documentation
@@ -249,7 +253,9 @@ pub fn proto_to_lsp_signature(proto_help: proto::SignatureHelp) -> lsp::Signatur
     }
 }
 
-fn proto_to_lsp_documentation(documentation: proto::Documentation) -> Option<lsp::Documentation> {
+fn proto_to_lsp_documentation(
+    documentation: project_models::Documentation,
+) -> Option<lsp::Documentation> {
     {
         Some(match documentation.content? {
             documentation::Content::Value(string) => lsp::Documentation::String(string),

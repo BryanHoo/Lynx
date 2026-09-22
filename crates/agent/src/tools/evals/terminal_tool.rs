@@ -1,7 +1,6 @@
 use crate::{AgentTool, Template, Templates, TerminalTool, TerminalToolInput};
 use Role::*;
 use anyhow::{Context as _, Result};
-use client::{Client, UserStore};
 use futures::{FutureExt as _, StreamExt};
 use gpui::{AppContext as _, AsyncApp, TestAppContext};
 use language_model::{
@@ -160,10 +159,8 @@ impl TerminalToolTest {
             gpui_tokio::init(cx);
             let http_client = Arc::new(ReqwestClient::user_agent("agent tests").unwrap());
             cx.set_http_client(http_client);
-            let client = Client::production(cx);
-            let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
             language_model::init(cx);
-            language_models::init(user_store, client, cx);
+            language_models::init(cx);
         });
 
         let agent_model = SelectedModel::from_str(

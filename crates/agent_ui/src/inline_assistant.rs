@@ -1766,7 +1766,6 @@ fn merge_ranges(ranges: &mut Vec<Range<Anchor>>, buffer: &MultiBufferSnapshot) {
 pub mod evals {
     use crate::InlineAssistant;
     use agent::ThreadStore;
-    use client::{Client, UserStore};
     use editor::{Editor, MultiBuffer, MultiBufferOffset};
     use eval_utils::{EvalOutput, NoProcessor};
     use fs::FakeFs;
@@ -1816,9 +1815,8 @@ pub mod evals {
         let app_state = cx.update(|cx| workspace::AppState::test(cx));
         let prompt_builder = Arc::new(PromptBuilder::new(None).unwrap());
         let http = Arc::new(reqwest_client::ReqwestClient::user_agent("agent tests").unwrap());
-        let client = cx.update(|cx| {
+        cx.update(|cx| {
             cx.set_http_client(http);
-            Client::production(cx)
         });
         let mut inline_assistant = InlineAssistant::new(fs.clone(), prompt_builder);
 
@@ -1830,9 +1828,8 @@ pub mod evals {
             gpui_tokio::init(cx);
             settings::init(cx);
             workspace::init(app_state.clone(), cx);
-            let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
             language_model::init(cx);
-            language_models::init(user_store, client.clone(), cx);
+            language_models::init(cx);
 
             cx.set_global(inline_assistant);
         });

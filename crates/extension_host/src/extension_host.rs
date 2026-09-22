@@ -8,7 +8,6 @@ mod extension_store_test;
 use anyhow::{Context as _, Result, bail};
 use async_compression::futures::bufread::GzipDecoder;
 use async_tar::Archive;
-use client::Client;
 use collections::{BTreeMap, BTreeSet, FxHashSet, HashSet, btree_map};
 pub use extension::ExtensionManifest;
 use extension::extension_builder::{CompileExtensionOptions, ExtensionBuilder};
@@ -215,7 +214,7 @@ actions!(
 pub fn init(
     extension_host_proxy: Arc<ExtensionHostProxy>,
     fs: Arc<dyn Fs>,
-    client: Arc<Client>,
+    http_client: Arc<HttpClientWithUrl>,
     node_runtime: NodeRuntime,
     cx: &mut App,
 ) {
@@ -225,8 +224,8 @@ pub fn init(
             None,
             extension_host_proxy,
             fs,
-            client.http_client(),
-            client.http_client(),
+            http_client.clone(),
+            http_client,
             node_runtime,
             cx,
         )

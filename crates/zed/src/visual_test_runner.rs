@@ -199,12 +199,12 @@ fn run_visual_tests(project_path: PathBuf, update_baseline: bool) -> Result<()> 
         prompt_store::init(cx);
         let prompt_builder = prompt_store::PromptBuilder::load(app_state.fs.clone(), false, cx);
         language_model::init(cx);
-        language_models::init(app_state.user_store.clone(), app_state.client.clone(), cx);
+        language_models::init(cx);
         git_ui::init(cx);
         project::AgentRegistryStore::init_global(
             cx,
             app_state.fs.clone(),
-            app_state.client.http_client(),
+            app_state.http_client.clone(),
         );
         agent_ui::init(
             app_state.fs.clone(),
@@ -248,9 +248,8 @@ fn run_visual_tests(project_path: PathBuf, update_baseline: bool) -> Result<()> 
     // Create a project for the workspace
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -972,18 +971,19 @@ fn init_app_state(cx: &mut App) -> Arc<AppState> {
     let languages = Arc::new(language::LanguageRegistry::test(
         cx.background_executor().clone(),
     ));
-    let http_client = http_client::FakeHttpClient::with_404_response();
-    let client = client::Client::new(http_client, cx);
+    let http_client = Arc::new(http_client::HttpClientWithUrl::new(
+        http_client::FakeHttpClient::with_404_response(),
+        "http://127.0.0.1:0",
+        None,
+    ));
     let session = cx.new(|cx| session::AppSession::new(Session::test(), cx));
-    let user_store = cx.new(|cx| client::UserStore::new(client.clone(), cx));
-    let workspace_store = cx.new(|cx| workspace::WorkspaceStore::new(client.clone(), cx));
+    let workspace_store = cx.new(workspace::WorkspaceStore::new);
 
     theme_settings::init(theme::LoadThemes::JustBase, cx);
     let app_state = Arc::new(AppState {
-        client,
+        http_client,
         fs,
         languages,
-        user_store,
         workspace_store,
         node_runtime: NodeRuntime::unavailable(),
         build_window_options: |_, _| Default::default(),
@@ -1033,9 +1033,8 @@ fn run_breakpoint_hover_visual_tests(
     // Create project
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -1305,9 +1304,8 @@ fn run_settings_ui_subpage_visual_tests(
 
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -1520,9 +1518,8 @@ import { AiPaneTabContext } from 'context';
     // Create project
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -1980,9 +1977,8 @@ fn run_agent_thread_view_test(
     // Create a project with the test image
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -2304,9 +2300,8 @@ fn run_tool_permissions_visual_tests(
 
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -2510,9 +2505,8 @@ fn run_multi_workspace_sidebar_visual_tests(
     // tries to access the window root (MultiWorkspace) while it's being updated.
     let project1 = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -2526,9 +2520,8 @@ fn run_multi_workspace_sidebar_visual_tests(
 
     let project2 = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,
@@ -3285,9 +3278,8 @@ fn create_project_with_worktree(
 ) -> Result<Entity<Project>> {
     let project = cx.update(|cx| {
         project::Project::local(
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
-            app_state.user_store.clone(),
             app_state.languages.clone(),
             app_state.fs.clone(),
             None,

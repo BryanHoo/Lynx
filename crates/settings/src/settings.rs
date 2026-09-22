@@ -1,3 +1,5 @@
+extern crate self as settings;
+
 mod base_keymap_setting;
 mod content_into_gpui;
 mod editable_setting_control;
@@ -25,6 +27,7 @@ pub mod private {
 }
 
 use gpui::{App, Global};
+use http_client::{Url, read_proxy_from_env};
 
 use std::env;
 use std::{borrow::Cow, fmt, str};
@@ -58,6 +61,58 @@ pub use keymap_file::ActionSequence;
 pub struct ActiveSettingsProfileName(pub String);
 
 impl Global for ActiveSettingsProfileName {}
+
+#[derive(serde::Deserialize, Default, RegisterSetting)]
+pub struct ProxySettings {
+    pub proxy: Option<String>,
+}
+
+impl ProxySettings {
+    pub fn proxy_url(&self) -> Option<Url> {
+        self.proxy
+            .as_deref()
+            .map(str::trim)
+            .filter(|input| !input.is_empty())
+            .and_then(|input| {
+                input
+                    .parse::<Url>()
+                    .inspect_err(|error| log::error!("Error parsing proxy settings: {error}"))
+                    .ok()
+            })
+            .or_else(read_proxy_from_env)
+    }
+}
+
+impl Settings for ProxySettings {
+    fn from_settings(content: &SettingsContent) -> Self {
+        Self {
+            proxy: content
+                .proxy
+                .as_deref()
+                .map(str::trim)
+                .filter(|proxy| !proxy.is_empty())
+                .map(ToOwned::to_owned),
+        }
+    }
+}
+
+#[cfg(test)]
+mod proxy_settings_tests {
+    use super::*;
+
+    #[test]
+    fn proxy_settings_trim_and_ignore_empty_values() {
+        let mut content = SettingsContent::default();
+        content.proxy = Some("   ".to_owned());
+        assert_eq!(ProxySettings::from_settings(&content).proxy, None);
+
+        content.proxy = Some("http://127.0.0.1:10809".to_owned());
+        assert_eq!(
+            ProxySettings::from_settings(&content).proxy.as_deref(),
+            Some("http://127.0.0.1:10809")
+        );
+    }
+}
 
 pub trait UserSettingsContentExt {
     fn for_profile(&self, cx: &App) -> Option<&SettingsProfile>;

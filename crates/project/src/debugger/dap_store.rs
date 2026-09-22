@@ -33,10 +33,6 @@ use language::{Buffer, LanguageToolchainStore};
 use node_runtime::NodeRuntime;
 use settings::InlayHintKind;
 
-use rpc::{
-    AnyProtoClient, TypedEnvelope,
-    proto::{self},
-};
 use serde::{Deserialize, Serialize};
 use settings::{Settings, SettingsLocation, WorktreeId};
 use std::{
@@ -63,11 +59,6 @@ pub enum DapStoreEvent {
     RemoteHasInitialized,
 }
 
-enum DapStoreMode {
-    Local(LocalDapStore),
-    Collab,
-}
-
 pub struct LocalDapStore {
     fs: Arc<dyn Fs>,
     node_runtime: NodeRuntime,
@@ -78,8 +69,7 @@ pub struct LocalDapStore {
 }
 
 pub struct DapStore {
-    mode: DapStoreMode,
-    downstream_client: Option<(AnyProtoClient, u64)>,
+    mode: LocalDapStore,
     breakpoint_store: Entity<BreakpointStore>,
     worktree_store: Entity<WorktreeStore>,
     sessions: BTreeMap<SessionId, Entity<Session>>,
@@ -102,7 +92,7 @@ pub struct PersistedAdapterOptions {
 }
 
 impl DapStore {
-    pub fn init(client: &AnyProtoClient, cx: &mut App) {
+    pub fn init(cx: &mut App) {
         static ADD_LOCATORS: Once = Once::new();
         ADD_LOCATORS.call_once(|| {
             let registry = DapRegistry::global(cx);
@@ -111,9 +101,6 @@ impl DapStore {
             registry.add_locator(Arc::new(locators::node::NodeLocator));
             registry.add_locator(Arc::new(locators::python::PythonLocator));
         });
-        client.add_entity_request_handler(Self::handle_run_debug_locator);
-        client.add_entity_request_handler(Self::handle_get_debug_adapter_binary);
-        client.add_entity_message_handler(Self::handle_log_to_debug_console);
     }
 
     #[expect(clippy::too_many_arguments)]
@@ -128,37 +115,20 @@ impl DapStore {
         is_headless: bool,
         cx: &mut Context<Self>,
     ) -> Self {
-        let mode = DapStoreMode::Local(LocalDapStore {
+        let mode = LocalDapStore {
             fs: fs.clone(),
             environment,
             http_client,
             node_runtime,
             toolchain_store,
             is_headless,
-        });
+        };
 
         Self::new(mode, breakpoint_store, worktree_store, fs, cx)
     }
 
-    pub fn new_collab(
-        _project_id: u64,
-        _upstream_client: AnyProtoClient,
-        breakpoint_store: Entity<BreakpointStore>,
-        worktree_store: Entity<WorktreeStore>,
-        fs: Arc<dyn Fs>,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        Self::new(
-            DapStoreMode::Collab,
-            breakpoint_store,
-            worktree_store,
-            fs,
-            cx,
-        )
-    }
-
     fn new(
-        mode: DapStoreMode,
+        mode: LocalDapStore,
         breakpoint_store: Entity<BreakpointStore>,
         worktree_store: Entity<WorktreeStore>,
         fs: Arc<dyn Fs>,
@@ -197,7 +167,6 @@ impl DapStore {
         Self {
             mode,
             next_session_id: 0,
-            downstream_client: None,
             breakpoint_store,
             worktree_store,
             sessions: Default::default(),
@@ -213,66 +182,61 @@ impl DapStore {
         console: UnboundedSender<String>,
         cx: &mut Context<Self>,
     ) -> Task<Result<DebugAdapterBinary>> {
-        match &self.mode {
-            DapStoreMode::Local(_) => {
-                let Some(adapter) = DapRegistry::global(cx).adapter(&definition.adapter) else {
-                    return Task::ready(Err(anyhow!("Failed to find a debug adapter")));
-                };
+        {
+            let Some(adapter) = DapRegistry::global(cx).adapter(&definition.adapter) else {
+                return Task::ready(Err(anyhow!("Failed to find a debug adapter")));
+            };
 
-                let settings_location = SettingsLocation {
-                    worktree_id: worktree.read(cx).id(),
-                    path: RelPath::empty(),
-                };
-                let dap_settings = ProjectSettings::get(Some(settings_location), cx)
-                    .dap
-                    .get(&adapter.name());
-                let user_installed_path = dap_settings.and_then(|s| match &s.binary {
-                    DapBinary::Default => None,
-                    DapBinary::Custom(binary) => {
-                        let path = PathBuf::from(binary);
-                        Some(worktree.read(cx).resolve_relative_path(path))
-                    }
-                });
-                let user_args = dap_settings.and_then(|s| s.args.clone());
-                let user_env = dap_settings.and_then(|s| s.env.clone());
+            let settings_location = SettingsLocation {
+                worktree_id: worktree.read(cx).id(),
+                path: RelPath::empty(),
+            };
+            let dap_settings = ProjectSettings::get(Some(settings_location), cx)
+                .dap
+                .get(&adapter.name());
+            let user_installed_path = dap_settings.and_then(|s| match &s.binary {
+                DapBinary::Default => None,
+                DapBinary::Custom(binary) => {
+                    let path = PathBuf::from(binary);
+                    Some(worktree.read(cx).resolve_relative_path(path))
+                }
+            });
+            let user_args = dap_settings.and_then(|s| s.args.clone());
+            let user_env = dap_settings.and_then(|s| s.env.clone());
 
-                let delegate = self.delegate(worktree, console, cx);
+            let delegate = self.delegate(worktree, console, cx);
 
-                let worktree = worktree.clone();
-                cx.spawn(async move |this, cx| {
-                    let mut binary = adapter
-                        .get_binary(
-                            &delegate,
-                            &definition,
-                            user_installed_path,
-                            user_args,
-                            user_env,
-                            cx,
-                        )
-                        .await?;
+            let worktree = worktree.clone();
+            cx.spawn(async move |this, cx| {
+                let mut binary = adapter
+                    .get_binary(
+                        &delegate,
+                        &definition,
+                        user_installed_path,
+                        user_args,
+                        user_env,
+                        cx,
+                    )
+                    .await?;
 
-                    let env = this
-                        .update(cx, |this, cx| {
-                            this.as_local()
-                                .unwrap()
-                                .environment
-                                .update(cx, |environment, cx| {
-                                    environment.worktree_environment(worktree, cx)
-                                })
-                        })?
-                        .await;
+                let env = this
+                    .update(cx, |this, cx| {
+                        this.as_local()
+                            .unwrap()
+                            .environment
+                            .update(cx, |environment, cx| {
+                                environment.worktree_environment(worktree, cx)
+                            })
+                    })?
+                    .await;
 
-                    if let Some(mut env) = env {
-                        env.extend(std::mem::take(&mut binary.envs));
-                        binary.envs = env;
-                    }
+                if let Some(mut env) = env {
+                    env.extend(std::mem::take(&mut binary.envs));
+                    binary.envs = env;
+                }
 
-                    Ok(binary)
-                })
-            }
-            DapStoreMode::Collab => {
-                Task::ready(Err(anyhow!("Debugging is not yet supported via collab")))
-            }
+                Ok(binary)
+            })
         }
     }
 
@@ -301,46 +265,38 @@ impl DapStore {
         build_command: SpawnInTerminal,
         cx: &mut Context<Self>,
     ) -> Task<Result<DebugRequest>> {
-        match &self.mode {
-            DapStoreMode::Local(_) => {
-                // Pre-resolve args with existing environment.
-                let locators = DapRegistry::global(cx).locators();
-                let locator = locators.get(locator_name);
-                let executor = cx.background_executor().clone();
+        {
+            // Pre-resolve args with existing environment.
+            let locators = DapRegistry::global(cx).locators();
+            let locator = locators.get(locator_name);
+            let executor = cx.background_executor().clone();
 
-                if let Some(locator) = locator.cloned() {
-                    cx.background_spawn(async move {
-                        let result = locator
-                            .run(build_command.clone(), executor)
-                            .await
-                            .log_with_level(log::Level::Error);
-                        if let Some(result) = result {
-                            return Ok(result);
-                        }
+            if let Some(locator) = locator.cloned() {
+                cx.background_spawn(async move {
+                    let result = locator
+                        .run(build_command.clone(), executor)
+                        .await
+                        .log_with_level(log::Level::Error);
+                    if let Some(result) = result {
+                        return Ok(result);
+                    }
 
-                        anyhow::bail!(
-                            "None of the locators for task `{}` completed successfully",
-                            build_command.label
-                        )
-                    })
-                } else {
-                    Task::ready(Err(anyhow!(
-                        "Couldn't find any locator for task `{}`. Specify the `attach` or `launch` arguments in your debug scenario definition",
+                    anyhow::bail!(
+                        "None of the locators for task `{}` completed successfully",
                         build_command.label
-                    )))
-                }
-            }
-            DapStoreMode::Collab => {
-                Task::ready(Err(anyhow!("Debugging is not yet supported via collab")))
+                    )
+                })
+            } else {
+                Task::ready(Err(anyhow!(
+                    "Couldn't find any locator for task `{}`. Specify the `attach` or `launch` arguments in your debug scenario definition",
+                    build_command.label
+                )))
             }
         }
     }
 
     fn as_local(&self) -> Option<&LocalDapStore> {
-        match &self.mode {
-            DapStoreMode::Local(local_dap_store) => Some(local_dap_store),
-            _ => None,
-        }
+        Some(&self.mode)
     }
 
     pub fn new_session(
@@ -453,28 +409,6 @@ impl DapStore {
 
     pub fn worktree_store(&self) -> &Entity<WorktreeStore> {
         &self.worktree_store
-    }
-
-    #[allow(dead_code)]
-    async fn handle_ignore_breakpoint_state(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::IgnoreBreakpointState>,
-        mut cx: AsyncApp,
-    ) -> Result<()> {
-        let session_id = SessionId::from_proto(envelope.payload.session_id);
-
-        this.update(&mut cx, |this, cx| {
-            if let Some(session) = this.session_by_id(&session_id) {
-                session.update(cx, |session, cx| {
-                    session.set_ignore_breakpoints(envelope.payload.ignore, cx)
-                })
-            } else {
-                Task::ready(HashMap::default())
-            }
-        })
-        .await;
-
-        Ok(())
     }
 
     fn delegate(
@@ -671,112 +605,6 @@ impl DapStore {
 
             Ok(())
         })
-    }
-
-    pub fn shared(
-        &mut self,
-        project_id: u64,
-        downstream_client: AnyProtoClient,
-        _: &mut Context<Self>,
-    ) {
-        self.downstream_client = Some((downstream_client, project_id));
-    }
-
-    pub fn unshared(&mut self, cx: &mut Context<Self>) {
-        self.downstream_client.take();
-
-        cx.notify();
-    }
-
-    async fn handle_run_debug_locator(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::RunDebugLocators>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::DebugRequest> {
-        let task = envelope
-            .payload
-            .build_command
-            .context("missing definition")?;
-        let build_task = SpawnInTerminal::from_proto(task);
-        let locator = envelope.payload.locator;
-        let request = this
-            .update(&mut cx, |this, cx| {
-                this.run_debug_locator(&locator, build_task, cx)
-            })
-            .await?;
-
-        Ok(request.to_proto())
-    }
-
-    async fn handle_get_debug_adapter_binary(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::GetDebugAdapterBinary>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::DebugAdapterBinary> {
-        let definition = DebugTaskDefinition::from_proto(
-            envelope.payload.definition.context("missing definition")?,
-        )?;
-        let (tx, mut rx) = mpsc::unbounded();
-        let session_id = envelope.payload.session_id;
-        cx.spawn({
-            let this = this.clone();
-            async move |cx| {
-                while let Some(message) = rx.next().await {
-                    this.read_with(cx, |this, _| {
-                        if let Some((downstream, project_id)) = this.downstream_client.clone() {
-                            downstream
-                                .send(proto::LogToDebugConsole {
-                                    project_id,
-                                    session_id,
-                                    message,
-                                })
-                                .ok();
-                        }
-                    });
-                }
-            }
-        })
-        .detach();
-
-        let worktree = this
-            .update(&mut cx, |this, cx| {
-                this.worktree_store
-                    .read(cx)
-                    .worktree_for_id(WorktreeId::from_proto(envelope.payload.worktree_id), cx)
-            })
-            .context("Failed to find worktree with a given ID")?;
-        let binary = this
-            .update(&mut cx, |this, cx| {
-                this.get_debug_adapter_binary(
-                    definition,
-                    SessionId::from_proto(session_id),
-                    &worktree,
-                    tx,
-                    cx,
-                )
-            })
-            .await?;
-        Ok(binary.to_proto())
-    }
-
-    async fn handle_log_to_debug_console(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::LogToDebugConsole>,
-        mut cx: AsyncApp,
-    ) -> Result<()> {
-        let session_id = SessionId::from_proto(envelope.payload.session_id);
-        this.update(&mut cx, |this, cx| {
-            let Some(session) = this.sessions.get(&session_id) else {
-                return;
-            };
-            session.update(cx, |session, cx| {
-                session
-                    .console_output(cx)
-                    .unbounded_send(envelope.payload.message)
-                    .ok();
-            })
-        });
-        Ok(())
     }
 
     pub fn sync_adapter_options(

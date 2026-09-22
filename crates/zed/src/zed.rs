@@ -5742,13 +5742,13 @@ mod tests {
             terminal_view::init(cx);
             image_viewer::init(cx);
             language_model::init(cx);
-            language_models::init(app_state.user_store.clone(), app_state.client.clone(), cx);
+            language_models::init(cx);
             web_search::init(cx);
             let prompt_builder = PromptBuilder::load(app_state.fs.clone(), false, cx);
             project::AgentRegistryStore::init_global(
                 cx,
                 app_state.fs.clone(),
-                app_state.client.http_client(),
+                app_state.http_client.clone(),
             );
             agent_ui::init(
                 app_state.fs.clone(),
@@ -5760,10 +5760,6 @@ mod tests {
             );
 
             tasks_ui::init(cx);
-            project::debugger::breakpoint_store::BreakpointStore::init(
-                &app_state.client.clone().into(),
-            );
-            project::debugger::dap_store::DapStore::init(&app_state.client.clone().into(), cx);
             initialize_workspace(app_state.clone(), cx);
             search::init(cx);
             lsp_locations::init(cx);

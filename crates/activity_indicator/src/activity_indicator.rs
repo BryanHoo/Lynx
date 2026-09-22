@@ -127,35 +127,35 @@ impl ActivityIndicator {
                 &project.read(cx).lsp_store(),
                 |activity_indicator, _, event, cx| {
                     if let LspStoreEvent::LanguageServerUpdate { name, message, .. } = event {
-                        if let proto::update_language_server::Variant::StatusUpdate(status_update) =
+                        if let project_models::update_language_server::Variant::StatusUpdate(status_update) =
                             message
                         {
                             let Some(name) = name.clone() else {
                                 return;
                             };
                             let status = match &status_update.status {
-                                Some(proto::status_update::Status::Binary(binary_status)) => {
+                                Some(project_models::status_update::Status::Binary(binary_status)) => {
                                     if let Some(binary_status) =
-                                        proto::ServerBinaryStatus::try_from(*binary_status).ok()
+                                        project_models::ServerBinaryStatus::try_from(*binary_status).ok()
                                     {
                                         let binary_status = match binary_status {
-                                            proto::ServerBinaryStatus::None => BinaryStatus::None,
-                                            proto::ServerBinaryStatus::CheckingForUpdate => {
+                                            project_models::ServerBinaryStatus::None => BinaryStatus::None,
+                                            project_models::ServerBinaryStatus::CheckingForUpdate => {
                                                 BinaryStatus::CheckingForUpdate
                                             }
-                                            proto::ServerBinaryStatus::Downloading => {
+                                            project_models::ServerBinaryStatus::Downloading => {
                                                 BinaryStatus::Downloading
                                             }
-                                            proto::ServerBinaryStatus::Starting => {
+                                            project_models::ServerBinaryStatus::Starting => {
                                                 BinaryStatus::Starting
                                             }
-                                            proto::ServerBinaryStatus::Stopping => {
+                                            project_models::ServerBinaryStatus::Stopping => {
                                                 BinaryStatus::Stopping
                                             }
-                                            proto::ServerBinaryStatus::Stopped => {
+                                            project_models::ServerBinaryStatus::Stopped => {
                                                 BinaryStatus::Stopped
                                             }
-                                            proto::ServerBinaryStatus::Failed => {
+                                            project_models::ServerBinaryStatus::Failed => {
                                                 let Some(error) = status_update.message.clone()
                                                 else {
                                                     return;
@@ -168,14 +168,14 @@ impl ActivityIndicator {
                                         return;
                                     }
                                 }
-                                Some(proto::status_update::Status::Health(health_status)) => {
+                                Some(project_models::status_update::Status::Health(health_status)) => {
                                     if let Some(health) =
-                                        proto::ServerHealth::try_from(*health_status).ok()
+                                        project_models::ServerHealth::try_from(*health_status).ok()
                                     {
                                         let health = match health {
-                                            proto::ServerHealth::Ok => ServerHealth::Ok,
-                                            proto::ServerHealth::Warning => ServerHealth::Warning,
-                                            proto::ServerHealth::Error => ServerHealth::Error,
+                                            project_models::ServerHealth::Ok => ServerHealth::Ok,
+                                            project_models::ServerHealth::Warning => ServerHealth::Warning,
+                                            project_models::ServerHealth::Error => ServerHealth::Error,
                                         };
                                         LanguageServerStatusUpdate::Health(
                                             health,

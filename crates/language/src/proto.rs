@@ -1,4 +1,4 @@
-//! Handles conversions of `language` items to and from the [`rpc`] protocol.
+//! Handles conversions between language-domain values and local project models.
 
 use crate::{
     CursorShape, Diagnostic, DiagnosticMessage, DiagnosticSourceKind,
@@ -8,48 +8,48 @@ use anyhow::{Context as _, Result};
 use clock::ReplicaId;
 use gpui::SharedString;
 use lsp::{DiagnosticSeverity, LanguageServerId};
-use rpc::proto;
+use project_models;
 use serde_json::Value;
 use std::{ops::Range, str::FromStr, sync::Arc};
 use text::*;
 
-pub use proto::{BufferState, File, Operation};
+pub use project_models::{BufferState, File, Operation};
 
 use super::{point_from_lsp, point_to_lsp};
 
 /// Deserializes a `[text::LineEnding]` from the RPC representation.
-pub fn deserialize_line_ending(message: proto::LineEnding) -> text::LineEnding {
+pub fn deserialize_line_ending(message: project_models::LineEnding) -> text::LineEnding {
     match message {
-        proto::LineEnding::Unix => text::LineEnding::Unix,
-        proto::LineEnding::Windows => text::LineEnding::Windows,
+        project_models::LineEnding::Unix => text::LineEnding::Unix,
+        project_models::LineEnding::Windows => text::LineEnding::Windows,
     }
 }
 
 /// Serializes a [`text::LineEnding`] to be sent over RPC.
-pub fn serialize_line_ending(message: text::LineEnding) -> proto::LineEnding {
+pub fn serialize_line_ending(message: text::LineEnding) -> project_models::LineEnding {
     match message {
-        text::LineEnding::Unix => proto::LineEnding::Unix,
-        text::LineEnding::Windows => proto::LineEnding::Windows,
+        text::LineEnding::Unix => project_models::LineEnding::Unix,
+        text::LineEnding::Windows => project_models::LineEnding::Windows,
     }
 }
 
 /// Serializes a [`crate::Operation`] to be sent over RPC.
-pub fn serialize_operation(operation: &crate::Operation) -> proto::Operation {
-    proto::Operation {
+pub fn serialize_operation(operation: &crate::Operation) -> project_models::Operation {
+    project_models::Operation {
         variant: Some(match operation {
             crate::Operation::Buffer(text::Operation::Edit(edit)) => {
-                proto::operation::Variant::Edit(serialize_edit_operation(edit))
+                project_models::operation::Variant::Edit(serialize_edit_operation(edit))
             }
 
             crate::Operation::Buffer(text::Operation::Undo(undo)) => {
-                proto::operation::Variant::Undo(proto::operation::Undo {
+                project_models::operation::Variant::Undo(project_models::operation::Undo {
                     replica_id: undo.timestamp.replica_id.as_u16() as u32,
                     lamport_timestamp: undo.timestamp.value,
                     version: serialize_version(&undo.version),
                     counts: undo
                         .counts
                         .iter()
-                        .map(|(edit_id, count)| proto::UndoCount {
+                        .map(|(edit_id, count)| project_models::UndoCount {
                             replica_id: edit_id.replica_id.as_u16() as u32,
                             lamport_timestamp: edit_id.value,
                             count: *count,
@@ -63,31 +63,35 @@ pub fn serialize_operation(operation: &crate::Operation) -> proto::Operation {
                 line_mode,
                 lamport_timestamp,
                 cursor_shape,
-            } => proto::operation::Variant::UpdateSelections(proto::operation::UpdateSelections {
-                replica_id: lamport_timestamp.replica_id.as_u16() as u32,
-                lamport_timestamp: lamport_timestamp.value,
-                selections: serialize_selections(selections),
-                line_mode: *line_mode,
-                cursor_shape: serialize_cursor_shape(cursor_shape) as i32,
-            }),
+            } => project_models::operation::Variant::UpdateSelections(
+                project_models::operation::UpdateSelections {
+                    replica_id: lamport_timestamp.replica_id.as_u16() as u32,
+                    lamport_timestamp: lamport_timestamp.value,
+                    selections: serialize_selections(selections),
+                    line_mode: *line_mode,
+                    cursor_shape: serialize_cursor_shape(cursor_shape) as i32,
+                },
+            ),
 
             crate::Operation::UpdateDiagnostics {
                 lamport_timestamp,
                 server_id,
                 diagnostics,
-            } => proto::operation::Variant::UpdateDiagnostics(proto::UpdateDiagnostics {
-                replica_id: lamport_timestamp.replica_id.as_u16() as u32,
-                lamport_timestamp: lamport_timestamp.value,
-                server_id: server_id.0 as u64,
-                diagnostics: serialize_diagnostics(diagnostics.iter()),
-            }),
+            } => project_models::operation::Variant::UpdateDiagnostics(
+                project_models::UpdateDiagnostics {
+                    replica_id: lamport_timestamp.replica_id.as_u16() as u32,
+                    lamport_timestamp: lamport_timestamp.value,
+                    server_id: server_id.0 as u64,
+                    diagnostics: serialize_diagnostics(diagnostics.iter()),
+                },
+            ),
 
             crate::Operation::UpdateCompletionTriggers {
                 triggers,
                 lamport_timestamp,
                 server_id,
-            } => proto::operation::Variant::UpdateCompletionTriggers(
-                proto::operation::UpdateCompletionTriggers {
+            } => project_models::operation::Variant::UpdateCompletionTriggers(
+                project_models::operation::UpdateCompletionTriggers {
                     replica_id: lamport_timestamp.replica_id.as_u16() as u32,
                     lamport_timestamp: lamport_timestamp.value,
                     triggers: triggers.clone(),
@@ -98,18 +102,20 @@ pub fn serialize_operation(operation: &crate::Operation) -> proto::Operation {
             crate::Operation::UpdateLineEnding {
                 line_ending,
                 lamport_timestamp,
-            } => proto::operation::Variant::UpdateLineEnding(proto::operation::UpdateLineEnding {
-                replica_id: lamport_timestamp.replica_id.as_u16() as u32,
-                lamport_timestamp: lamport_timestamp.value,
-                line_ending: serialize_line_ending(*line_ending) as i32,
-            }),
+            } => project_models::operation::Variant::UpdateLineEnding(
+                project_models::operation::UpdateLineEnding {
+                    replica_id: lamport_timestamp.replica_id.as_u16() as u32,
+                    lamport_timestamp: lamport_timestamp.value,
+                    line_ending: serialize_line_ending(*line_ending) as i32,
+                },
+            ),
         }),
     }
 }
 
 /// Serializes an [`EditOperation`] to be sent over RPC.
-pub fn serialize_edit_operation(operation: &EditOperation) -> proto::operation::Edit {
-    proto::operation::Edit {
+pub fn serialize_edit_operation(operation: &EditOperation) -> project_models::operation::Edit {
+    project_models::operation::Edit {
         replica_id: operation.timestamp.replica_id.as_u16() as u32,
         lamport_timestamp: operation.timestamp.value,
         version: serialize_version(&operation.version),
@@ -125,13 +131,13 @@ pub fn serialize_edit_operation(operation: &EditOperation) -> proto::operation::
 /// Serializes an entry in the undo map to be sent over RPC.
 pub fn serialize_undo_map_entry(
     (edit_id, counts): (&clock::Lamport, &[(clock::Lamport, u32)]),
-) -> proto::UndoMapEntry {
-    proto::UndoMapEntry {
+) -> project_models::UndoMapEntry {
+    project_models::UndoMapEntry {
         replica_id: edit_id.replica_id.as_u16() as u32,
         local_timestamp: edit_id.value,
         counts: counts
             .iter()
-            .map(|(undo_id, count)| proto::UndoCount {
+            .map(|(undo_id, count)| project_models::UndoCount {
                 replica_id: undo_id.replica_id.as_u16() as u32,
                 lamport_timestamp: undo_id.value,
                 count: *count,
@@ -142,8 +148,8 @@ pub fn serialize_undo_map_entry(
 
 /// Splits the given list of operations into chunks.
 pub fn split_operations(
-    mut operations: Vec<proto::Operation>,
-) -> impl Iterator<Item = Vec<proto::Operation>> {
+    mut operations: Vec<project_models::Operation>,
+) -> impl Iterator<Item = Vec<project_models::Operation>> {
     #[cfg(any(test, feature = "test-support"))]
     const CHUNK_SIZE: usize = 5;
 
@@ -167,19 +173,21 @@ pub fn split_operations(
 }
 
 /// Serializes selections to be sent over RPC.
-pub fn serialize_selections(selections: &Arc<[Selection<Anchor>]>) -> Vec<proto::Selection> {
+pub fn serialize_selections(
+    selections: &Arc<[Selection<Anchor>]>,
+) -> Vec<project_models::Selection> {
     selections.iter().map(serialize_selection).collect()
 }
 
 /// Serializes a [`Selection`] to be sent over RPC.
-pub fn serialize_selection(selection: &Selection<Anchor>) -> proto::Selection {
-    proto::Selection {
+pub fn serialize_selection(selection: &Selection<Anchor>) -> project_models::Selection {
+    project_models::Selection {
         id: selection.id as u64,
-        start: Some(proto::EditorAnchor {
+        start: Some(project_models::EditorAnchor {
             anchor: Some(serialize_anchor(&selection.start)),
             excerpt_id: None,
         }),
-        end: Some(proto::EditorAnchor {
+        end: Some(project_models::EditorAnchor {
             anchor: Some(serialize_anchor(&selection.end)),
             excerpt_id: None,
         }),
@@ -188,39 +196,39 @@ pub fn serialize_selection(selection: &Selection<Anchor>) -> proto::Selection {
 }
 
 /// Serializes a [`CursorShape`] to be sent over RPC.
-pub fn serialize_cursor_shape(cursor_shape: &CursorShape) -> proto::CursorShape {
+pub fn serialize_cursor_shape(cursor_shape: &CursorShape) -> project_models::CursorShape {
     match cursor_shape {
-        CursorShape::Bar => proto::CursorShape::CursorBar,
-        CursorShape::Block => proto::CursorShape::CursorBlock,
-        CursorShape::Underline => proto::CursorShape::CursorUnderscore,
-        CursorShape::Hollow => proto::CursorShape::CursorHollow,
+        CursorShape::Bar => project_models::CursorShape::CursorBar,
+        CursorShape::Block => project_models::CursorShape::CursorBlock,
+        CursorShape::Underline => project_models::CursorShape::CursorUnderscore,
+        CursorShape::Hollow => project_models::CursorShape::CursorHollow,
     }
 }
 
 /// Deserializes a [`CursorShape`] from the RPC representation.
-pub fn deserialize_cursor_shape(cursor_shape: proto::CursorShape) -> CursorShape {
+pub fn deserialize_cursor_shape(cursor_shape: project_models::CursorShape) -> CursorShape {
     match cursor_shape {
-        proto::CursorShape::CursorBar => CursorShape::Bar,
-        proto::CursorShape::CursorBlock => CursorShape::Block,
-        proto::CursorShape::CursorUnderscore => CursorShape::Underline,
-        proto::CursorShape::CursorHollow => CursorShape::Hollow,
+        project_models::CursorShape::CursorBar => CursorShape::Bar,
+        project_models::CursorShape::CursorBlock => CursorShape::Block,
+        project_models::CursorShape::CursorUnderscore => CursorShape::Underline,
+        project_models::CursorShape::CursorHollow => CursorShape::Hollow,
     }
 }
 
 /// Serializes a list of diagnostics to be sent over RPC.
 pub fn serialize_diagnostics<'a>(
     diagnostics: impl IntoIterator<Item = &'a DiagnosticEntry<Anchor>>,
-) -> Vec<proto::Diagnostic> {
+) -> Vec<project_models::Diagnostic> {
     diagnostics
         .into_iter()
         .map(|entry| {
             let lsp_markup = entry.diagnostic.message.lsp_markup();
-            proto::Diagnostic {
+            project_models::Diagnostic {
                 source: entry.diagnostic.source.clone(),
                 source_kind: match entry.diagnostic.source_kind {
-                    DiagnosticSourceKind::Pulled => proto::diagnostic::SourceKind::Pulled,
-                    DiagnosticSourceKind::Pushed => proto::diagnostic::SourceKind::Pushed,
-                    DiagnosticSourceKind::Other => proto::diagnostic::SourceKind::Other,
+                    DiagnosticSourceKind::Pulled => project_models::diagnostic::SourceKind::Pulled,
+                    DiagnosticSourceKind::Pushed => project_models::diagnostic::SourceKind::Pushed,
+                    DiagnosticSourceKind::Other => project_models::diagnostic::SourceKind::Other,
                 } as i32,
                 start: Some(serialize_anchor(&entry.range.start)),
                 end: Some(serialize_anchor(&entry.range.end)),
@@ -234,11 +242,13 @@ pub fn serialize_diagnostics<'a>(
                     (value != entry.diagnostic.message.as_str()).then(|| value.to_string())
                 }),
                 severity: match entry.diagnostic.severity {
-                    DiagnosticSeverity::ERROR => proto::diagnostic::Severity::Error,
-                    DiagnosticSeverity::WARNING => proto::diagnostic::Severity::Warning,
-                    DiagnosticSeverity::INFORMATION => proto::diagnostic::Severity::Information,
-                    DiagnosticSeverity::HINT => proto::diagnostic::Severity::Hint,
-                    _ => proto::diagnostic::Severity::None,
+                    DiagnosticSeverity::ERROR => project_models::diagnostic::Severity::Error,
+                    DiagnosticSeverity::WARNING => project_models::diagnostic::Severity::Warning,
+                    DiagnosticSeverity::INFORMATION => {
+                        project_models::diagnostic::Severity::Information
+                    }
+                    DiagnosticSeverity::HINT => project_models::diagnostic::Severity::Hint,
+                    _ => project_models::diagnostic::Severity::None,
                 } as i32,
                 group_id: entry.diagnostic.group_id as u64,
                 is_primary: entry.diagnostic.is_primary,
@@ -263,29 +273,29 @@ pub fn serialize_diagnostics<'a>(
 }
 
 /// Serializes an [`Anchor`] to be sent over RPC.
-pub fn serialize_anchor(anchor: &Anchor) -> proto::Anchor {
+pub fn serialize_anchor(anchor: &Anchor) -> project_models::Anchor {
     let timestamp = anchor.timestamp();
-    proto::Anchor {
+    project_models::Anchor {
         replica_id: timestamp.replica_id.as_u16() as u32,
         timestamp: timestamp.value,
         offset: anchor.offset as u64,
         bias: match anchor.bias {
-            Bias::Left => proto::Bias::Left as i32,
-            Bias::Right => proto::Bias::Right as i32,
+            Bias::Left => project_models::Bias::Left as i32,
+            Bias::Right => project_models::Bias::Right as i32,
         },
         buffer_id: Some(anchor.buffer_id.into()),
     }
 }
 
-pub fn serialize_anchor_range(range: Range<Anchor>) -> proto::AnchorRange {
-    proto::AnchorRange {
+pub fn serialize_anchor_range(range: Range<Anchor>) -> project_models::AnchorRange {
+    project_models::AnchorRange {
         start: Some(serialize_anchor(&range.start)),
         end: Some(serialize_anchor(&range.end)),
     }
 }
 
 /// Deserializes an [`Range<Anchor>`] from the RPC representation.
-pub fn deserialize_anchor_range(range: proto::AnchorRange) -> Result<Range<Anchor>> {
+pub fn deserialize_anchor_range(range: project_models::AnchorRange) -> Result<Range<Anchor>> {
     Ok(
         deserialize_anchor(range.start.context("invalid anchor")?).context("invalid anchor")?
             ..deserialize_anchor(range.end.context("invalid anchor")?).context("invalid anchor")?,
@@ -294,13 +304,13 @@ pub fn deserialize_anchor_range(range: proto::AnchorRange) -> Result<Range<Ancho
 
 // This behavior is currently copied in the collab database, for snapshotting channel notes
 /// Deserializes an [`crate::Operation`] from the RPC representation.
-pub fn deserialize_operation(message: proto::Operation) -> Result<crate::Operation> {
+pub fn deserialize_operation(message: project_models::Operation) -> Result<crate::Operation> {
     Ok(
         match message.variant.context("missing operation variant")? {
-            proto::operation::Variant::Edit(edit) => {
+            project_models::operation::Variant::Edit(edit) => {
                 crate::Operation::Buffer(text::Operation::Edit(deserialize_edit_operation(edit)))
             }
-            proto::operation::Variant::Undo(undo) => {
+            project_models::operation::Variant::Undo(undo) => {
                 crate::Operation::Buffer(text::Operation::Undo(UndoOperation {
                     timestamp: clock::Lamport {
                         replica_id: ReplicaId::new(undo.replica_id as u16),
@@ -322,7 +332,7 @@ pub fn deserialize_operation(message: proto::Operation) -> Result<crate::Operati
                         .collect(),
                 }))
             }
-            proto::operation::Variant::UpdateSelections(message) => {
+            project_models::operation::Variant::UpdateSelections(message) => {
                 let selections = message
                     .selections
                     .into_iter()
@@ -345,13 +355,13 @@ pub fn deserialize_operation(message: proto::Operation) -> Result<crate::Operati
                     selections: Arc::from(selections),
                     line_mode: message.line_mode,
                     cursor_shape: deserialize_cursor_shape(
-                        proto::CursorShape::try_from(message.cursor_shape)
+                        project_models::CursorShape::try_from(message.cursor_shape)
                             .ok()
                             .context("Missing cursor shape")?,
                     ),
                 }
             }
-            proto::operation::Variant::UpdateDiagnostics(message) => {
+            project_models::operation::Variant::UpdateDiagnostics(message) => {
                 crate::Operation::UpdateDiagnostics {
                     lamport_timestamp: clock::Lamport {
                         replica_id: ReplicaId::new(message.replica_id as u16),
@@ -361,7 +371,7 @@ pub fn deserialize_operation(message: proto::Operation) -> Result<crate::Operati
                     diagnostics: deserialize_diagnostics(message.diagnostics),
                 }
             }
-            proto::operation::Variant::UpdateCompletionTriggers(message) => {
+            project_models::operation::Variant::UpdateCompletionTriggers(message) => {
                 crate::Operation::UpdateCompletionTriggers {
                     triggers: message.triggers,
                     lamport_timestamp: clock::Lamport {
@@ -371,14 +381,14 @@ pub fn deserialize_operation(message: proto::Operation) -> Result<crate::Operati
                     server_id: LanguageServerId::from_proto(message.language_server_id),
                 }
             }
-            proto::operation::Variant::UpdateLineEnding(message) => {
+            project_models::operation::Variant::UpdateLineEnding(message) => {
                 crate::Operation::UpdateLineEnding {
                     lamport_timestamp: clock::Lamport {
                         replica_id: ReplicaId::new(message.replica_id as u16),
                         value: message.lamport_timestamp,
                     },
                     line_ending: deserialize_line_ending(
-                        proto::LineEnding::try_from(message.line_ending)
+                        project_models::LineEnding::try_from(message.line_ending)
                             .ok()
                             .context("missing line_ending")?,
                     ),
@@ -389,7 +399,7 @@ pub fn deserialize_operation(message: proto::Operation) -> Result<crate::Operati
 }
 
 /// Deserializes an [`EditOperation`] from the RPC representation.
-pub fn deserialize_edit_operation(edit: proto::operation::Edit) -> EditOperation {
+pub fn deserialize_edit_operation(edit: project_models::operation::Edit) -> EditOperation {
     EditOperation {
         timestamp: clock::Lamport {
             replica_id: ReplicaId::new(edit.replica_id as u16),
@@ -403,7 +413,7 @@ pub fn deserialize_edit_operation(edit: proto::operation::Edit) -> EditOperation
 
 /// Deserializes an entry in the undo map from the RPC representation.
 pub fn deserialize_undo_map_entry(
-    entry: proto::UndoMapEntry,
+    entry: project_models::UndoMapEntry,
 ) -> (clock::Lamport, Vec<(clock::Lamport, u32)>) {
     (
         clock::Lamport {
@@ -427,7 +437,9 @@ pub fn deserialize_undo_map_entry(
 }
 
 /// Deserializes selections from the RPC representation.
-pub fn deserialize_selections(selections: Vec<proto::Selection>) -> Arc<[Selection<Anchor>]> {
+pub fn deserialize_selections(
+    selections: Vec<project_models::Selection>,
+) -> Arc<[Selection<Anchor>]> {
     selections
         .into_iter()
         .filter_map(deserialize_selection)
@@ -435,7 +447,7 @@ pub fn deserialize_selections(selections: Vec<proto::Selection>) -> Arc<[Selecti
 }
 
 /// Deserializes a [`Selection`] from the RPC representation.
-pub fn deserialize_selection(selection: proto::Selection) -> Option<Selection<Anchor>> {
+pub fn deserialize_selection(selection: project_models::Selection) -> Option<Selection<Anchor>> {
     Some(Selection {
         id: selection.id as usize,
         start: deserialize_anchor(selection.start?.anchor?)?,
@@ -445,23 +457,23 @@ pub fn deserialize_selection(selection: proto::Selection) -> Option<Selection<An
     })
 }
 
-pub fn serialize_markup_kind(kind: &lsp::MarkupKind) -> proto::MarkupKind {
+pub fn serialize_markup_kind(kind: &lsp::MarkupKind) -> project_models::MarkupKind {
     match kind {
-        lsp::MarkupKind::PlainText => proto::MarkupKind::PlainText,
-        lsp::MarkupKind::Markdown => proto::MarkupKind::Markdown,
+        lsp::MarkupKind::PlainText => project_models::MarkupKind::PlainText,
+        lsp::MarkupKind::Markdown => project_models::MarkupKind::Markdown,
     }
 }
 
 pub fn deserialize_markup_kind(kind: i32) -> Option<lsp::MarkupKind> {
-    match proto::MarkupKind::try_from(kind).ok()? {
-        proto::MarkupKind::PlainText => Some(lsp::MarkupKind::PlainText),
-        proto::MarkupKind::Markdown => Some(lsp::MarkupKind::Markdown),
+    match project_models::MarkupKind::try_from(kind).ok()? {
+        project_models::MarkupKind::PlainText => Some(lsp::MarkupKind::PlainText),
+        project_models::MarkupKind::Markdown => Some(lsp::MarkupKind::Markdown),
     }
 }
 
 /// Deserializes a list of diagnostics from the RPC representation.
 pub fn deserialize_diagnostics(
-    diagnostics: Vec<proto::Diagnostic>,
+    diagnostics: Vec<project_models::Diagnostic>,
 ) -> Arc<[DiagnosticEntry<Anchor>]> {
     diagnostics
         .into_iter()
@@ -490,14 +502,20 @@ pub fn deserialize_diagnostics(
                 deserialize_anchor(diagnostic.start?)?..deserialize_anchor(diagnostic.end?)?,
                 Diagnostic {
                     source: diagnostic.source,
-                    severity: match proto::diagnostic::Severity::try_from(diagnostic.severity)
-                        .ok()?
+                    severity: match project_models::diagnostic::Severity::try_from(
+                        diagnostic.severity,
+                    )
+                    .ok()?
                     {
-                        proto::diagnostic::Severity::Error => DiagnosticSeverity::ERROR,
-                        proto::diagnostic::Severity::Warning => DiagnosticSeverity::WARNING,
-                        proto::diagnostic::Severity::Information => DiagnosticSeverity::INFORMATION,
-                        proto::diagnostic::Severity::Hint => DiagnosticSeverity::HINT,
-                        proto::diagnostic::Severity::None => return None,
+                        project_models::diagnostic::Severity::Error => DiagnosticSeverity::ERROR,
+                        project_models::diagnostic::Severity::Warning => {
+                            DiagnosticSeverity::WARNING
+                        }
+                        project_models::diagnostic::Severity::Information => {
+                            DiagnosticSeverity::INFORMATION
+                        }
+                        project_models::diagnostic::Severity::Hint => DiagnosticSeverity::HINT,
+                        project_models::diagnostic::Severity::None => return None,
                     },
                     message,
                     group_id: diagnostic.group_id as usize,
@@ -510,14 +528,20 @@ pub fn deserialize_diagnostics(
                     is_unnecessary: diagnostic.is_unnecessary,
                     underline: diagnostic.underline,
                     registration_id: diagnostic.registration_id.map(SharedString::from),
-                    source_kind: match proto::diagnostic::SourceKind::try_from(
+                    source_kind: match project_models::diagnostic::SourceKind::try_from(
                         diagnostic.source_kind,
                     )
                     .ok()?
                     {
-                        proto::diagnostic::SourceKind::Pulled => DiagnosticSourceKind::Pulled,
-                        proto::diagnostic::SourceKind::Pushed => DiagnosticSourceKind::Pushed,
-                        proto::diagnostic::SourceKind::Other => DiagnosticSourceKind::Other,
+                        project_models::diagnostic::SourceKind::Pulled => {
+                            DiagnosticSourceKind::Pulled
+                        }
+                        project_models::diagnostic::SourceKind::Pushed => {
+                            DiagnosticSourceKind::Pushed
+                        }
+                        project_models::diagnostic::SourceKind::Other => {
+                            DiagnosticSourceKind::Other
+                        }
                     },
                     data,
                 },
@@ -527,7 +551,7 @@ pub fn deserialize_diagnostics(
 }
 
 /// Deserializes an [`Anchor`] from the RPC representation.
-pub fn deserialize_anchor(anchor: proto::Anchor) -> Option<Anchor> {
+pub fn deserialize_anchor(anchor: project_models::Anchor) -> Option<Anchor> {
     let buffer_id = if let Some(id) = anchor.buffer_id {
         Some(BufferId::new(id).ok()?)
     } else {
@@ -537,9 +561,9 @@ pub fn deserialize_anchor(anchor: proto::Anchor) -> Option<Anchor> {
         replica_id: ReplicaId::new(anchor.replica_id as u16),
         value: anchor.timestamp,
     };
-    let bias = match proto::Bias::try_from(anchor.bias).ok()? {
-        proto::Bias::Left => Bias::Left,
-        proto::Bias::Right => Bias::Right,
+    let bias = match project_models::Bias::try_from(anchor.bias).ok()? {
+        project_models::Bias::Left => Bias::Left,
+        project_models::Bias::Right => Bias::Right,
     };
     Some(Anchor::new(
         timestamp,
@@ -549,32 +573,34 @@ pub fn deserialize_anchor(anchor: proto::Anchor) -> Option<Anchor> {
     ))
 }
 
-/// Returns a `[clock::Lamport`] timestamp for the given [`proto::Operation`].
-pub fn lamport_timestamp_for_operation(operation: &proto::Operation) -> Option<clock::Lamport> {
+/// Returns a `[clock::Lamport`] timestamp for the given [`project_models::Operation`].
+pub fn lamport_timestamp_for_operation(
+    operation: &project_models::Operation,
+) -> Option<clock::Lamport> {
     let replica_id;
     let value;
     match operation.variant.as_ref()? {
-        proto::operation::Variant::Edit(op) => {
+        project_models::operation::Variant::Edit(op) => {
             replica_id = op.replica_id;
             value = op.lamport_timestamp;
         }
-        proto::operation::Variant::Undo(op) => {
+        project_models::operation::Variant::Undo(op) => {
             replica_id = op.replica_id;
             value = op.lamport_timestamp;
         }
-        proto::operation::Variant::UpdateDiagnostics(op) => {
+        project_models::operation::Variant::UpdateDiagnostics(op) => {
             replica_id = op.replica_id;
             value = op.lamport_timestamp;
         }
-        proto::operation::Variant::UpdateSelections(op) => {
+        project_models::operation::Variant::UpdateSelections(op) => {
             replica_id = op.replica_id;
             value = op.lamport_timestamp;
         }
-        proto::operation::Variant::UpdateCompletionTriggers(op) => {
+        project_models::operation::Variant::UpdateCompletionTriggers(op) => {
             replica_id = op.replica_id;
             value = op.lamport_timestamp;
         }
-        proto::operation::Variant::UpdateLineEnding(op) => {
+        project_models::operation::Variant::UpdateLineEnding(op) => {
             replica_id = op.replica_id;
             value = op.lamport_timestamp;
         }
@@ -587,8 +613,8 @@ pub fn lamport_timestamp_for_operation(operation: &proto::Operation) -> Option<c
 }
 
 /// Serializes a [`Transaction`] to be sent over RPC.
-pub fn serialize_transaction(transaction: &Transaction) -> proto::Transaction {
-    proto::Transaction {
+pub fn serialize_transaction(transaction: &Transaction) -> project_models::Transaction {
+    project_models::Transaction {
         id: Some(serialize_timestamp(transaction.id)),
         edit_ids: transaction
             .edit_ids
@@ -601,7 +627,7 @@ pub fn serialize_transaction(transaction: &Transaction) -> proto::Transaction {
 }
 
 /// Deserializes a [`Transaction`] from the RPC representation.
-pub fn deserialize_transaction(transaction: proto::Transaction) -> Result<Transaction> {
+pub fn deserialize_transaction(transaction: project_models::Transaction) -> Result<Transaction> {
     Ok(Transaction {
         id: deserialize_timestamp(transaction.id.context("missing transaction id")?),
         edit_ids: transaction
@@ -614,15 +640,15 @@ pub fn deserialize_transaction(transaction: proto::Transaction) -> Result<Transa
 }
 
 /// Serializes a [`clock::Lamport`] timestamp to be sent over RPC.
-pub fn serialize_timestamp(timestamp: clock::Lamport) -> proto::LamportTimestamp {
-    proto::LamportTimestamp {
+pub fn serialize_timestamp(timestamp: clock::Lamport) -> project_models::LamportTimestamp {
+    project_models::LamportTimestamp {
         replica_id: timestamp.replica_id.as_u16() as u32,
         value: timestamp.value,
     }
 }
 
 /// Deserializes a [`clock::Lamport`] timestamp from the RPC representation.
-pub fn deserialize_timestamp(timestamp: proto::LamportTimestamp) -> clock::Lamport {
+pub fn deserialize_timestamp(timestamp: project_models::LamportTimestamp) -> clock::Lamport {
     clock::Lamport {
         replica_id: ReplicaId::new(timestamp.replica_id as u16),
         value: timestamp.value,
@@ -630,20 +656,20 @@ pub fn deserialize_timestamp(timestamp: proto::LamportTimestamp) -> clock::Lampo
 }
 
 /// Serializes a range of [`FullOffset`]s to be sent over RPC.
-pub fn serialize_range(range: &Range<FullOffset>) -> proto::Range {
-    proto::Range {
+pub fn serialize_range(range: &Range<FullOffset>) -> project_models::Range {
+    project_models::Range {
         start: range.start.0 as u64,
         end: range.end.0 as u64,
     }
 }
 
 /// Deserializes a range of [`FullOffset`]s from the RPC representation.
-pub fn deserialize_range(range: proto::Range) -> Range<FullOffset> {
+pub fn deserialize_range(range: project_models::Range) -> Range<FullOffset> {
     FullOffset(range.start as usize)..FullOffset(range.end as usize)
 }
 
 /// Deserializes a clock version from the RPC representation.
-pub fn deserialize_version(message: &[proto::VectorClockEntry]) -> clock::Global {
+pub fn deserialize_version(message: &[project_models::VectorClockEntry]) -> clock::Global {
     let mut version = clock::Global::new();
     for entry in message {
         version.observe(clock::Lamport {
@@ -655,33 +681,33 @@ pub fn deserialize_version(message: &[proto::VectorClockEntry]) -> clock::Global
 }
 
 /// Serializes a clock version to be sent over RPC.
-pub fn serialize_version(version: &clock::Global) -> Vec<proto::VectorClockEntry> {
+pub fn serialize_version(version: &clock::Global) -> Vec<project_models::VectorClockEntry> {
     version
         .iter()
-        .map(|entry| proto::VectorClockEntry {
+        .map(|entry| project_models::VectorClockEntry {
             replica_id: entry.replica_id.as_u16() as u32,
             timestamp: entry.value,
         })
         .collect()
 }
 
-pub fn serialize_lsp_edit(edit: lsp::TextEdit) -> proto::TextEdit {
+pub fn serialize_lsp_edit(edit: lsp::TextEdit) -> project_models::TextEdit {
     let start = point_from_lsp(edit.range.start).0;
     let end = point_from_lsp(edit.range.end).0;
-    proto::TextEdit {
+    project_models::TextEdit {
         new_text: edit.new_text,
-        lsp_range_start: Some(proto::PointUtf16 {
+        lsp_range_start: Some(project_models::PointUtf16 {
             row: start.row,
             column: start.column,
         }),
-        lsp_range_end: Some(proto::PointUtf16 {
+        lsp_range_end: Some(project_models::PointUtf16 {
             row: end.row,
             column: end.column,
         }),
     }
 }
 
-pub fn deserialize_lsp_edit(edit: proto::TextEdit) -> Option<lsp::TextEdit> {
+pub fn deserialize_lsp_edit(edit: project_models::TextEdit) -> Option<lsp::TextEdit> {
     let start = edit.lsp_range_start?;
     let start = PointUtf16::new(start.row, start.column);
     let end = edit.lsp_range_end?;

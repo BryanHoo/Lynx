@@ -38,7 +38,6 @@ heapless.workspace = true
 base64.workspace = true
 buffer_diff.workspace = true
 chrono.workspace = true
-client.workspace = true
 collections.workspace = true
 command_palette_hooks.workspace = true
 component.workspace = true
@@ -79,7 +78,7 @@ platform_title_bar.workspace = true
 postage.workspace = true
 project.workspace = true
 prompt_store.workspace = true
-proto.workspace = true
+project_models.workspace = true
 rand.workspace = true
 release_channel.workspace = true
 rope.workspace = true
@@ -116,7 +115,6 @@ acp_thread = { workspace = true, features = ["test-support"] }
 agent = { workspace = true, features = ["test-support"] }
 agent_servers = { workspace = true, features = ["test-support"] }
 buffer_diff = { workspace = true, features = ["test-support"] }
-client = { workspace = true, features = ["test-support"] }
 db = { workspace = true, features = ["test-support"] }
 editor = { workspace = true, features = ["test-support"] }
 eval_utils.workspace = true

@@ -423,13 +423,13 @@ impl MTime {
     }
 }
 
-impl From<proto::Timestamp> for MTime {
-    fn from(timestamp: proto::Timestamp) -> Self {
+impl From<project_models::Timestamp> for MTime {
+    fn from(timestamp: project_models::Timestamp) -> Self {
         MTime(timestamp.into())
     }
 }
 
-impl From<MTime> for proto::Timestamp {
+impl From<MTime> for project_models::Timestamp {
     fn from(mtime: MTime) -> Self {
         mtime.0.into()
     }

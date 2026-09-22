@@ -960,10 +960,10 @@ pub trait GitRepository: Send + Sync {
         env: Arc<HashMap<String, String>>,
     ) -> BoxFuture<'_, Result<()>>;
 
-    /// Only used to serve `proto::RunGitHook` requests from older remote clients;
+    /// Only used to serve `project_models::RunGitHook` requests from older remote clients;
     /// new code lets `git commit` run hooks itself.
     ///
-    /// TODO: remove together with `proto::RunGitHook` (see the deprecation note in git.proto).
+    /// TODO: remove together with `project_models::RunGitHook` (see the deprecation note in git.proto).
     fn run_hook(
         &self,
         hook: RunHook,

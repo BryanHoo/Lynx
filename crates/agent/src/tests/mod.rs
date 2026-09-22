@@ -6,7 +6,6 @@ use acp_thread::{
 use agent_client_protocol::schema::v1 as acp;
 use agent_settings::{AgentProfileId, AgentSettings, AutoCompactThreshold, COMPACTION_PROMPT};
 use anyhow::Result;
-use client::{Client, UserStore};
 use collections::IndexMap;
 use context_server::{ContextServer, ContextServerCommand, ContextServerId};
 use fs::{FakeFs, Fs};
@@ -4178,11 +4177,8 @@ async fn test_agent_connection(cx: &mut TestAppContext) {
     cx.update(|cx| {
         gpui_tokio::init(cx);
 
-        let http_client = FakeHttpClient::with_404_response();
-        let client = Client::new(http_client, cx);
-        let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
         language_model::init(cx);
-        language_models::init(user_store, client.clone(), cx);
+        language_models::init(cx);
         LanguageModelRegistry::test(cx);
     });
     cx.executor().forbid_parking();
@@ -4927,10 +4923,8 @@ async fn setup(cx: &mut TestAppContext, model: TestModel) -> ThreadTest {
                 gpui_tokio::init(cx);
                 let http_client = ReqwestClient::user_agent("agent tests").unwrap();
                 cx.set_http_client(Arc::new(http_client));
-                let client = Client::production(cx);
-                let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
                 language_model::init(cx);
-                language_models::init(user_store, client.clone(), cx);
+                language_models::init(cx);
             }
         };
 

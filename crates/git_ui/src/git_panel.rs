@@ -20,7 +20,6 @@ use crate::{
 use agent_settings::{AgentSettings, UserAgentsMd};
 use anyhow::Context as _;
 use askpass::AskPassDelegate;
-use client::zed_urls;
 use collections::{BTreeMap, HashMap, HashSet};
 use db::kvp::KeyValueStore;
 use editor::{Editor, EditorElement, EditorMode, MultiBuffer, MultiBufferOffset, SizingBehavior};
@@ -8826,7 +8825,7 @@ impl Render for GenerateCommitMessageConfigurationTooltip {
                                 )
                                 .label_size(LabelSize::Small)
                                 .on_click(move |_, _, cx| {
-                                    cx.open_url(&zed_urls::llm_provider_docs(cx))
+                                    cx.open_url(&release_channel::docs_url("ai/llm-providers", cx))
                                 }),
                         ),
                 )

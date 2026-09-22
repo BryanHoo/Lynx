@@ -4,7 +4,6 @@ use crate::status_bar::HideStatusItem;
 use crate::{DraggedDock, Event, FocusFollowsMouse, ModalLayer, Pane, WorkspaceSettings};
 use crate::{Workspace, status_bar::StatusItemView};
 use anyhow::Context as _;
-use client::proto;
 use db::kvp::KeyValueStore;
 
 use gpui::{
@@ -31,7 +30,7 @@ pub enum PanelEvent {
     Close,
 }
 
-pub use proto::PanelId;
+pub use project_models::PanelId;
 
 pub trait Panel: Focusable + EventEmitter<PanelEvent> + Render + Sized {
     fn persistent_name() -> &'static str;
@@ -85,7 +84,7 @@ pub trait Panel: Focusable + EventEmitter<PanelEvent> + Render + Sized {
     fn pane(&self) -> Option<Entity<Pane>> {
         None
     }
-    fn remote_id() -> Option<proto::PanelId> {
+    fn remote_id() -> Option<project_models::PanelId> {
         None
     }
     fn activation_priority(&self) -> u32;
@@ -113,7 +112,7 @@ pub trait PanelHandle: Send + Sync {
     fn is_zoomed(&self, window: &Window, cx: &App) -> bool;
     fn set_zoomed(&self, zoomed: bool, window: &mut Window, cx: &mut App);
     fn set_active(&self, active: bool, window: &mut Window, cx: &mut App);
-    fn remote_id(&self) -> Option<proto::PanelId>;
+    fn remote_id(&self) -> Option<project_models::PanelId>;
     fn pane(&self, cx: &App) -> Option<Entity<Pane>>;
     fn default_size(&self, window: &Window, cx: &App) -> Pixels;
     fn min_size(&self, window: &Window, cx: &App) -> Option<Pixels>;

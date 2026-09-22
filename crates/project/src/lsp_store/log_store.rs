@@ -13,7 +13,6 @@ use lsp::{
     IoKind, LanguageServer, LanguageServerId, LanguageServerName, LanguageServerSelector,
     MessageType, RequestId, TraceValue,
 };
-use rpc::proto;
 use serde::Deserialize;
 use settings::WorktreeId;
 
@@ -262,7 +261,7 @@ struct PendingRequestKey {
 }
 
 #[derive(Deserialize)]
-struct RpcEnvelope<'a> {
+struct JsonRpcMessage<'a> {
     id: Option<RequestId>,
     method: Option<&'a str>,
 }
@@ -339,7 +338,7 @@ impl RpcRequestTracker {
         message: &str,
         observed_at: Instant,
     ) -> Option<Duration> {
-        let envelope = serde_json::from_str::<RpcEnvelope>(message).ok()?;
+        let envelope = serde_json::from_str::<JsonRpcMessage>(message).ok()?;
         let id = envelope.id?;
         if envelope.method.is_some() {
             self.insert(PendingRequestKey { kind, id }, observed_at);
@@ -978,34 +977,6 @@ impl LogStore {
     }
 
     fn emit_event(&mut self, e: Event, cx: &mut Context<Self>) {
-        match &e {
-            Event::NewServerLogEntry { key, kind, text } => {
-                if let Some(state) = self.get_language_server_state(key) {
-                    let downstream_client = match &key.kind {
-                        LanguageServerKind::Remote { project }
-                        | LanguageServerKind::Local { project } => project
-                            .upgrade()
-                            .map(|project| project.read(cx).lsp_store()),
-                        LanguageServerKind::LocalSsh { lsp_store } => lsp_store.upgrade(),
-                        LanguageServerKind::Supplementary { .. } => None,
-                    }
-                    .and_then(|lsp_store| lsp_store.read(cx).downstream_client());
-                    if let Some((client, project_id)) = downstream_client {
-                        if state.toggled_log_kind == Some(LogKind::from_server_log_type(kind)) {
-                            client
-                                .send(proto::LanguageServerLog {
-                                    project_id,
-                                    language_server_id: key.server_id.to_proto(),
-                                    message: text.clone(),
-                                    log_type: Some(kind.to_proto()),
-                                })
-                                .ok();
-                        }
-                    }
-                }
-            }
-        }
-
         cx.emit(e);
     }
 

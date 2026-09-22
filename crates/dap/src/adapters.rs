@@ -112,7 +112,7 @@ pub struct TcpArguments {
 }
 
 impl TcpArguments {
-    pub fn from_proto(proto: proto::TcpHost) -> anyhow::Result<Self> {
+    pub fn from_proto(proto: project_models::TcpHost) -> anyhow::Result<Self> {
         let host = TcpArgumentsTemplate::from_proto(proto)?;
         Ok(TcpArguments {
             host: host.host.context("missing host")?,
@@ -121,7 +121,7 @@ impl TcpArguments {
         })
     }
 
-    pub fn to_proto(&self) -> proto::TcpHost {
+    pub fn to_proto(&self) -> project_models::TcpHost {
         TcpArgumentsTemplate {
             host: Some(self.host),
             port: Some(self.port),
@@ -167,8 +167,8 @@ impl DebugTaskDefinition {
         }
     }
 
-    pub fn to_proto(&self) -> proto::DebugTaskDefinition {
-        proto::DebugTaskDefinition {
+    pub fn to_proto(&self) -> project_models::DebugTaskDefinition {
+        project_models::DebugTaskDefinition {
             label: self.label.clone().into(),
             config: self.config.to_string(),
             tcp_connection: self.tcp_connection.clone().map(|v| v.to_proto()),
@@ -176,7 +176,7 @@ impl DebugTaskDefinition {
         }
     }
 
-    pub fn from_proto(proto: proto::DebugTaskDefinition) -> Result<Self> {
+    pub fn from_proto(proto: project_models::DebugTaskDefinition) -> Result<Self> {
         Ok(Self {
             label: proto.label.into(),
             config: serde_json::from_str(&proto.config)?,
@@ -201,12 +201,12 @@ pub struct DebugAdapterBinary {
 }
 
 impl DebugAdapterBinary {
-    pub fn from_proto(binary: proto::DebugAdapterBinary) -> anyhow::Result<Self> {
+    pub fn from_proto(binary: project_models::DebugAdapterBinary) -> anyhow::Result<Self> {
         let request = match binary.launch_type() {
-            proto::debug_adapter_binary::LaunchType::Launch => {
+            project_models::debug_adapter_binary::LaunchType::Launch => {
                 StartDebuggingRequestArgumentsRequest::Launch
             }
-            proto::debug_adapter_binary::LaunchType::Attach => {
+            project_models::debug_adapter_binary::LaunchType::Attach => {
                 StartDebuggingRequestArgumentsRequest::Attach
             }
         };
@@ -227,8 +227,8 @@ impl DebugAdapterBinary {
         })
     }
 
-    pub fn to_proto(&self) -> proto::DebugAdapterBinary {
-        proto::DebugAdapterBinary {
+    pub fn to_proto(&self) -> project_models::DebugAdapterBinary {
+        project_models::DebugAdapterBinary {
             command: self.command.clone(),
             arguments: self.arguments.clone(),
             envs: self
@@ -243,10 +243,10 @@ impl DebugAdapterBinary {
             connection: self.connection.as_ref().map(|c| c.to_proto()),
             launch_type: match self.request_args.request {
                 StartDebuggingRequestArgumentsRequest::Launch => {
-                    proto::debug_adapter_binary::LaunchType::Launch.into()
+                    project_models::debug_adapter_binary::LaunchType::Launch.into()
                 }
                 StartDebuggingRequestArgumentsRequest::Attach => {
-                    proto::debug_adapter_binary::LaunchType::Attach.into()
+                    project_models::debug_adapter_binary::LaunchType::Attach.into()
                 }
             },
             configuration: self.request_args.configuration.to_string(),

@@ -1,0 +1,80 @@
+syntax = "proto3";
+package zed.messages;
+
+import "ai.proto";
+import "app.proto";
+import "buffer.proto";
+import "call.proto";
+import "channel.proto";
+import "core.proto";
+import "debugger.proto";
+import "download.proto";
+import "git.proto";
+import "image.proto";
+import "lsp.proto";
+import "task.proto";
+import "toolchain.proto";
+import "worktree.proto";
+
+
+message Ping {}
+
+message Ack {}
+
+message Error {
+  string message = 1;
+  ErrorCode code = 2;
+  repeated string tags = 3;
+}
+
+enum ErrorCode {
+  Internal = 0;
+  NoSuchChannel = 1;
+  Disconnected = 2;
+  SignedOut = 3;
+  UpgradeRequired = 4;
+  Forbidden = 5;
+  NeedsCla = 7;
+  NotARootChannel = 8;
+  BadPublicNesting = 9;
+  CircularNesting = 10;
+  WrongMoveTarget = 11;
+  UnsharedItem = 12;
+  NoSuchProject = 13;
+  DevServerProjectPathDoesNotExist = 16;
+  RemoteUpgradeRequired = 17;
+  RateLimitExceeded = 18;
+  CommitFailed = 19;
+  reserved 6;
+  reserved 14 to 15;
+}
+
+message EndStream {}
+
+message Test {
+  uint64 id = 1;
+}
+
+message FlushBufferedMessages {}
+
+message FlushBufferedMessagesResponse {}
+
+message RemoteStarted {}
+
+message SpawnKernel {
+  string kernel_name = 1;
+  string working_directory = 2;
+  uint64 project_id = 3;
+  string command = 4;
+  repeated string args = 5;
+}
+
+message SpawnKernelResponse {
+  string kernel_id = 1;
+  string connection_file = 2;
+}
+
+message KillKernel {
+  string kernel_id = 1;
+  uint64 project_id = 2;
+}

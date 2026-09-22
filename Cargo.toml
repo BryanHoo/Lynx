@@ -18,7 +18,6 @@ members = [
     "crates/buffer_diff",
     "crates/call_hierarchy",
     "crates/cli",
-    "crates/client",
     "crates/clock",
     "crates/collections",
     "crates/command_palette",
@@ -128,15 +127,13 @@ members = [
     "crates/project_panel",
     "crates/project_symbols",
     "crates/prompt_store",
-    "crates/proto",
-    "crates/proxy_handshake",
+    "crates/project_models",
     "crates/recent_projects",
     "crates/refineable",
     "crates/refineable/derive_refineable",
     "crates/release_channel",
     "crates/reqwest_client",
     "crates/rope",
-    "crates/rpc",
     "crates/sandbox",
     "crates/scheduler",
     "crates/schema_generator",
@@ -247,7 +244,6 @@ breadcrumbs = { path = "crates/breadcrumbs" }
 buffer_diff = { path = "crates/buffer_diff" }
 call_hierarchy = { path = "crates/call_hierarchy" }
 cli = { path = "crates/cli" }
-client = { path = "crates/client" }
 clock = { path = "crates/clock" }
 collections = { path = "crates/collections", version = "0.1.0" }
 command_palette = { path = "crates/command_palette" }
@@ -353,15 +349,13 @@ project = { path = "crates/project" }
 project_panel = { path = "crates/project_panel" }
 project_symbols = { path = "crates/project_symbols" }
 prompt_store = { path = "crates/prompt_store" }
-proto = { path = "crates/proto" }
-proxy_handshake = { path = "crates/proxy_handshake" }
+project_models = { path = "crates/project_models" }
 recent_projects = { path = "crates/recent_projects" }
 refineable = { path = "crates/refineable" }
 release_channel = { path = "crates/release_channel" }
 reqwest_client = { path = "crates/reqwest_client" }
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "e50e726ddd0292f6ef9de0dda6b90af4ed1fb66a", default-features = false, features = ["wav", "playback", "wav_output", "recording", "dither"] }
 rope = { path = "crates/rope" }
-rpc = { path = "crates/rpc" }
 sandbox = { path = "crates/sandbox" }
 scheduler = { path = "crates/scheduler" }
 search = { path = "crates/search" }

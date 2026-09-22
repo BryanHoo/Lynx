@@ -2,10 +2,9 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::anyhow;
 use clap::Parser;
-use client::{Client, UserStore};
 use gpui::AppContext as _;
 use gpui::TaskExt;
-use http_client::FakeHttpClient;
+use http_client::{FakeHttpClient, HttpClientWithUrl};
 use language::LanguageRegistry;
 use node_runtime::NodeRuntime;
 use project::{
@@ -66,11 +65,13 @@ fn main() -> Result<(), anyhow::Error> {
     gpui_platform::headless().run(|cx| {
         release_channel::init_test(semver::Version::new(0, 0, 0), ReleaseChannel::Lynx, cx);
         settings::init(cx);
-        let client = Client::production(cx);
-        let http_client = FakeHttpClient::with_200_response();
+        let http_client = Arc::new(HttpClientWithUrl::new(
+            FakeHttpClient::with_200_response(),
+            "http://127.0.0.1:0",
+            None,
+        ));
         let (_, rx) = watch::channel(None);
-        let node = NodeRuntime::new(http_client, None, rx);
-        let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
+        let node = NodeRuntime::new(http_client.clone(), None, rx);
         let registry = Arc::new(LanguageRegistry::new(cx.background_executor().clone()));
         let fs = RealFs::new(None, cx.background_executor().clone());
 
@@ -79,9 +80,8 @@ fn main() -> Result<(), anyhow::Error> {
             cx.spawn(async move |cx| {
                 println!("Setting up local project");
                 let project = cx.update(|cx| Project::local(
-                    client,
+                    http_client,
                     node,
-                    user_store,
                     registry,
                     fs,
                     Some(Default::default()),

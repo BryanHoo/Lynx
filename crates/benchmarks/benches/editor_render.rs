@@ -51,7 +51,7 @@ impl File for BenchFile {
         WorktreeId::from_usize(0)
     }
 
-    fn to_proto(&self, _: &App) -> rpc::proto::File {
+    fn to_proto(&self, _: &App) -> project_models::File {
         unimplemented!()
     }
 

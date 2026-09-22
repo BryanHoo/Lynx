@@ -1,19 +1,20 @@
 [package]
-description = "Shared protocol for communication between the Zed app and the zed.dev server"
+description = "Local project data models and in-process message dispatch"
 edition.workspace = true
-name = "proto"
+name = "project_models"
 version = "0.1.0"
 publish.workspace = true
 license = "GPL-3.0-or-later"
 
 [features]
+gpui = []
 test-support = []
 
 [lints]
 workspace = true
 
 [lib]
-path = "src/proto.rs"
+path = "src/project_models.rs"
 doctest = false
 
 [dependencies]

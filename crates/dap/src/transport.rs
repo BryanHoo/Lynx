@@ -8,7 +8,7 @@ use dap_types::{
 use futures::{AsyncRead, AsyncReadExt as _, AsyncWrite, FutureExt as _, channel::oneshot, select};
 use gpui::{AppContext as _, AsyncApp, BackgroundExecutor, Task};
 use parking_lot::Mutex;
-use proto::ErrorExt;
+use project_models::ErrorExt;
 use settings::Settings as _;
 use smallvec::SmallVec;
 use smol::{

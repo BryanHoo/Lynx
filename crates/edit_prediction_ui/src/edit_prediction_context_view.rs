@@ -7,7 +7,6 @@ use std::{
 };
 
 use anyhow::Result;
-use client::Client;
 use editor::{
     Editor, PathKey,
     display_map::{BlockPlacement, BlockProperties, BlockStyle},
@@ -62,11 +61,10 @@ actions!(
 impl EditPredictionContextView {
     pub fn new(
         project: Entity<Project>,
-        client: &Arc<Client>,
         window: &mut gpui::Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let store = EditPredictionStore::global(client, cx);
+        let store = EditPredictionStore::global(cx);
 
         let mut debug_rx = store.update(cx, |store, cx| store.debug_info(&project, cx));
         let _update_task = cx.spawn_in(window, async move |this, cx| {

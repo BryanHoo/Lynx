@@ -14,7 +14,6 @@ doctest = false
 
 [dependencies]
 anyhow.workspace = true
-client.workspace = true
 collections.workspace = true
 command_palette_hooks.workspace = true
 editor.workspace = true
@@ -26,7 +25,7 @@ lsp.workspace = true
 menu.workspace = true
 path.workspace = true
 project.workspace = true
-proto.workspace = true
+project_models.workspace = true
 serde_json.workspace = true
 settings.workspace = true
 telemetry.workspace = true

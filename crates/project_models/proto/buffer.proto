@@ -14,7 +14,6 @@ message OpenBufferResponse {
 
 message CreateBufferForPeer {
   uint64 project_id = 1;
-  PeerId peer_id = 2;
   oneof variant {
     BufferState state = 3;
     BufferChunk chunk = 4;
@@ -331,7 +330,6 @@ message FindSearchCandidatesMatches {
 
 message FindSearchCandidatesChunk {
   uint64 project_id = 1;
-  PeerId peer_id = 2;
   uint64 handle = 3;
 
   oneof variant {

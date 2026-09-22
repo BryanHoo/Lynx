@@ -14,7 +14,6 @@ doctest = false
 
 [features]
 test-support = [
-    "client/test-support",
     "http_client/test-support",
     "db/test-support",
     "project/test-support",
@@ -29,7 +28,6 @@ any_vec.workspace = true
 agent_settings.workspace = true
 anyhow.workspace = true
 async-recursion.workspace = true
-client.workspace = true
 chrono.workspace = true
 clock.workspace = true
 collections.workspace = true
@@ -50,6 +48,7 @@ markdown.workspace = true
 node_runtime.workspace = true
 parking_lot.workspace = true
 postage.workspace = true
+project_models.workspace = true
 project.workspace = true
 release_channel.workspace = true
 schemars.workspace = true
@@ -72,7 +71,6 @@ uuid.workspace = true
 zed_actions.workspace = true
 
 [dev-dependencies]
-client = { workspace = true, features = ["test-support"] }
 db = { workspace = true, features = ["test-support"] }
 fs = { workspace = true, features = ["test-support"] }
 gpui = { workspace = true, features = ["test-support"] }

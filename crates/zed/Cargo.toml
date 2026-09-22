@@ -80,7 +80,6 @@ call_hierarchy.workspace = true
 chrono.workspace = true
 clap.workspace = true
 cli.workspace = true
-client.workspace = true
 clock = { workspace = true, optional = true }
 collections.workspace = true
 command_palette.workspace = true
@@ -153,7 +152,7 @@ project.workspace = true
 project_panel.workspace = true
 project_symbols.workspace = true
 prompt_store.workspace = true
-proto.workspace = true
+project_models.workspace = true
 recent_projects.workspace = true
 release_channel.workspace = true
 reqwest.workspace = true

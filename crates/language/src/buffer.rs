@@ -388,7 +388,7 @@ pub trait File: Send + Sync + Any {
     fn worktree_id(&self, cx: &App) -> WorktreeId;
 
     /// Converts this file into a protobuf message.
-    fn to_proto(&self, cx: &App) -> rpc::proto::File;
+    fn to_proto(&self, cx: &App) -> ::project_models::File;
 
     /// Return whether Zed considers this to be a private file.
     fn is_private(&self) -> bool;
@@ -1034,7 +1034,7 @@ impl Buffer {
     pub fn from_proto(
         replica_id: ReplicaId,
         capability: Capability,
-        message: proto::BufferState,
+        message: project_models::BufferState,
         file: Option<Arc<dyn File>>,
         cx: &mut Context<Self>,
     ) -> Result<Self> {
@@ -1042,7 +1042,7 @@ impl Buffer {
         let buffer = TextBuffer::new(replica_id, buffer_id, message.base_text);
         let mut this = Self::build(buffer, file, capability, cx);
         this.text.set_line_ending(proto::deserialize_line_ending(
-            rpc::proto::LineEnding::try_from(message.line_ending)
+            ::project_models::LineEnding::try_from(message.line_ending)
                 .ok()
                 .context("missing line_ending")?,
         ));
@@ -1052,8 +1052,8 @@ impl Buffer {
     }
 
     /// Serialize the buffer's state to a protobuf message.
-    pub fn to_proto(&self, cx: &App) -> proto::BufferState {
-        proto::BufferState {
+    pub fn to_proto(&self, cx: &App) -> project_models::BufferState {
+        project_models::BufferState {
             id: self.remote_id().into(),
             file: self.file.as_ref().map(|f| f.to_proto(cx)),
             base_text: self.base_text().to_string(),
@@ -1068,7 +1068,7 @@ impl Buffer {
         &self,
         since: Option<clock::Global>,
         cx: &App,
-    ) -> Task<Vec<proto::Operation>> {
+    ) -> Task<Vec<project_models::Operation>> {
         let mut operations = Vec::new();
         operations.extend(self.deferred_ops.iter().map(proto::serialize_operation));
 
@@ -6103,7 +6103,7 @@ impl File for TestFile {
         WorktreeId::from_usize(0)
     }
 
-    fn to_proto(&self, _: &App) -> rpc::proto::File {
+    fn to_proto(&self, _: &App) -> ::project_models::File {
         unimplemented!()
     }
 

@@ -18,7 +18,6 @@ use agent_ui::AgentPanel;
 use anyhow::{Context as _, Result};
 use clap::Parser;
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
-use client::{Client, ProxySettings, UserStore};
 use collections::HashMap;
 use db::kvp::KeyValueStore;
 use editor::Editor;
@@ -29,6 +28,7 @@ use git::GitHostingProviderRegistry;
 use git_ui::clone::clone_and_open;
 use gpui::{App, AppContext, Application, AsyncApp, QuitMode, Task, TaskExt, UpdateGlobal as _};
 use gpui_platform;
+use http_client::HttpClientWithUrl;
 
 use gpui_tokio::Tokio;
 use language::LanguageRegistry;
@@ -42,7 +42,7 @@ use parking_lot::Mutex;
 use project::{project_settings::ProjectSettings, trusted_worktrees};
 use release_channel::{AppCommitSha, AppVersion};
 use session::{AppSession, Session};
-use settings::{Settings, SettingsStore, watch_config_file};
+use settings::{ProxySettings, Settings, SettingsStore, watch_config_file};
 use std::{
     cell::RefCell,
     env,
@@ -448,13 +448,18 @@ fn main() {
             std::env::consts::ARCH
         );
         let proxy_url = ProxySettings::get_global(cx).proxy_url();
-        let http = {
+        let transport: Arc<dyn http_client::HttpClient> = Arc::new({
             let _guard = Tokio::handle(cx).enter();
 
             ReqwestClient::proxy_and_user_agent(proxy_url, &user_agent)
                 .expect("could not start HTTP client")
-        };
-        cx.set_http_client(Arc::new(http));
+        });
+        let http = Arc::new(HttpClientWithUrl::new(
+            transport,
+            "http://127.0.0.1:0",
+            None,
+        ));
+        cx.set_http_client(http.clone());
 
         <dyn Fs>::set_global(fs.clone(), cx);
 
@@ -466,8 +471,6 @@ fn main() {
         extension::init(cx);
         let extension_host_proxy = ExtensionHostProxy::global(cx);
 
-        let client = Client::production(cx);
-        cx.set_http_client(client.http_client());
         let mut languages = LanguageRegistry::new(cx.background_executor().clone());
         languages.set_language_server_download_dir(paths::languages_dir().clone());
         let languages = Arc::new(languages);
@@ -498,11 +501,10 @@ fn main() {
         .detach();
         ui::on_new_scrollbars::<SettingsStore>(cx);
 
-        let node_runtime = NodeRuntime::new(client.http_client(), Some(shell_env_loaded_rx), rx);
+        let node_runtime = NodeRuntime::new(http.clone(), Some(shell_env_loaded_rx), rx);
 
         languages::init(languages.clone(), fs.clone(), node_runtime.clone(), cx);
-        let user_store = cx.new(|cx| UserStore::new(client.clone(), cx));
-        let workspace_store = cx.new(|cx| WorkspaceStore::new(client.clone(), cx));
+        let workspace_store = cx.new(WorkspaceStore::new);
 
         language_extension::init(
             language_extension::LspAccess::ViaWorkspaces({
@@ -523,12 +525,10 @@ fn main() {
             languages.clone(),
         );
 
-        Client::set_global(client.clone(), cx);
-
         zed::init(cx);
         #[cfg(target_os = "macos")]
         zed::move_to_applications::init(cx);
-        project::Project::init(&client, cx);
+        project::Project::init(cx);
         let installation_id = cx.foreground_executor().block_on(installation_id).ok();
         let session = cx.foreground_executor().block_on(session);
 
@@ -537,8 +537,7 @@ fn main() {
 
         let app_state = Arc::new(AppState {
             languages,
-            client: client.clone(),
-            user_store,
+            http_client: http.clone(),
             fs: fs.clone(),
             build_window_options,
             workspace_store,
@@ -551,7 +550,7 @@ fn main() {
         extension_host::init(
             extension_host_proxy.clone(),
             app_state.fs.clone(),
-            app_state.client.clone(),
+            app_state.http_client.clone(),
             app_state.node_runtime.clone(),
             cx,
         );
@@ -565,17 +564,17 @@ fn main() {
         );
         command_palette::init(cx);
         language_model::init(cx);
-        language_models::init(app_state.user_store.clone(), app_state.client.clone(), cx);
+        language_models::init(cx);
         acp_tools::init(cx);
         edit_prediction_ui::init(cx);
         web_search::init(cx);
         snippet_provider::init(cx);
-        edit_prediction_registry::init(app_state.client.clone(), cx);
+        edit_prediction_registry::init(cx);
         let prompt_builder = PromptBuilder::load(app_state.fs.clone(), stdout_is_a_pty(), cx);
         project::AgentRegistryStore::init_global(
             cx,
             app_state.fs.clone(),
-            app_state.client.http_client(),
+            app_state.http_client.clone(),
         );
         agent_ui::init(
             app_state.fs.clone(),

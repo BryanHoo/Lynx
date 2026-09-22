@@ -1,6 +1,6 @@
-use std::{path::PathBuf, str::FromStr, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 
-use anyhow::{Context as _, Result, bail};
+use anyhow::{Context as _, Result};
 
 use async_trait::async_trait;
 use collections::{BTreeMap, IndexSet};
@@ -11,13 +11,6 @@ use gpui::{
 use language::{
     LanguageName, LanguageRegistry, LanguageToolchainStore, ManifestDelegate, Toolchain,
     ToolchainList, ToolchainScope,
-};
-use rpc::{
-    AnyProtoClient, TypedEnvelope,
-    proto::{
-        self, ResolveToolchainResponse,
-        resolve_toolchain_response::Response as ResolveResponsePayload,
-    },
 };
 use settings::WorktreeId;
 use task::Shell;
@@ -45,13 +38,6 @@ pub struct Toolchains {
 }
 impl EventEmitter<ToolchainStoreEvent> for ToolchainStore {}
 impl ToolchainStore {
-    pub fn init(client: &AnyProtoClient) {
-        client.add_entity_request_handler(Self::handle_activate_toolchain);
-        client.add_entity_request_handler(Self::handle_list_toolchains);
-        client.add_entity_request_handler(Self::handle_active_toolchain);
-        client.add_entity_request_handler(Self::handle_resolve_toolchain);
-    }
-
     pub fn local(
         languages: Arc<LanguageRegistry>,
         worktree_store: Entity<WorktreeStore>,
@@ -200,160 +186,6 @@ impl ToolchainStore {
             language_name,
         ))
     }
-    async fn handle_activate_toolchain(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::ActivateToolchain>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::Ack> {
-        this.update(&mut cx, |this, cx| {
-            let language_name = LanguageName::from_proto(envelope.payload.language_name);
-            let Some(toolchain) = envelope.payload.toolchain else {
-                bail!("Missing `toolchain` in payload");
-            };
-            let toolchain = Toolchain {
-                name: toolchain.name.into(),
-                // todo(windows)
-                // Do we need to convert path to native string?
-                path: toolchain.path.into(),
-                as_json: serde_json::Value::from_str(&toolchain.raw_json)?,
-                language_name,
-            };
-            let worktree_id = WorktreeId::from_proto(envelope.payload.worktree_id);
-            let path = if let Some(path) = envelope.payload.path {
-                RelPath::from_unix_str(&path)?.into()
-            } else {
-                RelPath::empty_arc()
-            };
-            Ok(this.activate_toolchain(ProjectPath { worktree_id, path }, toolchain, cx))
-        })?
-        .await;
-        Ok(proto::Ack {})
-    }
-    async fn handle_active_toolchain(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::ActiveToolchain>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::ActiveToolchainResponse> {
-        let path = RelPath::from_unix_str(envelope.payload.path.as_deref().unwrap_or(""))?;
-        let toolchain = this
-            .update(&mut cx, |this, cx| {
-                let language_name = LanguageName::from_proto(envelope.payload.language_name);
-                let worktree_id = WorktreeId::from_proto(envelope.payload.worktree_id);
-                this.active_toolchain(
-                    ProjectPath {
-                        worktree_id,
-                        path: Arc::from(path),
-                    },
-                    language_name,
-                    cx,
-                )
-            })
-            .await;
-
-        Ok(proto::ActiveToolchainResponse {
-            toolchain: toolchain.map(|toolchain| {
-                let path = PathBuf::from(toolchain.path.to_string());
-                proto::Toolchain {
-                    name: toolchain.name.into(),
-                    path: path.to_string_lossy().into_owned(),
-                    raw_json: toolchain.as_json.to_string(),
-                }
-            }),
-        })
-    }
-
-    async fn handle_list_toolchains(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::ListToolchains>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::ListToolchainsResponse> {
-        let toolchains = this
-            .update(&mut cx, |this, cx| {
-                let language_name = LanguageName::from_proto(envelope.payload.language_name);
-                let worktree_id = WorktreeId::from_proto(envelope.payload.worktree_id);
-                let path =
-                    RelPath::from_unix_str(envelope.payload.path.as_deref().unwrap_or(""))?.into();
-                anyhow::Ok(this.list_toolchains(
-                    ProjectPath { worktree_id, path },
-                    language_name,
-                    cx,
-                ))
-            })?
-            .await;
-        let has_values = toolchains.is_some();
-        let groups = if let Some(Toolchains { toolchains, .. }) = &toolchains {
-            toolchains
-                .groups
-                .iter()
-                .filter_map(|group| {
-                    Some(proto::ToolchainGroup {
-                        start_index: u64::try_from(group.0).ok()?,
-                        name: String::from(group.1.as_ref()),
-                    })
-                })
-                .collect()
-        } else {
-            vec![]
-        };
-        let (toolchains, relative_path) = if let Some(Toolchains {
-            toolchains,
-            root_path: relative_path,
-            ..
-        }) = toolchains
-        {
-            let toolchains = toolchains
-                .toolchains
-                .into_iter()
-                .map(|toolchain| {
-                    let path = PathBuf::from(toolchain.path.to_string());
-                    proto::Toolchain {
-                        name: toolchain.name.to_string(),
-                        path: path.to_string_lossy().into_owned(),
-                        raw_json: toolchain.as_json.to_string(),
-                    }
-                })
-                .collect::<Vec<_>>();
-            (toolchains, relative_path)
-        } else {
-            (vec![], Arc::from(RelPath::empty()))
-        };
-
-        Ok(proto::ListToolchainsResponse {
-            has_values,
-            toolchains,
-            groups,
-            relative_worktree_path: Some(relative_path.as_unix_str().to_owned()),
-        })
-    }
-
-    async fn handle_resolve_toolchain(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::ResolveToolchain>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::ResolveToolchainResponse> {
-        let toolchain = this
-            .update(&mut cx, |this, cx| {
-                let language_name = LanguageName::from_proto(envelope.payload.language_name);
-                let path = PathBuf::from(envelope.payload.abs_path);
-                this.resolve_toolchain(path, language_name, cx)
-            })
-            .await;
-        let response = match toolchain {
-            Ok(toolchain) => {
-                let toolchain = proto::Toolchain {
-                    name: toolchain.name.to_string(),
-                    path: toolchain.path.to_string(),
-                    raw_json: toolchain.as_json.to_string(),
-                };
-                ResolveResponsePayload::Toolchain(toolchain)
-            }
-            Err(e) => ResolveResponsePayload::Error(e.to_string()),
-        };
-        Ok(ResolveToolchainResponse {
-            response: Some(response),
-        })
-    }
-
     pub fn as_language_toolchain_store(&self) -> Arc<dyn LanguageToolchainStore> {
         Arc::new(LocalStore(self.local.downgrade()))
     }

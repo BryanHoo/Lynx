@@ -4,7 +4,6 @@ mod custom;
 #[cfg(any(test, feature = "test-support"))]
 pub mod e2e_tests;
 
-use client::ProxySettings;
 use collections::{HashMap, HashSet};
 pub use custom::*;
 use fs::Fs;
@@ -15,7 +14,7 @@ use acp_thread::AgentConnection;
 use agent_client_protocol::schema::v1 as acp_schema;
 use anyhow::Result;
 use gpui::{App, AppContext, Entity, Task};
-use settings::{AgentConfigOptionValue, SettingsStore};
+use settings::{AgentConfigOptionValue, ProxySettings, SettingsStore};
 use std::{any::Any, rc::Rc, sync::Arc};
 
 #[cfg(any(test, feature = "test-support"))]

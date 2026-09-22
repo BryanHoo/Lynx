@@ -1,9 +1,9 @@
 use anyhow::{Context as _, Result};
-use client::proto::{
+use dap_types::{OutputEventCategory, OutputEventGroup, ScopePresentationHint, Source};
+use project_models::{
     self, DapChecksum, DapChecksumAlgorithm, DapEvaluateContext, DapModule, DapScope,
     DapScopePresentationHint, DapSource, DapSourcePresentationHint, DapStackFrame, DapVariable,
 };
-use dap_types::{OutputEventCategory, OutputEventGroup, ScopePresentationHint, Source};
 
 pub trait ProtoConversion {
     type ProtoType;
@@ -270,7 +270,7 @@ impl ProtoConversion for dap_types::StackFrame {
 }
 
 impl ProtoConversion for dap_types::ModuleId {
-    type ProtoType = proto::dap_module_id::Id;
+    type ProtoType = project_models::dap_module_id::Id;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -294,7 +294,7 @@ impl ProtoConversion for dap_types::Module {
 
     fn to_proto(self) -> Self::ProtoType {
         DapModule {
-            id: Some(proto::DapModuleId {
+            id: Some(project_models::DapModuleId {
                 id: Some(self.id.to_proto()),
             }),
             name: self.name,
@@ -316,8 +316,10 @@ impl ProtoConversion for dap_types::Module {
             .id
             .context("All DapModuleID proto messages must have an id")?
         {
-            proto::dap_module_id::Id::String(string) => dap_types::ModuleId::String(string),
-            proto::dap_module_id::Id::Number(num) => dap_types::ModuleId::Number(num),
+            project_models::dap_module_id::Id::String(string) => {
+                dap_types::ModuleId::String(string)
+            }
+            project_models::dap_module_id::Id::Number(num) => dap_types::ModuleId::Number(num),
         };
 
         Ok(Self {
@@ -336,7 +338,7 @@ impl ProtoConversion for dap_types::Module {
 }
 
 impl ProtoConversion for dap_types::SteppingGranularity {
-    type ProtoType = proto::SteppingGranularity;
+    type ProtoType = project_models::SteppingGranularity;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -357,7 +359,7 @@ impl ProtoConversion for dap_types::SteppingGranularity {
 }
 
 impl ProtoConversion for dap_types::OutputEventCategory {
-    type ProtoType = proto::DapOutputCategory;
+    type ProtoType = project_models::DapOutputCategory;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -382,7 +384,7 @@ impl ProtoConversion for dap_types::OutputEventCategory {
 }
 
 impl ProtoConversion for dap_types::OutputEvent {
-    type ProtoType = proto::DapOutputEvent;
+    type ProtoType = project_models::DapOutputEvent;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -401,7 +403,7 @@ impl ProtoConversion for dap_types::OutputEvent {
         Self {
             category: payload
                 .category
-                .and_then(|value| proto::DapOutputCategory::try_from(value).ok())
+                .and_then(|value| project_models::DapOutputCategory::try_from(value).ok())
                 .map(OutputEventCategory::from_proto),
             output: payload.output,
             variables_reference: payload.variables_reference,
@@ -410,7 +412,7 @@ impl ProtoConversion for dap_types::OutputEvent {
             column: payload.column.map(|column| column as u64),
             group: payload
                 .group
-                .and_then(|value| proto::DapOutputEventGroup::try_from(value).ok())
+                .and_then(|value| project_models::DapOutputEventGroup::try_from(value).ok())
                 .map(OutputEventGroup::from_proto),
             data: None,
             location_reference: None,
@@ -419,7 +421,7 @@ impl ProtoConversion for dap_types::OutputEvent {
 }
 
 impl ProtoConversion for dap_types::OutputEventGroup {
-    type ProtoType = proto::DapOutputEventGroup;
+    type ProtoType = project_models::DapOutputEventGroup;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -440,7 +442,7 @@ impl ProtoConversion for dap_types::OutputEventGroup {
 }
 
 impl ProtoConversion for dap_types::CompletionItem {
-    type ProtoType = proto::DapCompletionItem;
+    type ProtoType = project_models::DapCompletionItem;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -506,7 +508,7 @@ impl ProtoConversion for dap_types::EvaluateArgumentsContext {
 }
 
 impl ProtoConversion for dap_types::CompletionItemType {
-    type ProtoType = proto::DapCompletionItemType;
+    type ProtoType = project_models::DapCompletionItemType;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
@@ -559,11 +561,11 @@ impl ProtoConversion for dap_types::CompletionItemType {
 }
 
 impl ProtoConversion for dap_types::Thread {
-    type ProtoType = proto::DapThread;
+    type ProtoType = project_models::DapThread;
     type Output = Self;
 
     fn to_proto(self) -> Self::ProtoType {
-        proto::DapThread {
+        project_models::DapThread {
             id: self.id,
             name: self.name,
         }

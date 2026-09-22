@@ -3,7 +3,6 @@ mod undo;
 mod utils;
 
 use anyhow::{Context as _, Result};
-use client::{ErrorCode, ErrorExt};
 use collections::{BTreeSet, HashMap, hash_map};
 use editor::{
     Editor, EditorEvent, MultiBufferOffset,
@@ -38,6 +37,7 @@ use project::{
     git_store::{GitStoreEvent, RepositoryEvent, git_traversal::ChildEntriesGitIter},
     project_settings::GoToDiagnosticSeverityFilter,
 };
+use project_models::{ErrorCode, ErrorExt};
 use project_panel_settings::ProjectPanelSettings;
 use rayon::slice::ParallelSliceMut;
 use schemars::JsonSchema;

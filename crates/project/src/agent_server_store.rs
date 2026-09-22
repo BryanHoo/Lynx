@@ -2,7 +2,6 @@ use std::{
     any::Any,
     path::{Path, PathBuf},
     sync::{Arc, LazyLock},
-    time::Duration,
 };
 
 use anyhow::{Context as _, Result, bail};
@@ -11,19 +10,17 @@ use fs::{Fs, RemoveOptions};
 use futures::StreamExt;
 use gpui::{
     AppContext as _, AsyncApp, Context, Entity, EventEmitter, SharedString, Subscription, Task,
-    TaskExt,
 };
 use http_client::{HttpClient, github::AssetKind};
 use node_runtime::NodeRuntime;
 use percent_encoding::percent_decode_str;
-use rpc::{AnyProtoClient, TypedEnvelope, proto};
 use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use settings::{AgentConfigOptionValue, RegisterSetting, SettingsStore, update_settings_file};
 use sha2::{Digest, Sha256};
 use url::Url;
-use util::{ResultExt as _, debug_panic};
+use util::ResultExt as _;
 
 use crate::ProjectEnvironment;
 use crate::agent_registry_store::{AgentRegistryStore, RegistryAgent, RegistryTargetConfig};
@@ -139,17 +136,13 @@ pub trait ExternalAgentServer {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-enum AgentServerStoreState {
-    Local {
-        node_runtime: NodeRuntime,
-        fs: Arc<dyn Fs>,
-        project_environment: Entity<ProjectEnvironment>,
-        downstream_client: Option<(u64, AnyProtoClient)>,
-        settings: Option<AllAgentServersSettings>,
-        http_client: Arc<dyn HttpClient>,
-        _subscriptions: Vec<Subscription>,
-    },
-    Collab,
+struct AgentServerStoreState {
+    node_runtime: NodeRuntime,
+    fs: Arc<dyn Fs>,
+    project_environment: Entity<ProjectEnvironment>,
+    settings: Option<AllAgentServersSettings>,
+    http_client: Arc<dyn HttpClient>,
+    _subscriptions: Vec<Subscription>,
 }
 
 pub struct ExternalAgentEntry {
@@ -250,21 +243,8 @@ impl AgentServerStore {
             .and_then(|entry| entry.display_name.clone())
     }
 
-    pub fn init_headless(session: &AnyProtoClient) {
-        session.add_entity_request_handler(Self::handle_get_agent_server_command);
-    }
-
     fn agent_servers_settings_changed(&mut self, cx: &mut Context<Self>) {
-        let AgentServerStoreState::Local {
-            settings: old_settings,
-            ..
-        } = &mut self.state
-        else {
-            debug_panic!(
-                "should not be subscribed to agent server settings changes in non-local project"
-            );
-            return;
-        };
+        let old_settings = &mut self.state.settings;
 
         let new_settings = cx
             .global::<SettingsStore>()
@@ -278,20 +258,14 @@ impl AgentServerStore {
     }
 
     fn reregister_agents(&mut self, cx: &mut Context<Self>) {
-        let AgentServerStoreState::Local {
+        let AgentServerStoreState {
             node_runtime,
             fs,
             project_environment,
-            downstream_client,
             settings: old_settings,
             http_client,
             ..
-        } = &mut self.state
-        else {
-            debug_panic!("Non-local projects should never attempt to reregister. This is a bug!");
-
-            return;
-        };
+        } = &mut self.state;
 
         let new_settings = cx
             .global::<SettingsStore>()
@@ -459,26 +433,11 @@ impl AgentServerStore {
 
         *old_settings = Some(new_settings);
 
-        if let Some((project_id, downstream_client)) = downstream_client {
-            downstream_client
-                .send(proto::ExternalAgentsUpdated {
-                    project_id: *project_id,
-                    names: self
-                        .external_agents
-                        .keys()
-                        .map(|name| name.to_string())
-                        .collect(),
-                })
-                .log_err();
-        }
         cx.emit(AgentServersUpdated);
     }
 
     pub fn node_runtime(&self) -> Option<NodeRuntime> {
-        match &self.state {
-            AgentServerStoreState::Local { node_runtime, .. } => Some(node_runtime.clone()),
-            _ => None,
-        }
+        Some(self.state.node_runtime.clone())
     }
 
     pub fn local(
@@ -497,12 +456,11 @@ impl AgentServerStore {
             }));
         }
         let mut this = Self {
-            state: AgentServerStoreState::Local {
+            state: AgentServerStoreState {
                 node_runtime,
                 fs,
                 project_environment,
                 http_client,
-                downstream_client: None,
                 settings: None,
                 _subscriptions: subscriptions,
             },
@@ -510,42 +468,6 @@ impl AgentServerStore {
         };
         this.agent_servers_settings_changed(cx);
         this
-    }
-
-    pub fn collab() -> Self {
-        Self {
-            state: AgentServerStoreState::Collab,
-            external_agents: HashMap::default(),
-        }
-    }
-
-    pub fn shared(&mut self, project_id: u64, client: AnyProtoClient, cx: &mut Context<Self>) {
-        match &mut self.state {
-            AgentServerStoreState::Local {
-                downstream_client, ..
-            } => {
-                *downstream_client = Some((project_id, client.clone()));
-                // Send the current list of external agents downstream, but only after a delay,
-                // to avoid having the message arrive before the downstream project's agent server store
-                // sets up its handlers.
-                cx.spawn(async move |this, cx| {
-                    cx.background_executor().timer(Duration::from_secs(1)).await;
-                    let names = this.update(cx, |this, _| {
-                        this.external_agents()
-                            .map(|name| name.to_string())
-                            .collect()
-                    })?;
-                    client
-                        .send(proto::ExternalAgentsUpdated { project_id, names })
-                        .log_err();
-                    anyhow::Ok(())
-                })
-                .detach();
-            }
-            AgentServerStoreState::Collab => {
-                debug_panic!("external agents over collab not implemented, should not be shared");
-            }
-        }
     }
 
     pub fn get_external_agent(
@@ -558,14 +480,7 @@ impl AgentServerStore {
     }
 
     pub fn no_browser(&self) -> bool {
-        match &self.state {
-            AgentServerStoreState::Local {
-                downstream_client, ..
-            } => downstream_client
-                .as_ref()
-                .is_some_and(|(_, client)| !client.has_wsl_interop()),
-            _ => false,
-        }
+        false
     }
 
     pub fn has_external_agents(&self) -> bool {
@@ -574,103 +489,6 @@ impl AgentServerStore {
 
     pub fn external_agents(&self) -> impl Iterator<Item = &AgentId> {
         self.external_agents.keys()
-    }
-
-    async fn handle_get_agent_server_command(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::GetAgentServerCommand>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::AgentServerCommand> {
-        let command = this
-            .update(&mut cx, |this, cx| {
-                let AgentServerStoreState::Local {
-                    downstream_client, ..
-                } = &this.state
-                else {
-                    debug_panic!("should not receive GetAgentServerCommand in a non-local project");
-                    bail!("unexpected GetAgentServerCommand request in a non-local project");
-                };
-                let no_browser = this.no_browser();
-                let agent = this
-                    .external_agents
-                    .get_mut(&*envelope.payload.name)
-                    .map(|entry| entry.server.as_mut())
-                    .with_context(|| format!("agent `{}` not found", envelope.payload.name))?;
-                let new_version_available_tx =
-                    downstream_client
-                        .clone()
-                        .map(|(project_id, downstream_client)| {
-                            let (new_version_available_tx, mut new_version_available_rx) =
-                                watch::channel(None);
-                            cx.spawn({
-                                let name = envelope.payload.name.clone();
-                                async move |_, _| {
-                                    if let Some(version) =
-                                        new_version_available_rx.recv().await.ok().flatten()
-                                    {
-                                        downstream_client.send(
-                                            proto::NewExternalAgentVersionAvailable {
-                                                project_id,
-                                                name: name.clone(),
-                                                version,
-                                            },
-                                        )?;
-                                    }
-                                    anyhow::Ok(())
-                                }
-                            })
-                            .detach_and_log_err(cx);
-                            new_version_available_tx
-                        });
-                let loading_status_tx =
-                    downstream_client
-                        .clone()
-                        .map(|(project_id, downstream_client)| {
-                            let (loading_status_tx, mut loading_status_rx) = watch::channel(None);
-                            cx.spawn({
-                                let name = envelope.payload.name.clone();
-                                async move |_, _| {
-                                    while let Ok(status) = loading_status_rx.recv().await {
-                                        downstream_client.send(
-                                            proto::ExternalAgentLoadingStatusUpdated {
-                                                project_id,
-                                                name: name.clone(),
-                                                status,
-                                            },
-                                        )?;
-                                    }
-                                    anyhow::Ok(())
-                                }
-                            })
-                            .detach_and_log_err(cx);
-                            loading_status_tx
-                        });
-                let mut extra_env = HashMap::default();
-                if no_browser {
-                    extra_env.insert("NO_BROWSER".to_owned(), "1".to_owned());
-                }
-                if let Some(new_version_available_tx) = new_version_available_tx {
-                    agent.set_new_version_available_tx(new_version_available_tx);
-                }
-                if let Some(loading_status_tx) = loading_status_tx {
-                    agent.set_loading_status_tx(loading_status_tx);
-                }
-                anyhow::Ok(agent.get_command(vec![], extra_env, &mut cx.to_async()))
-            })?
-            .await?;
-        Ok(proto::AgentServerCommand {
-            path: command.path.to_string_lossy().into_owned(),
-            args: command.args,
-            env: command
-                .env
-                .map(|env| env.into_iter().collect())
-                .unwrap_or_default(),
-            root_dir: envelope
-                .payload
-                .root_dir
-                .unwrap_or_else(|| paths::home_dir().to_string_lossy().to_string()),
-            login: None,
-        })
     }
 }
 

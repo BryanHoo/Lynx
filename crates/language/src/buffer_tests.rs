@@ -1,5 +1,6 @@
 use super::*;
 use crate::Buffer;
+use crate::proto::deserialize_operation;
 use clock::ReplicaId;
 use collections::BTreeMap;
 use futures::FutureExt as _;
@@ -8,7 +9,6 @@ use gpui::{App, AppContext as _, BorrowAppContext, Entity};
 use gpui::{HighlightStyle, TestAppContext};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use proto::deserialize_operation;
 use rand::prelude::*;
 use regex::RegexBuilder;
 use settings::SettingsStore;
@@ -3854,7 +3854,7 @@ fn test_serialization(cx: &mut gpui::App) {
             Buffer::from_proto(ReplicaId::new(1), Capability::ReadWrite, state, None, cx).unwrap();
         buffer.apply_ops(
             ops.into_iter()
-                .map(|op| proto::deserialize_operation(op).unwrap()),
+                .map(|op| crate::proto::deserialize_operation(op).unwrap()),
             cx,
         );
         buffer
@@ -4198,7 +4198,7 @@ fn test_random_collaboration(cx: &mut App, mut rng: StdRng) {
             .unwrap();
             buffer.apply_ops(
                 ops.into_iter()
-                    .map(|op| proto::deserialize_operation(op).unwrap()),
+                    .map(|op| crate::proto::deserialize_operation(op).unwrap()),
                 cx,
             );
             buffer.set_group_interval(Duration::from_millis(rng.random_range(0..=200)));
@@ -4211,7 +4211,7 @@ fn test_random_collaboration(cx: &mut App, mut rng: StdRng) {
                 {
                     network.lock().broadcast(
                         buffer.replica_id(),
-                        vec![proto::serialize_operation(operation)],
+                        vec![crate::proto::serialize_operation(operation)],
                     );
                 }
             })
@@ -4348,7 +4348,7 @@ fn test_random_collaboration(cx: &mut App, mut rng: StdRng) {
                         {
                             network.lock().broadcast(
                                 buffer.replica_id(),
-                                vec![proto::serialize_operation(operation)],
+                                vec![crate::proto::serialize_operation(operation)],
                             );
                         }
                     })
@@ -4366,7 +4366,7 @@ fn test_random_collaboration(cx: &mut App, mut rng: StdRng) {
                             .lock()
                             .receive(new_replica_id)
                             .into_iter()
-                            .map(|op| proto::deserialize_operation(op).unwrap());
+                            .map(|op| crate::proto::deserialize_operation(op).unwrap());
                         if ops.len() > 0 {
                             log::info!(
                                 "peer {:?} (version: {:?}) applying {} ops from the network. {:?}",
@@ -4395,7 +4395,7 @@ fn test_random_collaboration(cx: &mut App, mut rng: StdRng) {
                     .lock()
                     .receive(replica_id)
                     .into_iter()
-                    .map(|op| proto::deserialize_operation(op).unwrap());
+                    .map(|op| crate::proto::deserialize_operation(op).unwrap());
                 if ops.len() > 0 {
                     log::info!(
                         "peer {:?} (version: {:?}) applying {} ops from the network. {:?}",

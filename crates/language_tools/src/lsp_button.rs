@@ -8,7 +8,6 @@ use std::{
 
 use sysinfo::{Pid, ProcessRefreshKind, RefreshKind, System};
 
-use client::proto;
 use collections::HashSet;
 use editor::{Editor, EditorEvent};
 use gpui::{Action as _, Anchor, App, Entity, Subscription, Task, TaskExt, WeakEntity, actions};
@@ -340,19 +339,14 @@ impl LanguageServerState {
                 continue;
             };
             let server_selector = server_info.server_selector();
-            let is_remote = self
-                .lsp_store
-                .update(cx, |lsp_store, _| lsp_store.as_remote().is_some())
-                .unwrap_or(false);
-            let has_logs = is_remote
-                || self.workspace.upgrade().is_some_and(|workspace| {
-                    let project = workspace.read(cx).project();
-                    lsp_logs.read(cx).has_server_logs(
-                        &server_selector,
-                        &project.downgrade(),
-                        &self.lsp_store,
-                    )
-                });
+            let has_logs = self.workspace.upgrade().is_some_and(|workspace| {
+                let project = workspace.read(cx).project();
+                lsp_logs.read(cx).has_server_logs(
+                    &server_selector,
+                    &project.downgrade(),
+                    &self.lsp_store,
+                )
+            });
 
             let (status_color, status_label) = server_info
                 .binary_status
@@ -967,25 +961,28 @@ impl LspButton {
             LspStoreEvent::LanguageServerUpdate {
                 language_server_id,
                 name,
-                message: proto::update_language_server::Variant::StatusUpdate(status_update),
+                message:
+                    project_models::update_language_server::Variant::StatusUpdate(status_update),
             } => match &status_update.status {
-                Some(proto::status_update::Status::Binary(binary_status)) => {
+                Some(project_models::status_update::Status::Binary(binary_status)) => {
                     let Some(name) = name.as_ref() else {
                         return;
                     };
                     if let Some(binary_status) =
-                        proto::ServerBinaryStatus::try_from(*binary_status).ok()
+                        project_models::ServerBinaryStatus::try_from(*binary_status).ok()
                     {
                         let binary_status = match binary_status {
-                            proto::ServerBinaryStatus::None => BinaryStatus::None,
-                            proto::ServerBinaryStatus::CheckingForUpdate => {
+                            project_models::ServerBinaryStatus::None => BinaryStatus::None,
+                            project_models::ServerBinaryStatus::CheckingForUpdate => {
                                 BinaryStatus::CheckingForUpdate
                             }
-                            proto::ServerBinaryStatus::Downloading => BinaryStatus::Downloading,
-                            proto::ServerBinaryStatus::Starting => BinaryStatus::Starting,
-                            proto::ServerBinaryStatus::Stopping => BinaryStatus::Stopping,
-                            proto::ServerBinaryStatus::Stopped => BinaryStatus::Stopped,
-                            proto::ServerBinaryStatus::Failed => {
+                            project_models::ServerBinaryStatus::Downloading => {
+                                BinaryStatus::Downloading
+                            }
+                            project_models::ServerBinaryStatus::Starting => BinaryStatus::Starting,
+                            project_models::ServerBinaryStatus::Stopping => BinaryStatus::Stopping,
+                            project_models::ServerBinaryStatus::Stopped => BinaryStatus::Stopped,
+                            project_models::ServerBinaryStatus::Failed => {
                                 let Some(error) = status_update.message.clone() else {
                                     return;
                                 };
@@ -1002,12 +999,14 @@ impl LspButton {
                         updated = true;
                     };
                 }
-                Some(proto::status_update::Status::Health(health_status)) => {
-                    if let Some(health) = proto::ServerHealth::try_from(*health_status).ok() {
+                Some(project_models::status_update::Status::Health(health_status)) => {
+                    if let Some(health) =
+                        project_models::ServerHealth::try_from(*health_status).ok()
+                    {
                         let health = match health {
-                            proto::ServerHealth::Ok => ServerHealth::Ok,
-                            proto::ServerHealth::Warning => ServerHealth::Warning,
-                            proto::ServerHealth::Error => ServerHealth::Error,
+                            project_models::ServerHealth::Ok => ServerHealth::Ok,
+                            project_models::ServerHealth::Warning => ServerHealth::Warning,
+                            project_models::ServerHealth::Error => ServerHealth::Error,
                         };
                         self.server_state.update(cx, |state, _| {
                             state.language_servers.update_server_health(
@@ -1025,7 +1024,8 @@ impl LspButton {
             LspStoreEvent::LanguageServerUpdate {
                 language_server_id,
                 name,
-                message: proto::update_language_server::Variant::RegisteredForBuffer(update),
+                message:
+                    project_models::update_language_server::Variant::RegisteredForBuffer(update),
                 ..
             } => {
                 self.server_state.update(cx, |state, cx| {

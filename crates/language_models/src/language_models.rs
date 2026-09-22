@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use ::settings::{Settings, SettingsStore};
-use client::{Client, UserStore};
 use collections::{HashMap, HashSet};
 use credentials_provider::CredentialsProvider;
-use gpui::{App, Context, Entity};
+use gpui::{App, Context};
+use http_client::HttpClient;
 use language_model::{LanguageModelProviderId, LanguageModelRegistry};
 
 pub mod extension;
@@ -20,14 +20,14 @@ use crate::provider::ollama::OllamaLanguageModelProvider;
 use crate::provider::open_ai_compatible::OpenAiCompatibleLanguageModelProvider;
 pub use crate::settings::*;
 
-pub fn init(user_store: Entity<UserStore>, client: Arc<Client>, cx: &mut App) {
-    let credentials_provider = client.credentials_provider();
+pub fn init(cx: &mut App) {
+    let http_client = cx.http_client();
+    let credentials_provider = zed_credentials_provider::global(cx);
     let registry = LanguageModelRegistry::global(cx);
     registry.update(cx, |registry, cx| {
         register_language_model_providers(
             registry,
-            user_store,
-            client.clone(),
+            http_client.clone(),
             credentials_provider.clone(),
             cx,
         );
@@ -96,7 +96,7 @@ pub fn init(user_store: Entity<UserStore>, client: Arc<Client>, cx: &mut App) {
             registry,
             &CompatibleProviders::default(),
             &compatible_providers,
-            &client,
+            &http_client,
             &credentials_provider,
             cx,
         );
@@ -114,7 +114,7 @@ pub fn init(user_store: Entity<UserStore>, client: Arc<Client>, cx: &mut App) {
                     registry,
                     &compatible_providers,
                     &compatible_providers_new,
-                    &client,
+                    &http_client,
                     &credentials_provider,
                     cx,
                 );
@@ -164,7 +164,7 @@ fn register_compatible_providers(
     registry: &mut LanguageModelRegistry,
     old: &CompatibleProviders,
     new: &CompatibleProviders,
-    client: &Arc<Client>,
+    http_client: &Arc<dyn HttpClient>,
     credentials_provider: &Arc<dyn CredentialsProvider>,
     cx: &mut Context<LanguageModelRegistry>,
 ) {
@@ -180,7 +180,7 @@ fn register_compatible_providers(
                 CompatibleProviderKind::OpenAi => registry.register_provider(
                     Arc::new(OpenAiCompatibleLanguageModelProvider::new(
                         provider_id.clone(),
-                        client.http_client(),
+                        http_client.clone(),
                         credentials_provider.clone(),
                         cx,
                     )),
@@ -189,7 +189,7 @@ fn register_compatible_providers(
                 CompatibleProviderKind::Anthropic => registry.register_provider(
                     Arc::new(AnthropicCompatibleLanguageModelProvider::new(
                         provider_id.clone(),
-                        client.http_client(),
+                        http_client.clone(),
                         credentials_provider.clone(),
                         cx,
                     )),
@@ -202,14 +202,13 @@ fn register_compatible_providers(
 
 fn register_language_model_providers(
     registry: &mut LanguageModelRegistry,
-    _user_store: Entity<UserStore>,
-    client: Arc<Client>,
+    http_client: Arc<dyn HttpClient>,
     credentials_provider: Arc<dyn CredentialsProvider>,
     cx: &mut Context<LanguageModelRegistry>,
 ) {
     registry.register_provider(
         Arc::new(OllamaLanguageModelProvider::new(
-            client.http_client(),
+            http_client.clone(),
             credentials_provider.clone(),
             cx,
         )),
@@ -217,7 +216,7 @@ fn register_language_model_providers(
     );
     registry.register_provider(
         Arc::new(LmStudioLanguageModelProvider::new(
-            client.http_client(),
+            http_client.clone(),
             credentials_provider.clone(),
             cx,
         )),
@@ -225,7 +224,7 @@ fn register_language_model_providers(
     );
     registry.register_provider(
         Arc::new(LlamaCppLanguageModelProvider::new(
-            client.http_client(),
+            http_client,
             credentials_provider.clone(),
             cx,
         )),
@@ -275,15 +274,15 @@ mod tests {
         }
     }
 
-    fn init_test(cx: &mut App) -> (Arc<Client>, Arc<dyn CredentialsProvider>) {
+    fn init_test(cx: &mut App) -> (Arc<dyn HttpClient>, Arc<dyn CredentialsProvider>) {
         let settings_store = SettingsStore::test(cx);
         cx.set_global(settings_store);
         cx.set_global(db::AppDatabase::test_new());
         let app_version = AppVersion::global(cx);
         release_channel::init_test(app_version, release_channel::ReleaseChannel::Lynx, cx);
         gpui_tokio::init(cx);
-        let client = Client::new(FakeHttpClient::with_404_response(), cx);
-        (client, Arc::new(FakeCredentialsProvider))
+        let http_client = FakeHttpClient::with_404_response();
+        (http_client, Arc::new(FakeCredentialsProvider))
     }
 
     fn update_compatible_provider_settings(

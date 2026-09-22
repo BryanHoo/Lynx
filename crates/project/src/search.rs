@@ -1,6 +1,5 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 use anyhow::{Ok, Result};
-use client::proto;
 use fancy_regex::{Captures, Regex, RegexBuilder};
 use gpui::Entity;
 use itertools::Itertools as _;
@@ -310,7 +309,7 @@ impl SearchQuery {
         is_case_sensitive.map(|c| (c, new_query))
     }
 
-    pub fn from_proto(message: proto::SearchQuery, path_style: PathStyle) -> Result<Self> {
+    pub fn from_proto(message: project_models::SearchQuery, path_style: PathStyle) -> Result<Self> {
         let files_to_include = if message.files_to_include.is_empty() {
             message
                 .files_to_include_legacy
@@ -377,10 +376,10 @@ impl SearchQuery {
         }
     }
 
-    pub fn to_proto(&self) -> proto::SearchQuery {
+    pub fn to_proto(&self) -> project_models::SearchQuery {
         let mut files_to_include = self.files_to_include().sources();
         let mut files_to_exclude = self.files_to_exclude().sources();
-        proto::SearchQuery {
+        project_models::SearchQuery {
             query: self.as_str().to_string(),
             regex: self.is_regex(),
             whole_word: self.whole_word(),

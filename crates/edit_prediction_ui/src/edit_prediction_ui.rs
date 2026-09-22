@@ -27,14 +27,11 @@ pub fn init(cx: &mut App) {
                     let project = workspace.project();
                     workspace.split_item(
                         SplitDirection::Right,
-                        Box::new(cx.new(|cx| {
-                            EditPredictionContextView::new(
-                                project.clone(),
-                                workspace.client(),
-                                window,
-                                cx,
-                            )
-                        })),
+                        Box::new(
+                            cx.new(|cx| {
+                                EditPredictionContextView::new(project.clone(), window, cx)
+                            }),
+                        ),
                         window,
                         cx,
                     );

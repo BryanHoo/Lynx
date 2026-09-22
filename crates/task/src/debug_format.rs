@@ -34,7 +34,7 @@ impl TcpArgumentsTemplate {
             .unwrap_or(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST))
     }
 
-    pub fn from_proto(proto: proto::TcpHost) -> Result<Self> {
+    pub fn from_proto(proto: project_models::TcpHost) -> Result<Self> {
         Ok(Self {
             port: proto.port.map(|p| p.try_into()).transpose()?,
             host: proto.host.map(|h| h.parse()).transpose()?,
@@ -42,8 +42,8 @@ impl TcpArgumentsTemplate {
         })
     }
 
-    pub fn to_proto(&self) -> proto::TcpHost {
-        proto::TcpHost {
+    pub fn to_proto(&self) -> project_models::TcpHost {
+        project_models::TcpHost {
             port: self.port.map(|p| p.into()),
             host: self.host.map(|h| h.to_string()),
             timeout: self.timeout,
@@ -118,11 +118,11 @@ pub enum DebugRequest {
 }
 
 impl DebugRequest {
-    pub fn to_proto(&self) -> proto::DebugRequest {
+    pub fn to_proto(&self) -> project_models::DebugRequest {
         match self {
-            DebugRequest::Launch(launch_request) => proto::DebugRequest {
-                request: Some(proto::debug_request::Request::DebugLaunchRequest(
-                    proto::DebugLaunchRequest {
+            DebugRequest::Launch(launch_request) => project_models::DebugRequest {
+                request: Some(project_models::debug_request::Request::DebugLaunchRequest(
+                    project_models::DebugLaunchRequest {
                         program: launch_request.program.clone(),
                         cwd: launch_request
                             .cwd
@@ -137,9 +137,9 @@ impl DebugRequest {
                     },
                 )),
             },
-            DebugRequest::Attach(attach_request) => proto::DebugRequest {
-                request: Some(proto::debug_request::Request::DebugAttachRequest(
-                    proto::DebugAttachRequest {
+            DebugRequest::Attach(attach_request) => project_models::DebugRequest {
+                request: Some(project_models::debug_request::Request::DebugAttachRequest(
+                    project_models::DebugAttachRequest {
                         process_id: attach_request
                             .process_id
                             .expect("The process ID to be already filled out."),
@@ -149,24 +149,26 @@ impl DebugRequest {
         }
     }
 
-    pub fn from_proto(val: proto::DebugRequest) -> Result<DebugRequest> {
+    pub fn from_proto(val: project_models::DebugRequest) -> Result<DebugRequest> {
         let request = val.request.context("Missing debug request")?;
         match request {
-            proto::debug_request::Request::DebugLaunchRequest(proto::DebugLaunchRequest {
-                program,
-                cwd,
-                args,
-                env,
-            }) => Ok(DebugRequest::Launch(LaunchRequest {
+            project_models::debug_request::Request::DebugLaunchRequest(
+                project_models::DebugLaunchRequest {
+                    program,
+                    cwd,
+                    args,
+                    env,
+                },
+            ) => Ok(DebugRequest::Launch(LaunchRequest {
                 program,
                 cwd: cwd.map(From::from),
                 args,
                 env: env.into_iter().collect(),
             })),
 
-            proto::debug_request::Request::DebugAttachRequest(proto::DebugAttachRequest {
-                process_id,
-            }) => Ok(DebugRequest::Attach(AttachRequest {
+            project_models::debug_request::Request::DebugAttachRequest(
+                project_models::DebugAttachRequest { process_id },
+            ) => Ok(DebugRequest::Attach(AttachRequest {
                 process_id: Some(process_id),
             })),
         }

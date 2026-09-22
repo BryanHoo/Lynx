@@ -39,12 +39,10 @@
 //! To ease trusting multiple directory worktrees at once, it's possible to trust a parent directory of a certain directory worktree opened in Zed.
 //! Trusting a directory means trusting all its subdirectories as well, including all current and potential directory worktrees.
 
-use client::ProjectId;
 use collections::{HashMap, HashSet};
 use gpui::{
     App, AppContext as _, Context, Entity, EventEmitter, Global, SharedString, Task, WeakEntity,
 };
-use rpc::{AnyProtoClient, proto};
 use settings::{Settings as _, WorktreeId};
 use std::{
     path::{Path, PathBuf},
@@ -65,38 +63,12 @@ pub fn init(db_trusted_paths: DbTrustedPaths, cx: &mut App) {
 pub fn track_worktree_trust(
     worktree_store: Entity<WorktreeStore>,
     remote_host: Option<RemoteHostLocation>,
-    downstream_client: Option<(AnyProtoClient, ProjectId)>,
-    upstream_client: Option<(AnyProtoClient, ProjectId)>,
     cx: &mut App,
 ) {
     match TrustedWorktrees::try_get_global(cx) {
         Some(trusted_worktrees) => {
             trusted_worktrees.update(cx, |trusted_worktrees, cx| {
-                trusted_worktrees.add_worktree_store(
-                    worktree_store.clone(),
-                    remote_host,
-                    downstream_client,
-                    upstream_client.clone(),
-                    cx,
-                );
-
-                if let Some((upstream_client, upstream_project_id)) = upstream_client {
-                    let trusted_paths = trusted_worktrees
-                        .trusted_paths
-                        .get(&worktree_store.downgrade())
-                        .into_iter()
-                        .flatten()
-                        .map(|trusted_path| trusted_path.to_proto())
-                        .collect::<Vec<_>>();
-                    if !trusted_paths.is_empty() {
-                        upstream_client
-                            .send(proto::TrustWorktrees {
-                                project_id: upstream_project_id.0,
-                                trusted_paths,
-                            })
-                            .ok();
-                    }
-                }
+                trusted_worktrees.add_worktree_store(worktree_store.clone(), remote_host, cx);
             });
         }
         None => log::debug!("No TrustedWorktrees initialized, not tracking worktree trust"),
@@ -141,8 +113,6 @@ pub struct TrustedWorktreesStore {
 
 #[derive(Debug, Default)]
 struct StoreData {
-    upstream_client: Option<(AnyProtoClient, ProjectId)>,
-    downstream_client: Option<(AnyProtoClient, ProjectId)>,
     host: Option<RemoteHostLocation>,
 }
 
@@ -169,27 +139,29 @@ pub enum PathTrust {
 }
 
 impl PathTrust {
-    fn to_proto(&self) -> proto::PathTrust {
+    fn to_proto(&self) -> project_models::PathTrust {
         match self {
-            Self::Worktree(worktree_id) => proto::PathTrust {
-                content: Some(proto::path_trust::Content::WorktreeId(
+            Self::Worktree(worktree_id) => project_models::PathTrust {
+                content: Some(project_models::path_trust::Content::WorktreeId(
                     worktree_id.to_proto(),
                 )),
             },
-            Self::AbsPath(path_buf) => proto::PathTrust {
-                content: Some(proto::path_trust::Content::AbsPath(
+            Self::AbsPath(path_buf) => project_models::PathTrust {
+                content: Some(project_models::path_trust::Content::AbsPath(
                     path_buf.to_string_lossy().to_string(),
                 )),
             },
         }
     }
 
-    pub fn from_proto(proto: proto::PathTrust) -> Option<Self> {
+    pub fn from_proto(proto: project_models::PathTrust) -> Option<Self> {
         Some(match proto.content? {
-            proto::path_trust::Content::WorktreeId(id) => {
+            project_models::path_trust::Content::WorktreeId(id) => {
                 Self::Worktree(WorktreeId::from_proto(id))
             }
-            proto::path_trust::Content::AbsPath(path) => Self::AbsPath(PathBuf::from(path)),
+            project_models::path_trust::Content::AbsPath(path) => {
+                Self::AbsPath(PathBuf::from(path))
+            }
         })
     }
 }
@@ -371,22 +343,6 @@ impl TrustedWorktreesStore {
             );
         }
 
-        if let Some(store_data) = self.worktree_stores.get(&weak_worktree_store) {
-            if let Some((upstream_client, upstream_project_id)) = &store_data.upstream_client {
-                let trusted_paths = trusted_paths
-                    .iter()
-                    .map(|trusted_path| trusted_path.to_proto())
-                    .collect::<Vec<_>>();
-                if !trusted_paths.is_empty() {
-                    upstream_client
-                        .send(proto::TrustWorktrees {
-                            project_id: upstream_project_id.0,
-                            trusted_paths,
-                        })
-                        .ok();
-                }
-            }
-        }
         cx.emit(TrustedWorktreesEvent::Trusted(
             weak_worktree_store,
             trusted_paths,
@@ -499,25 +455,6 @@ impl TrustedWorktreesStore {
             .or_default()
             .insert(worktree_id);
         log::info!("Worktree {worktree_path:?} is not trusted");
-        if let Some(store_data) = self.worktree_stores.get(&weak_worktree_store) {
-            if let Some((downstream_client, downstream_project_id)) = &store_data.downstream_client
-            {
-                downstream_client
-                    .send(proto::RestrictWorktrees {
-                        project_id: downstream_project_id.0,
-                        worktree_ids: vec![worktree_id.to_proto()],
-                    })
-                    .ok();
-            }
-            if let Some((upstream_client, upstream_project_id)) = &store_data.upstream_client {
-                upstream_client
-                    .send(proto::RestrictWorktrees {
-                        project_id: upstream_project_id.0,
-                        worktree_ids: vec![worktree_id.to_proto()],
-                    })
-                    .ok();
-            }
-        }
         cx.emit(TrustedWorktreesEvent::Restricted(
             weak_worktree_store,
             HashSet::from_iter([PathTrust::Worktree(worktree_id)]),
@@ -625,8 +562,6 @@ impl TrustedWorktreesStore {
         &mut self,
         worktree_store: Entity<WorktreeStore>,
         remote_host: Option<RemoteHostLocation>,
-        downstream_client: Option<(AnyProtoClient, ProjectId)>,
-        upstream_client: Option<(AnyProtoClient, ProjectId)>,
         cx: &mut Context<Self>,
     ) {
         self.worktree_stores
@@ -636,8 +571,6 @@ impl TrustedWorktreesStore {
             weak_worktree_store.clone(),
             StoreData {
                 host: remote_host.clone(),
-                downstream_client,
-                upstream_client,
             },
         );
 

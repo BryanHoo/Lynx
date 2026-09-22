@@ -20,7 +20,6 @@ use http_client::HttpClient;
 use itertools::Itertools;
 use rand::Rng as _;
 use registry::ContextServerDescriptorRegistry;
-use rpc::{AnyProtoClient, TypedEnvelope, proto};
 use settings::{Settings as _, SettingsLocation, SettingsStore, WorktreeId};
 use util::{ResultExt as _, rel_path::RelPath};
 
@@ -254,13 +253,6 @@ impl ContextServerConfiguration {
 pub type ContextServerFactory =
     Box<dyn Fn(ContextServerId, Arc<ContextServerConfiguration>) -> Arc<ContextServer>>;
 
-enum ContextServerStoreState {
-    Local {
-        downstream_client: Option<(u64, AnyProtoClient)>,
-        is_headless: bool,
-    },
-}
-
 #[derive(Clone, PartialEq)]
 struct ContextServerSettingsEntry {
     worktree_id: Option<WorktreeId>,
@@ -268,7 +260,6 @@ struct ContextServerSettingsEntry {
 }
 
 pub struct ContextServerStore {
-    state: ContextServerStoreState,
     context_server_settings: HashMap<Arc<str>, ContextServerSettingsEntry>,
     servers: HashMap<ContextServerId, ContextServerState>,
     server_ids: Vec<ContextServerId>,
@@ -309,23 +300,8 @@ impl ContextServerStore {
             ContextServerDescriptorRegistry::default_global(cx),
             worktree_store,
             weak_project,
-            ContextServerStoreState::Local {
-                downstream_client: None,
-                is_headless: headless,
-            },
             cx,
         )
-    }
-
-    pub fn init_headless(session: &AnyProtoClient) {
-        session.add_entity_request_handler(Self::handle_get_context_server_command);
-    }
-
-    pub fn shared(&mut self, project_id: u64, client: AnyProtoClient) {
-        let ContextServerStoreState::Local {
-            downstream_client, ..
-        } = &mut self.state;
-        *downstream_client = Some((project_id, client));
     }
 
     /// Returns all configured context server ids, excluding the ones that are disabled
@@ -344,18 +320,7 @@ impl ContextServerStore {
         weak_project: Option<WeakEntity<Project>>,
         cx: &mut Context<Self>,
     ) -> Self {
-        Self::new_internal(
-            false,
-            None,
-            registry,
-            worktree_store,
-            weak_project,
-            ContextServerStoreState::Local {
-                downstream_client: None,
-                is_headless: false,
-            },
-            cx,
-        )
+        Self::new_internal(false, None, registry, worktree_store, weak_project, cx)
     }
 
     #[cfg(feature = "test-support")]
@@ -372,10 +337,6 @@ impl ContextServerStore {
             registry,
             worktree_store,
             weak_project,
-            ContextServerStoreState::Local {
-                downstream_client: None,
-                is_headless: false,
-            },
             cx,
         )
     }
@@ -409,7 +370,6 @@ impl ContextServerStore {
         registry: Entity<ContextServerDescriptorRegistry>,
         worktree_store: Entity<WorktreeStore>,
         weak_project: Option<WeakEntity<Project>>,
-        state: ContextServerStoreState,
         cx: &mut Context<Self>,
     ) -> Self {
         let mut subscriptions = vec![cx.observe_global::<SettingsStore>(move |this, cx| {
@@ -461,7 +421,6 @@ impl ContextServerStore {
 
         let ai_disabled = DisableAiSettings::get_global(cx).disable_ai;
         let mut this = Self {
-            state,
             _subscriptions: subscriptions,
             context_server_settings: Self::resolve_all_context_server_settings(&worktree_store, cx),
             worktree_store,
@@ -958,67 +917,6 @@ impl ContextServerStore {
         })??;
 
         Ok((server, configuration))
-    }
-
-    async fn handle_get_context_server_command(
-        this: Entity<Self>,
-        envelope: TypedEnvelope<proto::GetContextServerCommand>,
-        mut cx: AsyncApp,
-    ) -> Result<proto::ContextServerCommand> {
-        let server_id = ContextServerId(envelope.payload.server_id.into());
-
-        let (settings_entry, registry, worktree_store) =
-            this.update(&mut cx, |this, inner_cx| {
-                let ContextServerStoreState::Local {
-                    is_headless: true, ..
-                } = &this.state
-                else {
-                    anyhow::bail!(
-                        "unexpected GetContextServerCommand request in a non-local project"
-                    );
-                };
-
-                let settings = this
-                    .context_server_settings
-                    .get(&server_id.0)
-                    .cloned()
-                    .or_else(|| {
-                        this.registry
-                            .read(inner_cx)
-                            .context_server_descriptor(&server_id.0)
-                            .map(|_| ContextServerSettingsEntry {
-                                worktree_id: None,
-                                settings: ContextServerSettings::default_extension(),
-                            })
-                    })
-                    .with_context(|| format!("context server `{}` not found", server_id))?;
-
-                anyhow::Ok((settings, this.registry.clone(), this.worktree_store.clone()))
-            })?;
-
-        let configuration = ContextServerConfiguration::from_settings(
-            settings_entry.settings,
-            server_id.clone(),
-            registry,
-            worktree_store,
-            &cx,
-        )
-        .await
-        .with_context(|| format!("failed to build configuration for `{}`", server_id))?;
-
-        let command = configuration
-            .command()
-            .context("context server has no command (HTTP servers don't need RPC)")?;
-
-        Ok(proto::ContextServerCommand {
-            path: command.path.display().to_string(),
-            args: command.args.clone(),
-            env: command
-                .env
-                .clone()
-                .map(|env| env.into_iter().collect())
-                .unwrap_or_default(),
-        })
     }
 
     /// Merges context server settings from all visible worktrees so that servers defined

@@ -80,8 +80,8 @@ pub struct SpawnInTerminal {
 }
 
 impl SpawnInTerminal {
-    pub fn to_proto(&self) -> proto::SpawnInTerminal {
-        proto::SpawnInTerminal {
+    pub fn to_proto(&self) -> project_models::SpawnInTerminal {
+        project_models::SpawnInTerminal {
             label: self.label.clone(),
             command: self.command.clone(),
             args: self.args.clone(),
@@ -97,7 +97,7 @@ impl SpawnInTerminal {
         }
     }
 
-    pub fn from_proto(proto: proto::SpawnInTerminal) -> Self {
+    pub fn from_proto(proto: project_models::SpawnInTerminal) -> Self {
         Self {
             label: proto.label.clone(),
             command: proto.command.clone(),
@@ -371,12 +371,12 @@ impl From<TaskContext> for SharedTaskContext {
 #[derive(Clone, Debug)]
 pub struct RunnableTag(pub SharedString);
 
-pub fn shell_from_proto(proto: proto::Shell) -> anyhow::Result<Shell> {
+pub fn shell_from_proto(proto: project_models::Shell) -> anyhow::Result<Shell> {
     let shell_type = proto.shell_type.context("invalid shell type")?;
     let shell = match shell_type {
-        proto::shell::ShellType::System(_) => Shell::System,
-        proto::shell::ShellType::Program(program) => Shell::Program(program),
-        proto::shell::ShellType::WithArguments(program) => Shell::WithArguments {
+        project_models::shell::ShellType::System(_) => Shell::System,
+        project_models::shell::ShellType::Program(program) => Shell::Program(program),
+        project_models::shell::ShellType::WithArguments(program) => Shell::WithArguments {
             program: program.program,
             args: program.args,
             title_override: None,
@@ -385,17 +385,20 @@ pub fn shell_from_proto(proto: proto::Shell) -> anyhow::Result<Shell> {
     Ok(shell)
 }
 
-pub fn shell_to_proto(shell: Shell) -> proto::Shell {
-    let shell_type = match shell {
-        Shell::System => proto::shell::ShellType::System(proto::System {}),
-        Shell::Program(program) => proto::shell::ShellType::Program(program),
-        Shell::WithArguments {
-            program,
-            args,
-            title_override: _,
-        } => proto::shell::ShellType::WithArguments(proto::shell::WithArguments { program, args }),
-    };
-    proto::Shell {
+pub fn shell_to_proto(shell: Shell) -> project_models::Shell {
+    let shell_type =
+        match shell {
+            Shell::System => project_models::shell::ShellType::System(project_models::System {}),
+            Shell::Program(program) => project_models::shell::ShellType::Program(program),
+            Shell::WithArguments {
+                program,
+                args,
+                title_override: _,
+            } => project_models::shell::ShellType::WithArguments(
+                project_models::shell::WithArguments { program, args },
+            ),
+        };
+    project_models::Shell {
         shell_type: Some(shell_type),
     }
 }

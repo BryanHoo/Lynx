@@ -4,7 +4,7 @@ use crate::{
     proto::{deserialize_diagnostics, serialize_diagnostics},
 };
 use pretty_assertions::assert_eq;
-use rpc::proto;
+use project_models as proto;
 use text::{Anchor, BufferId};
 
 #[test]
@@ -18,7 +18,7 @@ fn test_markup_diagnostics_round_trip() {
     assert_eq!(serialized[0].markdown, None);
     assert_eq!(
         serialized[0].markup_message_kind,
-        Some(proto::MarkupKind::Markdown as i32)
+        Some(project_models::MarkupKind::Markdown as i32)
     );
     assert_eq!(
         serialized[0].untrimmed_markup_message,
@@ -28,13 +28,13 @@ fn test_markup_diagnostics_round_trip() {
     assert_eq!(serialized[1].untrimmed_markup_message, None);
     assert_eq!(
         serialized[1].markup_message_kind,
-        Some(proto::MarkupKind::Markdown as i32)
+        Some(project_models::MarkupKind::Markdown as i32)
     );
     assert_eq!(serialized[2].message, "plain");
     assert_eq!(serialized[2].markdown, None);
     assert_eq!(
         serialized[2].markup_message_kind,
-        Some(proto::MarkupKind::PlainText as i32)
+        Some(project_models::MarkupKind::PlainText as i32)
     );
     assert_eq!(
         serialized[2].untrimmed_markup_message,

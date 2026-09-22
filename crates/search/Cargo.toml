@@ -60,6 +60,6 @@ gpui = { workspace = true, features = ["test-support"] }
 language = { workspace = true, features = ["test-support"] }
 lsp.workspace = true
 pretty_assertions.workspace = true
-proto.workspace = true
+project_models.workspace = true
 unindent.workspace = true
 workspace = { workspace = true, features = ["test-support"] }

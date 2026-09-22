@@ -17,7 +17,7 @@ use project::{
     },
     search::SearchQuery,
 };
-use proto::toggle_lsp_logs::LogType;
+use project_models::toggle_lsp_logs::LogType;
 use settings::SeedQuerySetting;
 use std::{any::TypeId, borrow::Cow, sync::Arc};
 use ui::{Checkbox, ContextMenu, PopoverMenu, ToggleState, prelude::*};
@@ -267,9 +267,7 @@ impl LspLogView {
                     if key.is_for_project(&project, &lsp_store)
                         && let Some(log_kind) = state.toggled_log_kind
                         && let Some(log_type) = log_type(log_kind)
-                    {
-                        send_toggle_log_message(key, false, log_type, cx);
-                    }
+                    {}
                 }
             });
         })
@@ -448,7 +446,6 @@ impl LspLogView {
         self.log_store.update(cx, |log_store, cx| {
             let state = log_store.get_language_server_state(&key)?;
             state.toggled_log_kind = Some(LogKind::Logs);
-            send_toggle_log_message(&key, true, LogType::Log, cx);
             Some(())
         });
     }
@@ -505,7 +502,6 @@ impl LspLogView {
             self.log_store.update(cx, |log_store, cx| {
                 let state = log_store.get_language_server_state(&key)?;
                 state.toggled_log_kind = Some(LogKind::Trace);
-                send_toggle_log_message(&key, true, LogType::Trace, cx);
                 Some(())
             });
             cx.notify();
@@ -571,9 +567,7 @@ impl LspLogView {
                 log_store.disable_rpc_trace_for_language_server(&key);
             }
 
-            if log_store.language_servers.contains_key(&key) {
-                send_toggle_log_message(&key, enabled, LogType::Rpc, cx);
-            }
+            if log_store.language_servers.contains_key(&key) {}
         });
         if !enabled && self.current_server_key.as_ref() == Some(&key) {
             self.show_logs_for_server(key, window, cx);
@@ -665,9 +659,7 @@ impl LspLogView {
             let state = log_store.get_language_server_state(&key)?;
             if let Some(log_kind) = state.toggled_log_kind.take()
                 && let Some(log_type) = log_type(log_kind)
-            {
-                send_toggle_log_message(&key, false, log_type, cx);
-            }
+            {}
             Some(())
         });
     }
@@ -679,30 +671,6 @@ fn log_type(log_kind: LogKind) -> Option<LogType> {
         LogKind::Trace => Some(LogType::Trace),
         LogKind::Logs => Some(LogType::Log),
         LogKind::ServerInfo => None,
-    }
-}
-
-fn send_toggle_log_message(
-    key: &LanguageServerLogKey,
-    enabled: bool,
-    log_type: LogType,
-    cx: &mut App,
-) {
-    if let LanguageServerKind::Remote { project } = &key.kind {
-        project
-            .update(cx, |project, cx| {
-                if let Some((client, project_id)) = project.lsp_store().read(cx).upstream_client() {
-                    client
-                        .send(proto::ToggleLspLogs {
-                            project_id,
-                            log_type: log_type as i32,
-                            server_id: key.server_id.to_proto(),
-                            enabled,
-                        })
-                        .log_err();
-                }
-            })
-            .ok();
     }
 }
 

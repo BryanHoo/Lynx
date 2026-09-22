@@ -308,7 +308,7 @@ impl MentionSet {
 
         let task = match mention_uri.clone() {
             MentionUri::Fetch { url } => {
-                self.confirm_mention_for_fetch(url, workspace.read(cx).client().http_client(), cx)
+                self.confirm_mention_for_fetch(url, workspace.read(cx).http_client(), cx)
             }
             MentionUri::Directory { .. } => Task::ready(Ok(Mention::Link)),
             MentionUri::Thread { id, .. } => self.confirm_mention_for_thread(id, cx),
@@ -810,7 +810,7 @@ mod tests {
         let mention_set = cx.new(|_cx| MentionSet::new(project.downgrade(), None));
 
         let mention_task = mention_set.update(cx, |mention_set, cx| {
-            let http_client = project.read(cx).client().http_client();
+            let http_client = project.read(cx).http_client();
             mention_set.confirm_mention_for_uri(
                 MentionUri::Selection {
                     abs_path: Some(path!("/project/file.rs").into()),

@@ -1,6 +1,5 @@
-use std::{cmp, sync::Arc, time::Duration};
+use std::{cmp, time::Duration};
 
-use client::Client;
 use edit_prediction_types::{
     DataCollectionState, EditPredictionDelegate, EditPredictionDiscardReason,
     EditPredictionIconSet, EditPredictionRequestTrigger, SuggestionDisplayType,
@@ -17,8 +16,8 @@ pub struct ZedEditPredictionDelegate {
 }
 
 impl ZedEditPredictionDelegate {
-    pub fn new(project: Entity<Project>, client: &Arc<Client>, cx: &mut Context<Self>) -> Self {
-        let store = EditPredictionStore::global(client, cx);
+    pub fn new(project: Entity<Project>, cx: &mut Context<Self>) -> Self {
+        let store = EditPredictionStore::global(cx);
         store.update(cx, |store, cx| {
             store.register_project(&project, cx);
         });

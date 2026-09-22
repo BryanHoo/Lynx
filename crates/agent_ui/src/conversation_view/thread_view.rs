@@ -21,6 +21,11 @@ use agent_skills::MAX_SKILL_DESCRIPTION_LEN;
 use editor::actions::OpenExcerpts;
 use sandbox::{SandboxFsPolicy, SandboxNetPolicy, SandboxPolicy};
 
+fn sandboxing_docs_url(section: Option<&str>, cx: &App) -> String {
+    let base = release_channel::docs_url("ai/sandboxing", cx);
+    section.map_or(base.clone(), |section| format!("{base}#{section}"))
+}
+
 use crate::completion_provider::{AvailableSkill, pluralize};
 use crate::message_editor::SharedSessionCapabilities;
 use crate::ui::{
@@ -7748,7 +7753,7 @@ impl ThreadView {
         TerminalSandboxWarning {
             title,
             detail,
-            docs_url: zed_urls::sandboxing_docs(docs_section, cx).into(),
+            docs_url: sandboxing_docs_url(docs_section, cx).into(),
         }
     }
 
@@ -8376,7 +8381,7 @@ impl ThreadView {
         section: Option<&str>,
         cx: &Context<Self>,
     ) -> AnyElement {
-        let url = zed_urls::sandboxing_docs(section, cx);
+        let url = sandboxing_docs_url(section, cx);
 
         Button::new(id, "View Sandboxing Docs")
             .label_size(LabelSize::Small)

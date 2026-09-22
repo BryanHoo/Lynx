@@ -5977,9 +5977,8 @@ pub mod test {
 
         let project1 = cx.update(|cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
@@ -6003,9 +6002,8 @@ pub mod test {
 
         let project2 = cx.update(|cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
@@ -6148,9 +6146,8 @@ pub mod test {
 
         let project1 = cx.update(|cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
@@ -6198,9 +6195,8 @@ pub mod test {
 
         let project2 = cx.update(|_, cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
@@ -6325,9 +6321,8 @@ pub mod test {
 
         let project = cx.update(|cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
@@ -6472,9 +6467,8 @@ pub mod test {
 
         let project = cx.update(|cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
@@ -6564,9 +6558,8 @@ pub mod test {
 
         let project = cx.update(|cx| {
             Project::local(
-                app_state.client.clone(),
+                app_state.http_client.clone(),
                 app_state.node_runtime.clone(),
-                app_state.user_store.clone(),
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,

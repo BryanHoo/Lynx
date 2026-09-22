@@ -1220,7 +1220,7 @@ impl MessageEditor {
 
                 if !all_mentions.is_empty() {
                     let supports_images = self.session_capabilities.read().supports_images();
-                    let http_client = workspace.read(cx).client().http_client();
+                    let http_client = workspace.read(cx).http_client();
 
                     for (anchor, content_len, mention_uri) in all_mentions {
                         let Some((crease_id, tx, crease_entity)) = insert_crease_for_mention(

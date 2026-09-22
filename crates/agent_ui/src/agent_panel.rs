@@ -5010,8 +5010,8 @@ impl Panel for AgentPanel {
         }
     }
 
-    fn remote_id() -> Option<proto::PanelId> {
-        Some(proto::PanelId::AssistantPanel)
+    fn remote_id() -> Option<project_models::PanelId> {
+        Some(project_models::PanelId::AssistantPanel)
     }
 
     fn icon(&self, _window: &Window, cx: &App) -> Option<IconName> {
@@ -6703,7 +6703,7 @@ mod tests {
     use gpui::{App, Modifiers, TestAppContext, UpdateGlobal, VisualTestContext, px, size};
     use parking_lot::Mutex;
     use project::{Project, WorktreePaths};
-    use settings::{SettingsStore, WorkingDirectory};
+    use settings::SettingsStore;
     use std::any::Any;
 
     use serde_json::json;
@@ -7354,74 +7354,6 @@ mod tests {
                 "active terminal metadata should be restored into the loaded panel"
             );
         });
-    }
-
-    #[gpui::test]
-    async fn test_terminal_restore_working_directory_does_not_read_leased_workspace(
-        cx: &mut TestAppContext,
-    ) {
-        init_test(cx);
-        cx.update(|cx| {
-            agent::ThreadStore::init_global(cx);
-            language_model::LanguageModelRegistry::test(cx);
-
-            SettingsStore::update_global(cx, |store, cx| {
-                store.update_user_settings(cx, |settings| {
-                    settings
-                        .terminal
-                        .get_or_insert_default()
-                        .project
-                        .working_directory = Some(WorkingDirectory::AlwaysHome);
-                });
-            });
-        });
-
-        let fs = FakeFs::new(cx.executor());
-        let project = Project::test(fs, [], cx).await;
-        project.update(cx, |project, _cx| {
-            project.mark_as_collab_for_testing();
-        });
-        project.read_with(cx, |project, _cx| {
-            assert!(project.is_remote());
-        });
-
-        let multi_workspace =
-            cx.add_window(|window, cx| MultiWorkspace::test_new(project.clone(), window, cx));
-        let workspace = multi_workspace
-            .read_with(cx, |multi_workspace, _cx| {
-                multi_workspace.workspace().clone()
-            })
-            .expect("multi workspace should have an active workspace");
-        let cx = &mut VisualTestContext::from_window(multi_workspace.into(), cx);
-        let panel = workspace.update_in(cx, |workspace, window, cx| {
-            cx.new(|cx| AgentPanel::new(workspace, window, cx))
-        });
-
-        assert_eq!(
-            workspace.read_with(cx, |workspace, cx| {
-                terminal_view::default_working_directory(workspace, cx)
-            }),
-            None
-        );
-
-        let metadata = TerminalThreadMetadata {
-            terminal_id: TerminalId::new(),
-            title: "Dev Server".into(),
-            custom_title: None,
-            created_at: Utc::now(),
-            worktree_paths: project.read_with(cx, |project, cx| project.worktree_paths(cx)),
-            remote_connection: None,
-            working_directory: None,
-        };
-        assert_eq!(metadata.working_directory, None);
-
-        let working_directory = workspace.update_in(cx, |workspace, _window, cx| {
-            panel
-                .read(cx)
-                .terminal_restore_working_directory(&metadata, Some(workspace), cx)
-        });
-
-        assert_eq!(working_directory, None);
     }
 
     #[gpui::test]

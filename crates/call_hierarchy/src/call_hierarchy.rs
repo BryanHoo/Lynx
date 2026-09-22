@@ -217,7 +217,7 @@ impl CallHierarchyView {
             window,
             |view, _, event, window, cx| match event {
                 LspStoreEvent::LanguageServerUpdate {
-                    message: proto::update_language_server::Variant::WorkEnd(_),
+                    message: project_models::update_language_server::Variant::WorkEnd(_),
                     ..
                 } => {
                     view.retry_empty_hierarchy(
@@ -2476,9 +2476,9 @@ mod tests {
             cx.emit(LspStoreEvent::LanguageServerUpdate {
                 language_server_id: lsp::LanguageServerId(0),
                 name: None,
-                message: proto::update_language_server::Variant::WorkEnd(proto::LspWorkEnd {
-                    token: None,
-                }),
+                message: project_models::update_language_server::Variant::WorkEnd(
+                    project_models::LspWorkEnd { token: None },
+                ),
             });
         });
     }

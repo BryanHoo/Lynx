@@ -27,7 +27,6 @@ agent_settings.workspace = true
 agent_skills.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
-client.workspace = true
 collections.workspace = true
 context_server.workspace = true
 db.workspace = true
@@ -86,7 +85,6 @@ release_channel.workspace = true
 acp_thread = { workspace = true, features = ["test-support"] }
 async-io.workspace = true
 agent_servers = { workspace = true, "features" = ["test-support"] }
-client = { workspace = true, "features" = ["test-support"] }
 clock = { workspace = true, "features" = ["test-support"] }
 context_server = { workspace = true, "features" = ["test-support"] }
 ctor.workspace = true
