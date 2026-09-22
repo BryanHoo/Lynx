@@ -2412,7 +2412,6 @@ impl Sidebar {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let focus_handle = self.focus_handle.clone();
-
         let menu_handle = self
             .project_header_new_thread_menu_handles
             .get(&ix)
@@ -2420,13 +2419,34 @@ impl Sidebar {
             .unwrap_or_default();
         let is_menu_open = menu_handle.is_deployed();
 
-        let button = IconButton::new(
+        let new_thread_button = IconButton::new(
             SharedString::from(format!("{id_prefix}project-header-new-thread-{ix}")),
             IconName::Plus,
         )
         .selected_style(ButtonStyle::Tinted(TintColor::Accent))
         .icon_size(IconSize::Small)
-        .when(!is_menu_open, |this| this.visible_on_hover(group_name));
+        .visible_on_hover(group_name)
+        .tooltip(move |_, cx| {
+            Tooltip::for_action_in("Start New Agent Thread", &NewThread, &focus_handle, cx)
+        })
+        .on_click({
+            let key = key.clone();
+            cx.listener(move |this, _, window, cx| {
+                // 加号始终在项目组当前工作区直接创建 thread，不再经过位置选择弹窗。
+                this.set_group_expanded(&key, true, cx);
+                this.selection = None;
+                if let Some(workspace) = this.workspace_for_group(&key, cx) {
+                    this.create_new_entry(&workspace, window, cx);
+                } else {
+                    this.open_workspace_and_create_entry(
+                        &key,
+                        NewEntryTarget::LastCreatedKind,
+                        window,
+                        cx,
+                    );
+                }
+            })
+        });
 
         let open_workspaces = self
             .multi_workspace
@@ -2435,38 +2455,41 @@ impl Sidebar {
             .unwrap_or_default();
 
         if open_workspaces.is_empty() {
-            let key = key.clone();
-            return button
-                .tooltip(move |_, cx| {
-                    Tooltip::for_action_in("Start New Agent Thread", &NewThread, &focus_handle, cx)
-                })
-                .on_click(cx.listener(move |this, _, window, cx| {
-                    this.set_group_expanded(&key, true, cx);
-                    this.selection = None;
-                    if let Some(workspace) = this.workspace_for_group(&key, cx) {
-                        this.create_new_entry(&workspace, window, cx);
-                    } else {
-                        this.open_workspace_and_create_entry(
-                            &key,
-                            NewEntryTarget::LastCreatedKind,
-                            window,
-                            cx,
-                        );
-                    }
-                }))
-                .into_any_element();
+            return new_thread_button.into_any_element();
         }
+
+        let active_workspace = self.active_workspace(cx);
+        // 创建 worktree 时优先继承当前工作区；当前工作区不属于该组时沿用组内首个工作区。
+        let base_workspace = active_workspace
+            .filter(|workspace| open_workspaces.contains(workspace))
+            .or_else(|| open_workspaces.first().cloned());
+        let can_create_worktree = base_workspace.as_ref().is_some_and(|workspace| {
+            let project = workspace.read(cx).project().read(cx);
+            !project.is_via_collab() && !project.repositories(cx).is_empty()
+        });
+
+        let Some(base_workspace) = base_workspace.filter(|_| can_create_worktree) else {
+            return new_thread_button.into_any_element();
+        };
 
         let this = cx.weak_entity();
         let key = key.clone();
-
-        PopoverMenu::new(SharedString::from(format!(
-            "{id_prefix}project-header-new-thread-menu-{ix}"
+        let new_worktree_menu = PopoverMenu::new(SharedString::from(format!(
+            "{id_prefix}project-header-new-worktree-menu-{ix}"
         )))
         .with_handle(menu_handle)
-        .trigger_with_tooltip(button, move |_, cx| {
-            Tooltip::for_action_in("Start New Agent Thread", &NewThread, &focus_handle, cx)
-        })
+        .trigger_with_tooltip(
+            IconButton::new(
+                SharedString::from(format!(
+                    "{id_prefix}project-header-new-worktree-thread-{ix}"
+                )),
+                IconName::GitWorktree,
+            )
+            .selected_style(ButtonStyle::Tinted(TintColor::Accent))
+            .icon_size(IconSize::Small)
+            .when(!is_menu_open, |this| this.visible_on_hover(group_name)),
+            Tooltip::text("Start New Agent Thread in New Worktree"),
+        )
         .anchor(gpui::Anchor::TopLeft)
         .on_open(Rc::new({
             let this = this.clone();
@@ -2475,148 +2498,54 @@ impl Sidebar {
             }
         }))
         .menu(move |window, cx| {
-            let this = this.clone();
-            let key = key.clone();
-            let open_workspaces = open_workspaces.clone();
-            let active_workspace = this
-                .read_with(cx, |sidebar, cx| {
-                    sidebar
-                        .multi_workspace
-                        .upgrade()
-                        .map(|mw| mw.read(cx).workspace().clone())
+            let project = base_workspace.read(cx).project().clone();
+            let project_ref = project.read(cx);
+            let has_multiple_repositories = project_ref.repositories(cx).len() > 1;
+            let current_branch = project_ref.active_repository(cx).and_then(|repo| {
+                repo.read(cx)
+                    .branch
+                    .as_ref()
+                    .map(|branch| branch.name().to_string())
+            });
+            let default_branch = this
+                .read_with(cx, |sidebar, _| {
+                    match sidebar.worktree_default_branches.get(&key) {
+                        Some(DefaultBranchCache::Resolved(branch)) => branch.clone(),
+                        _ => None,
+                    }
                 })
                 .ok()
                 .flatten();
-            let workspace_labels: Vec<_> = open_workspaces
-                .iter()
-                .map(|workspace| workspace_menu_worktree_labels(workspace, cx))
-                .collect();
+            let targets = worktree_create_targets(
+                has_multiple_repositories,
+                default_branch,
+                current_branch.as_deref(),
+            );
+            let menu_workspace = base_workspace.clone();
 
             Some(ContextMenu::build(
                 window,
                 cx,
-                move |mut menu, _window, cx| {
-                    menu = menu.header("New Thread In…");
-
-                    for (workspace, labels) in open_workspaces
-                        .iter()
-                        .cloned()
-                        .zip(workspace_labels.iter().cloned())
-                    {
-                        let is_active_workspace = active_workspace.as_ref() == Some(&workspace);
-                        menu = menu.custom_entry(
-                            move |_window, _cx| {
-                                h_flex()
-                                    .w_full()
-                                    .gap_2()
-                                    .justify_between()
-                                    .child(h_flex().min_w_0().gap_1().children(
-                                        labels.iter().enumerate().map(|(label_ix, label)| {
-                                            h_flex()
-                                                .gap_1()
-                                                .when(label_ix > 0, |this| {
-                                                    this.child(Label::new("•").alpha(0.25))
-                                                })
-                                                .child(label.render())
-                                                .into_any_element()
-                                        }),
-                                    ))
-                                    .when(is_active_workspace, |this| {
-                                        this.child(
-                                            Icon::new(IconName::Check)
-                                                .size(IconSize::Small)
-                                                .color(Color::Accent),
-                                        )
-                                    })
-                                    .into_any_element()
-                            },
-                            {
-                                let this = this.clone();
-                                let key = key.clone();
-                                let workspace = workspace.clone();
-                                move |window, cx| {
-                                    this.update(cx, |sidebar, cx| {
-                                        sidebar.set_group_expanded(&key, true, cx);
-                                        sidebar.selection = None;
-                                        sidebar.create_new_entry(&workspace, window, cx);
-                                    })
-                                    .ok();
-                                }
-                            },
+                move |mut menu, _window, _cx| {
+                    for target in targets {
+                        let label = format!(
+                            "Based on {}",
+                            target.branch_label(
+                                has_multiple_repositories,
+                                current_branch.as_deref(),
+                            )
                         );
-                    }
-
-                    let base_workspace = active_workspace
-                        .as_ref()
-                        .filter(|workspace| open_workspaces.contains(workspace))
-                        .cloned()
-                        .or_else(|| open_workspaces.first().cloned());
-
-                    // Only offer worktree creation when the base project can
-                    // actually create one; otherwise the submenu would expand to
-                    // nothing. Mirrors the picker's `creation_blocked_reason`.
-                    let creation_blocked = base_workspace.as_ref().is_none_or(|base_workspace| {
-                        let project = base_workspace.read(cx).project().read(cx);
-                        project.is_via_collab() || project.repositories(cx).is_empty()
-                    });
-
-                    if let Some(base_workspace) = base_workspace.filter(|_| !creation_blocked) {
-                        menu = menu.separator().submenu("Create New Worktree…", {
-                            let this = this.clone();
-                            move |mut submenu, _window, submenu_cx| {
-                                let project = base_workspace.read(submenu_cx).project().clone();
-                                let project_ref = project.read(submenu_cx);
-                                let has_multiple_repositories =
-                                    project_ref.repositories(submenu_cx).len() > 1;
-                                let current_branch =
-                                    project_ref.active_repository(submenu_cx).and_then(|repo| {
-                                        repo.read(submenu_cx)
-                                            .branch
-                                            .as_ref()
-                                            .map(|branch| branch.name().to_string())
-                                    });
-                                let default_branch = this
-                                    .read_with(submenu_cx, |sidebar, _| {
-                                        match sidebar.worktree_default_branches.get(&key) {
-                                            Some(DefaultBranchCache::Resolved(branch)) => {
-                                                branch.clone()
-                                            }
-                                            _ => None,
-                                        }
-                                    })
-                                    .ok()
-                                    .flatten();
-
-                                let targets = worktree_create_targets(
-                                    has_multiple_repositories,
-                                    default_branch,
-                                    current_branch.as_deref(),
-                                );
-                                for target in targets {
-                                    let label = format!(
-                                        "Based on {}",
-                                        target.branch_label(
-                                            has_multiple_repositories,
-                                            current_branch.as_deref(),
-                                        )
-                                    );
-                                    let branch_target = target.branch_target();
-                                    let workspace = base_workspace.clone();
-                                    submenu = submenu.entry(label, None, move |window, cx| {
-                                        create_worktree_in_workspace(
-                                            &workspace,
-                                            branch_target.clone(),
-                                            window,
-                                            cx,
-                                        );
-                                    });
-                                }
-
-                                submenu
-                            }
+                        let branch_target = target.branch_target();
+                        let workspace = menu_workspace.clone();
+                        menu = menu.entry(label, None, move |window, cx| {
+                            create_worktree_in_workspace(
+                                &workspace,
+                                branch_target.clone(),
+                                window,
+                                cx,
+                            );
                         });
                     }
-
                     menu
                 },
             ))
@@ -2625,8 +2554,13 @@ impl Sidebar {
         .offset(gpui::Point {
             x: px(0.),
             y: px(1.),
-        })
-        .into_any_element()
+        });
+
+        h_flex()
+            .gap_px()
+            .child(new_thread_button)
+            .child(new_worktree_menu)
+            .into_any_element()
     }
 
     // Warms `worktree_default_branches` for every project group with at least one
