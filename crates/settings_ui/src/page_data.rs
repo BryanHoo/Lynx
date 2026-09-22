@@ -8107,6 +8107,27 @@ fn ai_page(cx: &App) -> SettingsPage {
                 files: USER,
             }),
             SettingsPageItem::SettingItem(SettingItem {
+                title: "Git Commit Message Model",
+                description: "Model used to generate Git commit messages. When unset, the default fast model is preferred, then the default model.",
+                field: Box::new(SettingField {
+                    json_path: Some("agent.commit_message_model"),
+                    pick: |settings_content| {
+                        settings_content.agent.as_ref()?.commit_message_model.as_ref()
+                    },
+                    write: |settings_content, value, _| {
+                        settings_content
+                            .agent
+                            .get_or_insert_default()
+                            .commit_message_model = value;
+                    },
+                }),
+                metadata: Some(Box::new(SettingsFieldMetadata {
+                    allow_missing_default: true,
+                    ..Default::default()
+                })),
+                files: USER,
+            }),
+            SettingsPageItem::SettingItem(SettingItem {
                 title: "Git Commit Message Instructions",
                 description: "Custom instructions for AI-generated Git commit messages, such as a required format, scope, or language.",
                 field: Box::new(SettingField {
@@ -10296,6 +10317,27 @@ mod tests {
                 .as_deref()
                 .expect("metadata should be present");
             assert_eq!(metadata.text_area_lines, Some(3));
+        });
+    }
+
+    #[gpui::test]
+    fn commit_message_model_should_be_selectable_from_ai_settings(cx: &mut gpui::TestAppContext) {
+        cx.update(|cx| {
+            let page = ai_page(cx);
+            let commit_message_model = page.items.iter().find_map(|item| {
+                let SettingsPageItem::SettingItem(item) = item else {
+                    return None;
+                };
+
+                (item.field.json_path() == Some("agent.commit_message_model")).then_some(item)
+            });
+
+            let item = commit_message_model.expect("setting should be present");
+            assert!(
+                item.metadata
+                    .as_deref()
+                    .is_some_and(|metadata| metadata.allow_missing_default)
+            );
         });
     }
 

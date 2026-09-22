@@ -11,6 +11,7 @@ Use this guide for GPUI views, editor surfaces, panels, pickers, UI components, 
 - Perform model mutation through GPUI context APIs and keep subscriptions owned for their required lifetime.
 - Preserve keyboard, focus, accessibility, theme, and platform behavior for interactive controls.
 - Keep multiline settings editors and their focus-out subscriptions in stable keyed state; cover pointer focus, text input, and blur-save behavior with an interaction test.
+- Mark optional GUI settings that intentionally lack a raw default so debug builds render their control instead of the `NO DEFAULT` placeholder.
 - Add visual or interaction tests only at stable user-visible boundaries.
 
 ## Verification

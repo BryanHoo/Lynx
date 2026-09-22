@@ -43,6 +43,9 @@ Some Lynx AI features have their own model or prompt settings in `settings.json`
 - `agent.commit_message_instructions`
 - `agent.inline_alternatives`
 
+The Git commit message model can also be selected directly from the AI settings page. Leaving it
+on the first option prefers the default fast model, then falls back to the default model.
+
 Use `agent.commit_message_instructions` for instructions that apply only to generated Git commit messages:
 
 ```json [settings]

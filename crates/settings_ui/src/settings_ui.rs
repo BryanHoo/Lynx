@@ -55,8 +55,8 @@ use zed_actions::{
 
 use crate::components::{
     EnumVariantDropdown, NumberField, NumberFieldMode, NumberFieldType, SettingsInputField,
-    SettingsSectionHeader, SettingsTextArea, font_picker, icon_theme_picker,
-    render_ollama_model_picker, text_field_a11y_state, theme_picker,
+    SettingsLanguageModelDropdown, SettingsSectionHeader, SettingsTextArea, font_picker,
+    icon_theme_picker, render_ollama_model_picker, text_field_a11y_state, theme_picker,
 };
 use crate::pages::{CustomAgentForm, LlmProviderForm, McpServerForm};
 
@@ -422,6 +422,7 @@ struct SettingsFieldMetadata {
     confirm_on_focus_out: bool,
     treat_missing_text_as_empty: bool,
     text_area_lines: Option<usize>,
+    allow_missing_default: bool,
 }
 
 pub fn init(cx: &mut App) {
@@ -531,6 +532,7 @@ fn init_renderers(cx: &mut App) {
         .add_basic_renderer::<bool>(render_toggle_button)
         .add_basic_renderer::<String>(render_text_field)
         .add_basic_renderer::<SharedString>(render_text_field)
+        .add_basic_renderer::<settings::LanguageModelSelection>(render_language_model_field)
         .add_basic_renderer::<settings::SaturatingBool>(render_toggle_button)
         .add_basic_renderer::<settings::CursorShape>(render_dropdown)
         .add_basic_renderer::<settings::RestoreOnStartupBehavior>(render_dropdown)
@@ -1128,7 +1130,13 @@ impl SettingsPageItem {
                     renderers.get(&AnySettingField::type_id(setting_item.field.as_ref()));
                 let field_renderer_or_warning =
                     field_renderer.ok_or("NO RENDERER").and_then(|renderer| {
-                        if cfg!(debug_assertions) && !found {
+                        if cfg!(debug_assertions)
+                            && !found
+                            && !setting_item
+                                .metadata
+                                .as_deref()
+                                .is_some_and(|metadata| metadata.allow_missing_default)
+                        {
                             Err("NO DEFAULT")
                         } else {
                             Ok(renderer)
@@ -5015,6 +5023,40 @@ fn render_text_field<T: From<String> + Into<String> + AsRef<str> + Clone>(
             }
         })
         .into_any_element()
+}
+
+fn render_language_model_field(
+    field: SettingField<settings::LanguageModelSelection>,
+    file: SettingsUiFile,
+    _metadata: Option<&SettingsFieldMetadata>,
+    title: &'static str,
+    description: &'static str,
+    _window: &mut Window,
+    cx: &mut App,
+) -> AnyElement {
+    let (_, current) =
+        SettingsStore::global(cx).get_value_from_file(file.to_settings(), field.pick);
+
+    SettingsLanguageModelDropdown::new(
+        field.json_path.unwrap_or("settings-language-model"),
+        current,
+        title,
+        description,
+        cx,
+        move |selection, window, cx| {
+            update_settings_file(
+                file.clone(),
+                field.json_path,
+                window,
+                cx,
+                move |settings, app| {
+                    (field.write)(settings, selection, app);
+                },
+            )
+            .log_err();
+        },
+    )
+    .into_any_element()
 }
 
 fn render_toggle_button<B: Into<bool> + From<bool> + Copy>(

@@ -238,6 +238,9 @@ pub(super) fn translate(message: &str) -> Option<&'static str> {
         "Model Name" => "模型名称",
         "Model Name cannot be empty" => "模型名称不能为空",
         "Model Names must be unique" => "模型名称必须唯一",
+        "Model used to generate Git commit messages. When unset, the default fast model is preferred, then the default model." => {
+            "用于生成 Git 提交信息的模型。未设置时优先使用默认快速模型，其次使用默认模型。"
+        }
         "Models" => "模型",
         "Modifier key for adding multiple cursors." => "添加多个光标的修饰键",
         "Mouse Wheel Zoom" => "滚轮缩放",

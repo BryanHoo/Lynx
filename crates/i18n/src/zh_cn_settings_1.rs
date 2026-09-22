@@ -290,6 +290,7 @@ pub(super) fn translate(message: &str) -> Option<&'static str> {
             "为 AI 生成的 Git 提交信息设置自定义要求，例如格式、作用域或语言。"
         }
         "Customize keybindings in the keymap editor." => "在键映射编辑器中自定义键绑定",
+        "Default Model (Prefer Fast Model)" => "默认模型（优先快速模型）",
         "Dark Icon Theme" => "深色图标主题",
         "Dark Theme" => "深色主题",
         "Data Collection" => "数据收集",

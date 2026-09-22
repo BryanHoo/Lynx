@@ -300,7 +300,10 @@ You can ask AI to generate a commit message by focusing on the message editor wi
 > Note that you need to have an LLM provider configured either via your own API keys or through Lynx's hosted AI models.
 > Visit [AI Quick Start](./ai/quick-start.md) to learn how to configure AI.
 
-You can specify your preferred model for this task by adding a `commit_message_model` field to your agent settings.
+You can select the commit message model from the AI settings page. The first option keeps the
+default behavior: use the default fast model when available, then fall back to the default model.
+The selection is stored in `agent.commit_message_model`.
+
 See [Feature-specific models](./ai/agent-settings.md#feature-specific-models) for more information.
 
 ```json [settings]

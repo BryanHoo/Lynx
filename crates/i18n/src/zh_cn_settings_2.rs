@@ -304,6 +304,7 @@ pub(super) fn translate(message: &str) -> Option<&'static str> {
         "General Settings" => "通用设置",
         "Git Blame View" => "Git 追溯视图",
         "Git Commit Message Instructions" => "Git 提交信息生成提示词",
+        "Git Commit Message Model" => "Git 提交信息生成模型",
         "Git Diff" => "Git 差异",
         "Git Gutter" => "Git 装订线",
         "Git Gutter Width" => "Git 装订线宽度",
