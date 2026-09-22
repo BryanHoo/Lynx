@@ -8107,6 +8107,33 @@ fn ai_page(cx: &App) -> SettingsPage {
                 files: USER,
             }),
             SettingsPageItem::SettingItem(SettingItem {
+                title: "Git Commit Message Instructions",
+                description: "Custom instructions for AI-generated Git commit messages, such as a required format, scope, or language.",
+                field: Box::new(SettingField {
+                    json_path: Some("agent.commit_message_instructions"),
+                    pick: |settings_content| {
+                        settings_content
+                            .agent
+                            .as_ref()?
+                            .commit_message_instructions
+                            .as_ref()
+                    },
+                    write: |settings_content, value, _| {
+                        settings_content
+                            .agent
+                            .get_or_insert_default()
+                            .commit_message_instructions = value;
+                    },
+                }),
+                metadata: Some(Box::new(SettingsFieldMetadata {
+                    placeholder: Some("Describe the required commit message format and style"),
+                    treat_missing_text_as_empty: true,
+                    text_area_lines: Some(3),
+                    ..Default::default()
+                })),
+                files: USER,
+            }),
+            SettingsPageItem::SettingItem(SettingItem {
                 title: "Thinking Display",
                 description: "How thinking blocks should be displayed by default. 'Auto' fully expands during streaming, then auto-collapses when done. 'Preview' auto-expands with a height constraint during streaming. 'Always Expanded' shows full content. 'Always Collapsed' keeps them collapsed.",
                 field: Box::new(SettingField {
@@ -10247,6 +10274,30 @@ fn write_helix_mode_inner(settings: &mut SettingsContent, value: Option<bool>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[gpui::test]
+    fn commit_message_instructions_should_be_editable_from_ai_settings(
+        cx: &mut gpui::TestAppContext,
+    ) {
+        cx.update(|cx| {
+            let page = ai_page(cx);
+            let commit_message_instructions = page.items.iter().find_map(|item| {
+                let SettingsPageItem::SettingItem(item) = item else {
+                    return None;
+                };
+
+                (item.field.json_path() == Some("agent.commit_message_instructions"))
+                    .then_some(item)
+            });
+
+            let item = commit_message_instructions.expect("setting should be present");
+            let metadata = item
+                .metadata
+                .as_deref()
+                .expect("metadata should be present");
+            assert_eq!(metadata.text_area_lines, Some(3));
+        });
+    }
 
     #[test]
     fn test_write_vim_helix_mode() {

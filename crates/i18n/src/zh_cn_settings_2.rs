@@ -70,6 +70,7 @@ pub(super) fn translate(message: &str) -> Option<&'static str> {
         "Delay in milliseconds of the project panel title tooltips." => {
             "项目面板标题工具提示的延迟（毫秒）"
         }
+        "Describe the required commit message format and style" => "描述提交信息所需的格式和风格",
         "Delete" => "删除",
         "Delete Invalid Pattern" => "删除无效模式",
         "Delete Path" => "删除路径",
@@ -302,6 +303,7 @@ pub(super) fn translate(message: &str) -> Option<&'static str> {
         "General" => "通用",
         "General Settings" => "通用设置",
         "Git Blame View" => "Git 追溯视图",
+        "Git Commit Message Instructions" => "Git 提交信息生成提示词",
         "Git Diff" => "Git 差异",
         "Git Gutter" => "Git 装订线",
         "Git Gutter Width" => "Git 装订线宽度",

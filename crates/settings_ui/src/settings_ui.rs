@@ -55,8 +55,8 @@ use zed_actions::{
 
 use crate::components::{
     EnumVariantDropdown, NumberField, NumberFieldMode, NumberFieldType, SettingsInputField,
-    SettingsSectionHeader, font_picker, icon_theme_picker, render_ollama_model_picker,
-    text_field_a11y_state, theme_picker,
+    SettingsSectionHeader, SettingsTextArea, font_picker, icon_theme_picker,
+    render_ollama_model_picker, text_field_a11y_state, theme_picker,
 };
 use crate::pages::{CustomAgentForm, LlmProviderForm, McpServerForm};
 
@@ -421,6 +421,7 @@ struct SettingsFieldMetadata {
     display_clear_button: bool,
     confirm_on_focus_out: bool,
     treat_missing_text_as_empty: bool,
+    text_area_lines: Option<usize>,
 }
 
 pub fn init(cx: &mut App) {
@@ -4946,6 +4947,33 @@ fn render_text_field<T: From<String> + Into<String> + AsRef<str> + Clone>(
             .filter(|text| !text.as_ref().is_empty())
             .map(|text| text.as_ref().to_string())
     };
+
+    if let Some(lines) = metadata.and_then(|metadata| metadata.text_area_lines) {
+        return SettingsTextArea::new(field.json_path.unwrap_or("settings-text-area"), lines)
+            .tab_index(0)
+            .aria_label(title)
+            .when(!description.is_empty(), |editor| {
+                editor.aria_description(description)
+            })
+            .when_some(initial_text, |editor, text| editor.with_initial_text(text))
+            .when_some(
+                metadata.and_then(|metadata| metadata.placeholder),
+                |editor, placeholder| editor.with_placeholder(i18n::translate_in(cx, placeholder)),
+            )
+            .on_confirm(move |new_text, window, cx| {
+                update_settings_file(
+                    file.clone(),
+                    field.json_path,
+                    window,
+                    cx,
+                    move |settings, app| {
+                        (field.write)(settings, new_text.map(Into::into), app);
+                    },
+                )
+                .log_err(); // todo(settings_ui) don't log err
+            })
+            .into_any_element();
+    }
 
     // The JSON path uniquely identifies the setting this field edits, making
     // it a stable, collision-free element ID within the page.

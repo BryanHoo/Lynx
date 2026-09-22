@@ -286,6 +286,9 @@ pub(super) fn translate(message: &str) -> Option<&'static str> {
         "Custom Width" => "自定义宽度",
         "Custom digraph mappings for Vim mode." => "Vim 模式的自定义二合字符映射",
         "Custom line height value (must be at least 1.0)." => "自定义行高值（必须至少为 1.0）",
+        "Custom instructions for AI-generated Git commit messages, such as a required format, scope, or language." => {
+            "为 AI 生成的 Git 提交信息设置自定义要求，例如格式、作用域或语言。"
+        }
         "Customize keybindings in the keymap editor." => "在键映射编辑器中自定义键绑定",
         "Dark Icon Theme" => "深色图标主题",
         "Dark Theme" => "深色主题",

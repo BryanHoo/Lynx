@@ -10,6 +10,7 @@ Use this guide for GPUI views, editor surfaces, panels, pickers, UI components, 
 - Keep `render` paths free of blocking work, avoid repeated allocation, and preserve stable element identity.
 - Perform model mutation through GPUI context APIs and keep subscriptions owned for their required lifetime.
 - Preserve keyboard, focus, accessibility, theme, and platform behavior for interactive controls.
+- Keep multiline settings editors and their focus-out subscriptions in stable keyed state; cover pointer focus, text input, and blur-save behavior with an interaction test.
 - Add visual or interaction tests only at stable user-visible boundaries.
 
 ## Verification
